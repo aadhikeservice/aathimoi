@@ -1,0 +1,37 @@
+<?xml stroke="none" version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="750" viewBox="0 0 600 750">
+  <rect width="600" height="750" fill="#FFF8DC" stroke="#8B0000" stroke-width="8" rx="16"/>
+  <rect x="15" y="15" width="570" height="720" fill="none" stroke="#D4AF37" stroke-width="3" rx="10"/>
+  
+  <!-- Header -->
+  <text x="300" y="65" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="34" font-weight="bold" fill="#8B0000">ஆதி மொய்</text>
+  <text x="300" y="95" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="16" font-weight="bold" fill="#333333">கருணாக்கமுத்தன்பட்டி 9865607179</text>
+  <line x1="40" y1="110" x2="560" y2="110" stroke="#8B0000" stroke-width="2"/>
+  
+  <text x="300" y="145" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="24" font-weight="bold" fill="#8B0000">முத்து குமார்</text>
+  <text x="300" y="175" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="20" font-weight="bold" fill="#0F172A">சரண்யா</text>
+  <text x="300" y="205" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="18" font-weight="bold" fill="#475569">உப்பார்பட்டி</text>
+  <line x1="40" y1="225" x2="560" y2="225" stroke="#CBD5E1" stroke-dasharray="6,6" stroke-width="2"/>
+  
+  <!-- Receipt Details -->
+  <g font-family="Segoe UI, Tahoma, sans-serif" font-size="18" fill="#1E293B">
+    <text x="60" y="270" font-weight="bold">ரசீது எண்:</text><text x="540" y="270" text-anchor="end" font-weight="bold" font-family="monospace" font-size="20" fill="#8B0000">#AM0001</text>
+    <text x="60" y="315" font-weight="bold">தேதி:</text><text x="540" y="315" text-anchor="end">17/09/2026 07:20 PM</text>
+    <text x="60" y="360" font-weight="bold">பெயர்:</text><text x="540" y="360" text-anchor="end" font-weight="bold" fill="#0F172A">விருமன் காமாட்சி</text>
+    <text x="60" y="405" font-weight="bold">இடம்:</text><text x="540" y="405" text-anchor="end">உப்பார்பட்டி</text>
+  </g>
+  
+  <!-- Amount Box -->
+  <line x1="40" y1="480" x2="560" y2="480" stroke="#8B0000" stroke-width="3"/>
+  <text x="60" y="525" font-family="Segoe UI, Tahoma, sans-serif" font-size="26" font-weight="bold" fill="#8B0000">தொகை:</text>
+  <text x="540" y="525" text-anchor="end" font-family="Segoe UI, Tahoma, sans-serif" font-size="36" font-weight="bold" fill="#15803D">₹1001</text>
+  <text x="300" y="565" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="16" font-style="italic" font-weight="bold" fill="#334155">(ஒன்று ஆயிரம் ஒன்று ரூபாய் மட்டும்)</text>
+  <line x1="40" y1="585" x2="560" y2="585" stroke="#8B0000" stroke-width="2"/>
+  
+  <!-- Payment Mode & Footer -->
+  <text x="60" y="625" font-family="Segoe UI, Tahoma, sans-serif" font-size="18" font-weight="bold" fill="#1E293B">செலுத்திய முறை:</text>
+  <text x="540" y="625" text-anchor="end" font-family="Segoe UI, Tahoma, sans-serif" font-size="18" font-weight="bold" fill="#0F172A">ரொக்கம்</text>
+  
+  <line x1="40" y1="660" x2="560" y2="660" stroke="#CBD5E1" stroke-width="1.5"/>
+  <text x="300" y="700" text-anchor="middle" font-family="Segoe UI, Tahoma, sans-serif" font-size="18" font-weight="bold" fill="#8B0000">தங்கள் வருகைக்கு நன்றி</text>
+</svg>

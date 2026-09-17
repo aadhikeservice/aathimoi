@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ஆதி மொய் - Aathi Moi Collection Software</title>
+  
+  <!-- Tailwind CSS (Offline Local + CDN Fallback) -->
+  <script src="js/lib/tailwind.min.js"></script>
+  <script>if (!window.tailwind) document.write('<script src="https://cdn.tailwindcss.com"><\/script>');</script>
+  
+  <!-- Lucide Icons (Offline Local + CDN Fallback) -->
+  <script src="js/lib/lucide.min.js"></script>
+  <script>if (!window.lucide) document.write('<script src="https://unpkg.com/lucide@latest"><\/script>');</script>
+  
+  <!-- QRCode.js Library (Offline Local + CDN Fallback) -->
+  <script src="js/lib/qrcode.min.js"></script>
+  <script>if (!window.QRCode) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');</script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
+
+  <div id="app" class="flex flex-col min-h-screen">
+    <!-- Top Header Bar -->
+    <header class="glass-nav sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <div class="w-10 h-10 rounded-xl crimson-gradient-bg border border-amber-500/30 flex items-center justify-center font-bold text-xl text-amber-300 shadow-lg">
+          ஆ
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-wide gold-gradient-text">ஆதி மொய்</h1>
+          <p class="text-xs text-slate-400">Aadhi Moi Collection & Management</p>
+          <p class="text-[11px] font-semibold text-amber-400/90 tracking-wide mt-0.5">Group of Perumu</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <!-- Sync Google Drive Button -->
+        <button type="button" id="btn-sync-drive" onclick="window.appSyncAllToDrive()" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl border border-emerald-500/40 bg-emerald-950/80 text-emerald-300 hover:bg-emerald-900 transition text-xs font-bold shadow-md cursor-pointer">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i>
+          <span class="hidden sm:inline">Sync Drive</span>
+        </button>
+
+        <!-- Cloud / Google Drive Backup Settings Button -->
+        <button type="button" onclick="window.appOpenGasSettingsModal()" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl border border-amber-500/40 bg-slate-900/80 text-amber-300 hover:bg-slate-800 transition text-xs font-bold shadow-md cursor-pointer">
+          <i data-lucide="cloud" class="w-4 h-4 text-amber-400"></i>
+          <span class="hidden sm:inline">Cloud Settings</span>
+        </button>
+
+        <button type="button" onclick="window.appToggleTheme()" class="theme-toggle-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl border border-amber-500/40 bg-slate-900/80 text-amber-300 hover:bg-slate-800 transition text-xs font-bold shadow-md cursor-pointer">
+          <i data-lucide="sun" class="w-4 h-4 text-amber-400 theme-icon-sun"></i>
+          <i data-lucide="moon" class="w-4 h-4 text-indigo-400 theme-icon-moon hidden"></i>
+          <span class="theme-toggle-label hidden sm:inline">Dark Theme</span>
+        </button>
+
+        <!-- User Info -->
+        <div id="header-user-section" class="flex items-center space-x-6 hidden">
+
+          <div class="flex items-center space-x-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/60">
+            <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+            <span id="user-display-name" class="text-sm font-medium text-slate-200">Admin</span>
+            <span id="user-role-badge" class="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">ADMIN</span>
+          </div>
+
+          <button id="btn-logout" class="flex items-center space-x-2 bg-rose-900/40 hover:bg-rose-800/60 text-rose-300 px-3 py-2 rounded-xl text-xs font-semibold border border-rose-700/40 transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex flex-1 relative">
+      <!-- Sidebar Navigation -->
+      <aside id="sidebar-nav" class="w-64 glass-card m-4 mr-0 hidden flex-col justify-between p-4 space-y-6">
+        <nav class="space-y-2">
+          <button data-panel="dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span>Dashboard</span>
+          </button>
+
+          <button id="nav-event-master" data-panel="event-master" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+            <span>Event Master</span>
+          </button>
+
+          <button id="nav-users-master" data-panel="users-master" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span>Users Master</span>
+          </button>
+
+          <button data-panel="moi-entry" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+            <span>Moi Entry</span>
+          </button>
+
+          <button data-panel="receipt" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span>Receipts</span>
+          </button>
+
+          <button data-panel="payout" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="hand-coins" class="w-5 h-5"></i>
+            <span>Payout</span>
+          </button>
+
+          <button data-panel="report" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="download" class="w-5 h-5"></i>
+            <span>Download</span>
+          </button>
+
+          <button data-panel="cloud-settings" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="cloud" class="w-5 h-5 text-amber-400"></i>
+            <span>Cloud Settings</span>
+          </button>
+
+          <button type="button" onclick="window.appSyncAllToDrive()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-bold text-emerald-300 hover:bg-emerald-500/20 transition text-sm cursor-pointer border border-emerald-500/40 bg-emerald-950/60 mt-2">
+            <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-400"></i>
+            <span>Sync Google Drive</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Main Dynamic Content Area -->
+      <main id="main-content" class="flex-1 p-6 overflow-y-auto min-h-[calc(100vh-80px)]">
+        <!-- Panels will be rendered here by app.js -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Thermal Printer Hidden Area -->
+  <div id="thermal-print-area" class="hidden"></div>
+
+  <!-- A4 Report Print Hidden Area -->
+  <div id="a4-report-print-area" class="hidden"></div>
+
+  <!-- Scripts -->
+  <script src="js/tamilTransliterate.js"></script>
+  <script src="js/tamilWords.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "aadhi-moi",
+  "version": "1.0.0",
+  "description": "Aadhi Moi Collection & Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

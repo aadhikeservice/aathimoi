@@ -1,0 +1,88 @@
+{
+  "events": [
+    {
+      "id": "ev_1789570946669",
+      "displayName1": "கார்த்திக்",
+      "memberName": "பிரியா",
+      "eventName": "கார்த்திக் - பிரியா",
+      "place": "தேனி",
+      "phone": "9865607179",
+      "eventDate": "2026-09-16",
+      "status": "confirmed",
+      "assignedUsername": "user",
+      "createdAt": "2026-09-16T15:02:26.669Z"
+    }
+  ],
+  "receipts": [
+    {
+      "id": "rcpt_1789236171882",
+      "billNo": "1001",
+      "eventId": "ev_1789570946669",
+      "eventName": "கார்த்திக் - பிரியா",
+      "memberName": "பிரியா",
+      "place": "மதுரை",
+      "name": "கிஷோர்",
+      "relationship": "மற்றவை",
+      "amount": "5000",
+      "amountWords": "ஐந்தாயிரம் ரூபாய் மட்டும்",
+      "mode": "ரொக்கம்",
+      "createdBy": "admin",
+      "date": "12/09/2026",
+      "time": "11:32 PM",
+      "createdAt": "2026-09-12T18:02:51.875Z"
+    },
+    {
+      "id": "rcpt_1789236781487",
+      "billNo": "1002",
+      "eventId": "ev_1789570946669",
+      "eventName": "கார்த்திக் - பிரியா",
+      "memberName": "பிரியா",
+      "place": "தேனி",
+      "name": "முத்து",
+      "relationship": "நண்பர்",
+      "amount": "5000",
+      "amountWords": "ஐந்தாயிரம் ரூபாய் மட்டும்",
+      "mode": "ரொக்கம்",
+      "createdBy": "user",
+      "date": "12/09/2026",
+      "time": "11:43 PM",
+      "createdAt": "2026-09-12T18:13:01.487Z"
+    }
+  ],
+  "payouts": [
+    {
+      "id": "payout_1789572217850",
+      "eventId": "ev_1789570946669",
+      "eventName": "பிரியா",
+      "name": "நிர்மல்",
+      "reason": "பூ",
+      "amount": "500",
+      "createdBy": "admin",
+      "date": "16/09/2026",
+      "time": "08:53 PM",
+      "createdAt": "2026-09-16T15:23:37.849Z"
+    },
+    {
+      "id": "payout_1789572810153",
+      "eventId": "ev_1789570946669",
+      "eventName": "பிரியா",
+      "name": "மலர்",
+      "reason": "இலை",
+      "amount": "300",
+      "createdBy": "user",
+      "date": "16/09/2026",
+      "time": "09:03 PM",
+      "createdAt": "2026-09-16T15:33:30.152Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr_1789235883506",
+      "username": "user",
+      "password": "1234",
+      "role": "user",
+      "assignedEventId": "ev_1789570946669",
+      "startingBillNo": "1001"
+    }
+  ]
+}

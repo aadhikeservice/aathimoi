@@ -1,0 +1,20 @@
+{
+  "id": "rcpt_1789655440285",
+  "billNo": "AM0001",
+  "eventId": "ev_1789655390752",
+  "displayName1": "நிர்மல் குமார்",
+  "eventName": "பார்வதி",
+  "memberName": "பார்வதி",
+  "place": "செல்லம்பட்டி",
+  "name": "சாமி",
+  "name1": "காயத்ரி",
+  "relationship": "",
+  "amount": "1001",
+  "amountWords": "ஒன்று ஆயிரம் ஒன்று ரூபாய் மட்டும்",
+  "mode": "ரொக்கம்",
+  "upiTxTime": "",
+  "createdBy": "admin",
+  "date": "17/09/2026",
+  "time": "08:00 PM",
+  "createdAt": "2026-09-17T14:30:40.285Z"
+}

@@ -1,88 +1,176 @@
 {
   "events": [
     {
-      "id": "ev_1789570946669",
-      "displayName1": "கார்த்திக்",
-      "memberName": "பிரியா",
-      "eventName": "கார்த்திக் - பிரியா",
-      "place": "தேனி",
-      "phone": "9865607179",
-      "eventDate": "2026-09-16",
-      "status": "confirmed",
-      "assignedUsername": "user",
-      "createdAt": "2026-09-16T15:02:26.669Z"
+      "id": "ev_1790263958301",
+      "displayName1": "மெம்பெர் நேம்",
+      "memberName": "மெம்பெர் நேம் 1",
+      "eventTitle": "விழா",
+      "eventName": "மெம்பெர் நேம்",
+      "place": "பழசே",
+      "phone": "9865327410",
+      "eventDate": "2026-09-24",
+      "upiId": "ggh@ghvbn",
+      "status": "pending",
+      "assignedUsername": "",
+      "createdAt": "2026-09-24T15:32:38.301Z"
     }
   ],
   "receipts": [
     {
-      "id": "rcpt_1789236171882",
-      "billNo": "1001",
-      "eventId": "ev_1789570946669",
-      "eventName": "கார்த்திக் - பிரியா",
-      "memberName": "பிரியா",
-      "place": "மதுரை",
+      "id": "rcpt_1790264047542",
+      "billNo": "AM0001",
+      "eventId": "ev_1790263958301",
+      "displayName1": "மெம்பெர் நேம்",
+      "eventName": "மெம்பெர் நேம்",
+      "memberName": "மெம்பெர் நேம் 1",
+      "place": "கருணாக்கமுதன் பட்டி",
+      "initial": "J",
       "name": "கிஷோர்",
-      "relationship": "மற்றவை",
-      "amount": "5000",
-      "amountWords": "ஐந்தாயிரம் ரூபாய் மட்டும்",
+      "job": "airport",
+      "name1": "குமார்",
+      "relationship": "",
+      "mobile": "9865607179",
+      "amount": "5001",
+      "amountWords": "ஐந்து ஆயிரம் ஒன்று ரூபாய் மட்டும்",
       "mode": "ரொக்கம்",
+      "upiTxTime": "",
       "createdBy": "admin",
-      "date": "12/09/2026",
-      "time": "11:32 PM",
-      "createdAt": "2026-09-12T18:02:51.875Z"
+      "date": "24/09/2026",
+      "time": "09:04 PM",
+      "createdAt": "2026-09-24T15:34:07.542Z"
     },
     {
-      "id": "rcpt_1789236781487",
-      "billNo": "1002",
-      "eventId": "ev_1789570946669",
-      "eventName": "கார்த்திக் - பிரியா",
-      "memberName": "பிரியா",
-      "place": "தேனி",
-      "name": "முத்து",
-      "relationship": "நண்பர்",
-      "amount": "5000",
-      "amountWords": "ஐந்தாயிரம் ரூபாய் மட்டும்",
+      "id": "rcpt_1790264067145",
+      "billNo": "AM0002",
+      "eventId": "ev_1790263958301",
+      "displayName1": "மெம்பெர் நேம்",
+      "eventName": "மெம்பெர் நேம்",
+      "memberName": "மெம்பெர் நேம் 1",
+      "place": "கருணாக்கமுதன் பட்டி",
+      "initial": "J",
+      "name": "கிஷோர்",
+      "job": "airport",
+      "name1": "குமார்",
+      "relationship": "",
+      "mobile": "9865607179",
+      "amount": "10001",
+      "amountWords": "பத்து ஆயிரம் ஒன்று ரூபாய் மட்டும்",
       "mode": "ரொக்கம்",
-      "createdBy": "user",
-      "date": "12/09/2026",
-      "time": "11:43 PM",
-      "createdAt": "2026-09-12T18:13:01.487Z"
+      "upiTxTime": "",
+      "createdBy": "admin",
+      "date": "24/09/2026",
+      "time": "09:04 PM",
+      "createdAt": "2026-09-24T15:34:27.145Z"
+    },
+    {
+      "id": "rcpt_1790264185323",
+      "billNo": "AM0003",
+      "eventId": "ev_1790263958301",
+      "displayName1": "மெம்பெர் நேம்",
+      "eventName": "மெம்பெர் நேம்",
+      "memberName": "மெம்பெர் நேம் 1",
+      "place": "கருணாக்கமுதன் பட்டி",
+      "initial": "J",
+      "name": "கிஷோர்",
+      "job": "airport",
+      "name1": "குமார்",
+      "relationship": "",
+      "mobile": "9865607179",
+      "amount": "20000",
+      "amountWords": "இருபது ஆயிரம் ரூபாய் மட்டும்",
+      "mode": "யூ.பி.ஐ",
+      "upiTxTime": "1515",
+      "createdBy": "admin",
+      "date": "24/09/2026",
+      "time": "09:06 PM",
+      "createdAt": "2026-09-24T15:36:25.323Z"
     }
   ],
   "payouts": [
     {
-      "id": "payout_1789572217850",
-      "eventId": "ev_1789570946669",
-      "eventName": "பிரியா",
-      "name": "நிர்மல்",
-      "reason": "பூ",
-      "amount": "500",
-      "createdBy": "admin",
-      "date": "16/09/2026",
-      "time": "08:53 PM",
-      "createdAt": "2026-09-16T15:23:37.849Z"
-    },
-    {
-      "id": "payout_1789572810153",
-      "eventId": "ev_1789570946669",
-      "eventName": "பிரியா",
-      "name": "மலர்",
+      "id": "payout_1790264128702",
+      "eventId": "ev_1790263958301",
+      "eventName": "மெம்பெர் நேம்",
+      "name": "௧",
       "reason": "இலை",
-      "amount": "300",
-      "createdBy": "user",
-      "date": "16/09/2026",
-      "time": "09:03 PM",
-      "createdAt": "2026-09-16T15:33:30.152Z"
+      "amount": "100",
+      "createdBy": "admin",
+      "date": "24/09/2026",
+      "time": "09:05 PM",
+      "createdAt": "2026-09-24T15:35:28.702Z",
+      "sender": "௧",
+      "receiver": "௨"
     }
   ],
   "users": [
     {
-      "id": "usr_1789235883506",
-      "username": "user",
+      "id": "1",
+      "username": "admin",
       "password": "1234",
-      "role": "user",
-      "assignedEventId": "ev_1789570946669",
-      "startingBillNo": "1001"
+      "role": "admin",
+      "assignedEventIds": []
+    }
+  ],
+  "noteEvents": [
+    {
+      "id": "nev_1789932663900",
+      "name": "ஹரிஷ் பூர்ணிமா",
+      "title": "வசந்த விழா",
+      "place": "புதுகோட்டை",
+      "date": "2026-09-20",
+      "createdAt": "2026-09-20T19:31:03.900Z"
+    }
+  ],
+  "noteEntries": [
+    {
+      "id": "nent_1789932688376",
+      "noteEventId": "nev_1789932663900",
+      "place": "வத்தலகுண்டு",
+      "name1": "சுந்தர்",
+      "name2": "சுமதி",
+      "amount": "5001",
+      "createdBy": "admin",
+      "createdAt": "2026-09-20T19:31:28.376Z"
+    }
+  ],
+  "eventDenominations": {
+    "ev_1789936298730": {
+      "c500": 350,
+      "c200": 10,
+      "c100": 98,
+      "c50": 600,
+      "c20": 0,
+      "c10": 0,
+      "c1": 1,
+      "gpay": 30519,
+      "hostCash": 200,
+      "savedAt": "2026-09-22T17:08:05.442Z"
+    },
+    "ev_1790263958301": {
+      "c500": 0,
+      "c200": 0,
+      "c100": 0,
+      "c50": 0,
+      "c20": 0,
+      "c10": 0,
+      "c1": 0,
+      "gpay": 20000,
+      "hostCash": 50,
+      "savedAt": "2026-09-24T15:36:51.064Z"
+    }
+  },
+  "members": [
+    {
+      "id": "mem_1790267726325_gp9l3",
+      "mobile": "9865607179",
+      "initial": "J",
+      "name": "கிஷோர்",
+      "job": "airport",
+      "name1": "குமார்",
+      "relationship": "",
+      "place": "கருணாக்கமுதன் பட்டி",
+      "eventName": "மெம்பெர் நேம்",
+      "lastUpdated": "2026-09-24T16:35:26.325Z"
     }
   ]
 }

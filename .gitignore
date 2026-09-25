@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+out.log
+*.log
+
+# Build & Electron Distributables
+dist/
+build/
+
+# Customer Data & Transaction Backups (Keep private)
+Backup/
+_archive_backup_events/
+receipts/
+public/receipts/
+public/Backup/
+
+# Scratch & Temporary Output Files
+scratch/
+scratch_*
+temp_*
+_temp_*
+public/temp_*
+public/_temp_*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local

@@ -68,11 +68,11 @@ function setupSheets() {
   if (!receiptSheet) {
     receiptSheet = ss.insertSheet('Receipts');
     receiptSheet.appendRow([
-      'Bill No', 'Event Name', 'Place', 'Name', 'Name 1', 
-      'Relationship', 'Amount (₹)', 'Amount in Words', 'Mode', 
+      'Bill No', 'Event Name', 'Place', 'Initial', 'Name', 'Job', 'Name 1', 
+      'Relationship', 'Mobile Number', 'Amount (₹)', 'Amount in Words', 'Mode', 
       'UPI Ref / Time', 'Created By', 'Date', 'Time', 'Timestamp'
     ]);
-    receiptSheet.getRange(1, 1, 1, 14).setFontWeight('bold').setBackground('#D4AF37').setFontColor('#0F172A');
+    receiptSheet.getRange(1, 1, 1, 17).setFontWeight('bold').setBackground('#D4AF37').setFontColor('#0F172A');
   }
 
   // 2. Events Sheet
@@ -80,9 +80,9 @@ function setupSheets() {
   if (!eventSheet) {
     eventSheet = ss.insertSheet('Events');
     eventSheet.appendRow([
-      'Event ID', 'Member Name', 'Place', 'Phone', 'Event Date', 'UPI ID', 'Status', 'Assigned User', 'Drive Folder ID'
+      'Event ID', 'Member Name', 'Member Name 1', 'Event Title', 'Place', 'Phone', 'Event Date', 'UPI ID', 'Status', 'Assigned User', 'Drive Folder ID'
     ]);
-    eventSheet.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#8B0000').setFontColor('#FFFFFF');
+    eventSheet.getRange(1, 1, 1, 11).setFontWeight('bold').setBackground('#8B0000').setFontColor('#FFFFFF');
   }
 
   // 3. Payouts Sheet
@@ -129,7 +129,9 @@ function doGet(e) {
         events: getSheetDataAsJson(ss.getSheetByName('Events')),
         receipts: getSheetDataAsJson(ss.getSheetByName('Receipts')),
         payouts: getSheetDataAsJson(ss.getSheetByName('Payouts')),
-        users: getSheetDataAsJson(ss.getSheetByName('Users'))
+        users: getSheetDataAsJson(ss.getSheetByName('Users')),
+        noteEvents: getSheetDataAsJson(ss.getSheetByName('Note Events')),
+        noteEntries: getSheetDataAsJson(ss.getSheetByName('Note Entries'))
       };
       return createJsonResponse({ status: 'success', data: data, spreadsheetUrl: ss.getUrl() });
     }
@@ -166,6 +168,26 @@ function doPost(e) {
     if (action === 'createEvent') {
       var resultEvent = createEventEntry(contents.event);
       return createJsonResponse({ status: 'success', event: resultEvent });
+    }
+
+    if (action === 'saveNoteEntry') {
+      var resultNote = saveNoteEntryToDrive(contents.noteEventName, contents.noteEntry, contents.noteEntryHtml);
+      return createJsonResponse({ status: 'success', noteEntry: resultNote });
+    }
+
+    if (action === 'saveBulkNoteEntries') {
+      var resultBulk = saveBulkNoteEntriesToDrive(contents.noteEventName, contents.noteEntries);
+      return createJsonResponse({ status: 'success', result: resultBulk });
+    }
+
+    if (action === 'createNoteEvent') {
+      var resultNoteEv = createNoteEventFolderInDrive(contents.noteEvent);
+      return createJsonResponse({ status: 'success', noteEvent: resultNoteEv });
+    }
+
+    if (action === 'deleteEvent') {
+      deleteEventEntry(contents);
+      return createJsonResponse({ status: 'success', message: 'Event and associated data deleted' });
     }
 
     if (action === 'syncBatch') {
@@ -241,9 +263,12 @@ function saveMoiReceipt(rcpt) {
     rcpt.billNo,
     rcpt.eventName || '',
     rcpt.place || '',
+    rcpt.initial || '',
     rcpt.name || '',
+    rcpt.job || '',
     rcpt.name1 || '',
     rcpt.relationship || '',
+    rcpt.mobile || rcpt.phone || '',
     rcpt.amount || 0,
     rcpt.amountWords || '',
     rcpt.mode || 'Cash',
@@ -289,6 +314,12 @@ function savePayoutEntry(payout) {
     now.toISOString()
   ]);
 
+  try {
+    createPayoutHtmlInDrive(payout);
+  } catch (err) {
+    Logger.log('Drive Payout HTML generation notice: ' + err.toString());
+  }
+
   return payout;
 }
 
@@ -301,21 +332,46 @@ function createEventEntry(event) {
     sheet = ss.getSheetByName('Events');
   }
 
+  var displayName1 = event.displayName1 || event.memberName || '';
+  var memberName = event.memberName || '';
+  var eventTitle = event.eventTitle || '';
+  var folderTitle = (displayName1 ? displayName1 : '') + (memberName ? (' - ' + memberName) : '');
+  if (!folderTitle) folderTitle = 'Event';
+
   // Create Google Drive Folder for Event inside Backup folder
-  var folderId = '';
+  var folderId = event.folderId || '';
   try {
     var backupFolder = getOrCreateBackupFolder();
-    var folderTitle = (event.displayName1 ? (event.displayName1 + ' - ') : '') + (event.memberName || 'Event');
-    var newFolder = backupFolder.createFolder(folderTitle);
-    folderId = newFolder.getId();
+    var existingFolders = backupFolder.getFoldersByName(folderTitle);
+    if (existingFolders.hasNext()) {
+      folderId = existingFolders.next().getId();
+    } else {
+      var newFolder = backupFolder.createFolder(folderTitle);
+      folderId = newFolder.getId();
+    }
   } catch (e) {
     Logger.log('Folder creation notice: ' + e.toString());
   }
 
   var eventId = event.id || ('ev_' + Date.now());
-  sheet.appendRow([
+
+  // Check if event row already exists (by ID or Member Name) to update instead of duplicating
+  var data = sheet.getDataRange().getValues();
+  var existingRowIndex = -1;
+  for (var r = 1; r < data.length; r++) {
+    var rId = data[r][0];
+    var rName = data[r][1];
+    if ((eventId && rId == eventId) || (displayName1 && rName == displayName1)) {
+      existingRowIndex = r + 1;
+      break;
+    }
+  }
+
+  var rowValues = [
     eventId,
-    event.memberName || '',
+    displayName1,
+    memberName,
+    eventTitle,
     event.place || '',
     event.phone || '',
     event.eventDate || '',
@@ -323,11 +379,83 @@ function createEventEntry(event) {
     event.status || 'pending',
     event.assignedUsername || '',
     folderId
-  ]);
+  ];
+
+  if (existingRowIndex > 0) {
+    sheet.getRange(existingRowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+  } else {
+    sheet.appendRow(rowValues);
+  }
 
   event.folderId = folderId;
   event.folderUrl = folderId ? ('https://drive.google.com/drive/folders/' + folderId) : '';
   return event;
+}
+
+function deleteEventEntry(contents) {
+  var eventId = contents.eventId;
+  var eventName = contents.eventName || contents.memberName || contents.displayName1 || '';
+  var majorName = contents.displayName1 || contents.memberName || contents.eventName || '';
+  var name1 = contents.displayName1 ? (contents.memberName || '') : '';
+  var folderTitle = (majorName ? (majorName + (name1 ? (' - ' + name1) : '')) : '');
+
+  var ss = getSs();
+  
+  // 1. Delete rows in Receipts sheet matching eventId or eventName
+  var receiptSheet = ss.getSheetByName('Receipts');
+  if (receiptSheet) {
+    var rData = receiptSheet.getDataRange().getValues();
+    for (var i = rData.length - 1; i >= 1; i--) {
+      var rowEvName = rData[i][1]; // Column 2: Event Name
+      if (rowEvName && (rowEvName == eventName || rowEvName == majorName || rowEvName == folderTitle)) {
+        receiptSheet.deleteRow(i + 1);
+      }
+    }
+  }
+
+  // 2. Delete rows in Payouts sheet matching eventId or eventName
+  var payoutSheet = ss.getSheetByName('Payouts');
+  if (payoutSheet) {
+    var pData = payoutSheet.getDataRange().getValues();
+    for (var j = pData.length - 1; j >= 1; j--) {
+      var rowEvNameP = pData[j][1]; // Column 2: Event Name
+      if (rowEvNameP && (rowEvNameP == eventName || rowEvNameP == majorName || rowEvNameP == folderTitle)) {
+        payoutSheet.deleteRow(j + 1);
+      }
+    }
+  }
+
+  // 3. Delete rows in Events sheet matching eventId or eventName
+  var eventSheet = ss.getSheetByName('Events');
+  if (eventSheet) {
+    var eData = eventSheet.getDataRange().getValues();
+    for (var k = eData.length - 1; k >= 1; k--) {
+      var rowEvId = eData[k][0]; // Column 1: Event ID
+      var rowMember = eData[k][1]; // Column 2: Member Name
+      if ((eventId && rowEvId == eventId) || (rowMember && (rowMember == eventName || rowMember == majorName))) {
+        eventSheet.deleteRow(k + 1);
+      }
+    }
+  }
+
+  // 4. Delete Google Drive Folder for the event inside Backup folder
+  try {
+    var backupFolder = getOrCreateBackupFolder();
+    if (folderTitle) {
+      var folders = backupFolder.getFoldersByName(folderTitle);
+      while (folders.hasNext()) {
+        folders.next().setTrashed(true);
+      }
+    }
+    if (majorName && majorName !== folderTitle) {
+      var altFolders = backupFolder.getFoldersByName(majorName);
+      while (altFolders.hasNext()) {
+        altFolders.next().setTrashed(true);
+      }
+    }
+  } catch (err) {
+    Logger.log('Drive folder deletion notice: ' + err.toString());
+  }
 }
 
 // Helper to locate or create top-level "moi" folder in Google Drive
@@ -488,6 +616,83 @@ function createReceiptHtmlInDrive(rcpt) {
   targetFolder.createFile(htmlBlob);
 }
 
+function getOrCreatePayoutUserDriveFolder(payout) {
+  var eventFolder = getOrCreateEventDriveFolder(payout);
+  var payoutsFolder;
+  try {
+    var pFolders = eventFolder.getFoldersByName('Payouts');
+    if (pFolders.hasNext()) {
+      payoutsFolder = pFolders.next();
+    } else {
+      payoutsFolder = eventFolder.createFolder('Payouts');
+    }
+  } catch (e) {
+    payoutsFolder = eventFolder;
+  }
+
+  var username = (payout.createdBy || 'admin').toString().trim();
+  try {
+    var userFolders = payoutsFolder.getFoldersByName(username);
+    if (userFolders.hasNext()) {
+      return userFolders.next();
+    } else {
+      return payoutsFolder.createFolder(username);
+    }
+  } catch (e) {
+    return payoutsFolder;
+  }
+}
+
+function createPayoutHtmlInDrive(payout) {
+  var majorName = payout.displayName1 || payout.memberName || payout.eventName || 'Event';
+  var sanitize = function(str) {
+    return (str || '').toString().replace(/[\\/:*?"<>|]/g, '_').trim();
+  };
+
+  var fileName = sanitize(payout.id || ('Payout_' + Date.now()));
+
+  var htmlText = '<!DOCTYPE html>\n' +
+    '<html lang="ta">\n' +
+    '<head>\n' +
+    '  <meta charset="UTF-8">\n' +
+    '  <title>ஆதி மொய் - பட்டுவாடா ரசீது</title>\n' +
+    '  <style>\n' +
+    '    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; background-color: #f8fafc; }\n' +
+    '    .card { border: 2px solid #8B0000; padding: 24px; max-width: 450px; margin: 0 auto; border-radius: 12px; background: #FFF8DC; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }\n' +
+    '    .header { text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 10px; margin-bottom: 15px; }\n' +
+    '    h2 { color: #8B0000; font-size: 22pt; margin: 0; font-weight: bold; }\n' +
+    '    .sub { font-size: 11pt; font-weight: bold; color: #555; margin-top: 4px; }\n' +
+    '    .event-title { font-size: 16pt; font-weight: bold; color: #8B0000; margin-top: 8px; }\n' +
+    '    .row { display: flex; justify-content: space-between; font-size: 11pt; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; color: #1E293B; }\n' +
+    '    .bold { font-weight: bold; }\n' +
+    '    .amount-box { border-top: 2px solid #8B0000; border-bottom: 2px solid #8B0000; padding: 10px 0; margin-top: 15px; text-align: center; }\n' +
+    '    .amount-val { font-size: 24pt; font-weight: bold; color: #E11D48; }\n' +
+    '  </style>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '  <div class="card">\n' +
+    '    <div class="header">\n' +
+    '      <h2>ஆதி மொய்</h2>\n' +
+    '      <div class="sub">பட்டுவாடா ரசீது (Payout Expense Receipt)</div>\n' +
+    '      <div class="event-title">' + escapeXml(majorName) + '</div>\n' +
+    '    </div>\n' +
+    '    <div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>' + escapeXml(payout.createdBy || 'admin') + '</span></div>\n' +
+    '    <div class="row"><span class="bold">தேதி & நேரம்:</span> <span>' + escapeXml((payout.date || '') + ' ' + (payout.time || '')) + '</span></div>\n' +
+    '    <div class="row"><span class="bold">பெயர்:</span> <span>' + escapeXml(payout.name || '') + '</span></div>\n' +
+    '    <div class="row"><span class="bold">காரணம்:</span> <span>' + escapeXml(payout.reason || '') + '</span></div>\n' +
+    '    <div class="amount-box">\n' +
+    '      <div style="font-size: 14pt; font-weight: bold; color: #8B0000;">செலவுத் தொகை:</div>\n' +
+    '      <div class="amount-val">₹' + escapeXml(payout.amount || '0') + '</div>\n' +
+    '    </div>\n' +
+    '  </div>\n' +
+    '</body>\n' +
+    '</html>';
+
+  var targetFolder = getOrCreatePayoutUserDriveFolder(payout);
+  var htmlBlob = Utilities.newBlob(htmlText, 'text/html', fileName + '.html');
+  targetFolder.createFile(htmlBlob);
+}
+
 function escapeXml(str) {
   if (!str) return '';
   return str.toString()
@@ -582,4 +787,137 @@ function getSheetDataAsJson(sheet) {
     rows.push(row);
   }
   return rows;
+}
+
+// Note Entry Drive & Sheets Sync Helpers
+function sanitizeFolderName(name) {
+  if (!name) return 'Folder';
+  return name.toString().replace(/[\\/:*?"<>|]/g, '_').trim();
+}
+
+function getOrCreateChildFolder(parentFolder, childName) {
+  var safeName = sanitizeFolderName(childName);
+  var folders = parentFolder.getFoldersByName(safeName);
+  if (folders.hasNext()) {
+    return folders.next();
+  } else {
+    return parentFolder.createFolder(safeName);
+  }
+}
+
+function getNoteEntryBackupFolder() {
+  var rootFolder = DriveApp.getRootFolder();
+  var moiFolder = getOrCreateChildFolder(rootFolder, 'moi');
+  var backupFolder = getOrCreateChildFolder(moiFolder, 'Backup');
+  return getOrCreateChildFolder(backupFolder, 'Note Entry');
+}
+
+function createNoteEventFolderInDrive(noteEvent) {
+  if (!noteEvent) return null;
+  var rootNoteFolder = getNoteEntryBackupFolder();
+  var safeName = sanitizeFolderName(noteEvent.name || 'Event');
+  var eventFolder = getOrCreateChildFolder(rootNoteFolder, safeName);
+
+  try {
+    var ss = getSs();
+    var noteEventSheet = ss.getSheetByName('Note Events');
+    if (!noteEventSheet) {
+      noteEventSheet = ss.insertSheet('Note Events');
+      noteEventSheet.appendRow(['Note Event ID', 'Event Name', 'Event Title', 'Place', 'Date', 'Drive Folder ID', 'Timestamp']);
+      noteEventSheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#8B0000').setFontColor('#FFFFFF');
+    }
+    
+    var existingData = noteEventSheet.getDataRange().getValues();
+    var exists = false;
+    for (var i = 1; i < existingData.length; i++) {
+      if (existingData[i][0] === noteEvent.id || existingData[i][1] === noteEvent.name) {
+        exists = true;
+        noteEventSheet.getRange(i + 1, 6).setValue(eventFolder.getId());
+        break;
+      }
+    }
+    if (!exists) {
+      noteEventSheet.appendRow([
+        noteEvent.id || ('nev_' + Date.now()),
+        noteEvent.name || '',
+        noteEvent.title || '',
+        noteEvent.place || '',
+        noteEvent.date || '',
+        eventFolder.getId(),
+        new Date().toISOString()
+      ]);
+    }
+  } catch (e) {}
+
+  return { id: eventFolder.getId(), name: safeName, url: eventFolder.getUrl() };
+}
+
+function saveNoteEntryToDrive(noteEventName, noteEntry, noteEntryHtml) {
+  if (!noteEntry) return null;
+  var rootNoteFolder = getNoteEntryBackupFolder();
+  var safeEventName = sanitizeFolderName(noteEventName || 'General');
+  var eventFolder = getOrCreateChildFolder(rootNoteFolder, safeEventName);
+
+  var baseName = sanitizeFolderName((noteEntry.name1 || 'Entry') + '_' + (noteEntry.id || Date.now()));
+
+  var htmlContent = noteEntryHtml;
+  if (!htmlContent) {
+    htmlContent = '<!DOCTYPE html><html lang="ta"><head><meta charset="UTF-8"><title>ஆதி மொய் - குறிப்பு பதிவு (' + escapeXml(noteEntry.name1) + ')</title><style>body { font-family: sans-serif; padding: 20px; } .card { border: 2px solid #D4AF37; padding: 20px; max-width: 450px; border-radius: 10px; background: #FFFDF0; } h2 { color: #8B0000; text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 8px; } .row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; } .bold { font-weight: bold; } .amt { font-size: 14pt; font-weight: bold; color: #059669; }</style></head><body><div class="card"><h2>ஆதி மொய் - குறிப்பு பதிவு</h2><div class="row"><span class="bold">நிகழ்ச்சி:</span> <span>' + escapeXml(noteEventName) + '</span></div><div class="row"><span class="bold">ஊர் / இடம்:</span> <span>' + escapeXml(noteEntry.place) + '</span></div><div class="row"><span class="bold">பெயர் 1:</span> <span>' + escapeXml(noteEntry.name1) + '</span></div>' + (noteEntry.name2 ? '<div class="row"><span class="bold">பெயர் 2:</span> <span>' + escapeXml(noteEntry.name2) + '</span></div>' : '') + '<div class="row"><span class="bold">தொகை:</span> <span class="amt">₹' + escapeXml(noteEntry.amount) + '</span></div><div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>' + escapeXml(noteEntry.createdBy || 'admin') + '</span></div></div></body></html>';
+  }
+
+  var htmlFile = eventFolder.createFile(baseName + '.html', htmlContent, MimeType.HTML);
+
+  try {
+    var ss = getSs();
+    var noteSheet = ss.getSheetByName('Note Entries');
+    if (!noteSheet) {
+      noteSheet = ss.insertSheet('Note Entries');
+      noteSheet.appendRow(['Note Event Name', 'Place', 'Name 1', 'Name 2', 'Amount (₹)', 'Created By', 'Timestamp']);
+      noteSheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#D4AF37').setFontColor('#0F172A');
+    }
+    noteSheet.appendRow([
+      noteEventName, noteEntry.place, noteEntry.name1, noteEntry.name2 || '',
+      noteEntry.amount, noteEntry.createdBy || 'admin', noteEntry.createdAt || new Date().toISOString()
+    ]);
+  } catch (err) {}
+
+  return { fileId: htmlFile.getId(), url: htmlFile.getUrl() };
+}
+
+function saveBulkNoteEntriesToDrive(noteEventName, noteEntries) {
+  if (!Array.isArray(noteEntries)) return null;
+  var rootNoteFolder = getNoteEntryBackupFolder();
+  var safeEventName = sanitizeFolderName(noteEventName || 'General');
+  var eventFolder = getOrCreateChildFolder(rootNoteFolder, safeEventName);
+
+  var ss = getSs();
+  var noteSheet = ss.getSheetByName('Note Entries');
+  if (!noteSheet) {
+    noteSheet = ss.insertSheet('Note Entries');
+    noteSheet.appendRow(['Note Event Name', 'Place', 'Name 1', 'Name 2', 'Amount (₹)', 'Created By', 'Timestamp']);
+    noteSheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#D4AF37').setFontColor('#0F172A');
+  }
+
+  var savedCount = 0;
+  for (var i = 0; i < noteEntries.length; i++) {
+    var noteEntry = noteEntries[i];
+    if (!noteEntry) continue;
+    var baseName = sanitizeFolderName((noteEntry.name1 || 'Entry') + '_' + (noteEntry.id || Date.now()));
+
+    var htmlContent = '<!DOCTYPE html><html lang="ta"><head><meta charset="UTF-8"><title>ஆதி மொய் - குறிப்பு பதிவு (' + escapeXml(noteEntry.name1) + ')</title><style>body { font-family: sans-serif; padding: 20px; } .card { border: 2px solid #D4AF37; padding: 20px; max-width: 450px; border-radius: 10px; background: #FFFDF0; } h2 { color: #8B0000; text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 8px; } .row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; } .bold { font-weight: bold; } .amt { font-size: 14pt; font-weight: bold; color: #059669; }</style></head><body><div class="card"><h2>ஆதி மொய் - குறிப்பு பதிவு</h2><div class="row"><span class="bold">நிகழ்ச்சி:</span> <span>' + escapeXml(noteEventName) + '</span></div><div class="row"><span class="bold">ஊர் / இடம்:</span> <span>' + escapeXml(noteEntry.place) + '</span></div><div class="row"><span class="bold">பெயர் 1:</span> <span>' + escapeXml(noteEntry.name1) + '</span></div>' + (noteEntry.name2 ? '<div class="row"><span class="bold">பெயர் 2:</span> <span>' + escapeXml(noteEntry.name2) + '</span></div>' : '') + '<div class="row"><span class="bold">தொகை:</span> <span class="amt">₹' + escapeXml(noteEntry.amount) + '</span></div><div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>' + escapeXml(noteEntry.createdBy || 'admin') + '</span></div></div></body></html>';
+
+    try {
+      eventFolder.createFile(baseName + '.html', htmlContent, MimeType.HTML);
+    } catch (eFile) {}
+
+    try {
+      noteSheet.appendRow([
+        noteEventName, noteEntry.place, noteEntry.name1, noteEntry.name2 || '',
+        noteEntry.amount, noteEntry.createdBy || 'admin', noteEntry.createdAt || new Date().toISOString()
+      ]);
+      savedCount++;
+    } catch (errSheet) {}
+  }
+
+  return { count: savedCount };
 }

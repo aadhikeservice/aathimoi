@@ -338,6 +338,219 @@
     return list.sort((a, b) => a.en.localeCompare(b.en));
   }
 
+  // Live Google Tamil Input Tool Suggestion Dropdown Engine
+  let activeInputEl = null;
+  let activeWordObj = { word: '', start: 0, end: 0 };
+  let currentSuggestions = [];
+  let selectedIndex = 0;
+  let fetchTimer = null;
+
+  function getOrCreateSuggestionBox() {
+    let box = document.getElementById('tamil-suggestion-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'tamil-suggestion-box';
+      box.className = 'fixed z-[9999] bg-slate-900 border border-amber-500/50 rounded-xl shadow-2xl p-1 text-xs text-slate-100 hidden min-w-[200px] max-w-[300px] backdrop-blur-md';
+      document.body.appendChild(box);
+    }
+    return box;
+  }
+
+  function hideSuggestionBox() {
+    const box = document.getElementById('tamil-suggestion-box');
+    if (box) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+    }
+    currentSuggestions = [];
+    selectedIndex = 0;
+  }
+
+  function positionSuggestionBox(inputEl) {
+    const box = getOrCreateSuggestionBox();
+    const rect = inputEl.getBoundingClientRect();
+    const top = rect.bottom + window.scrollY + 4;
+    const left = rect.left + window.scrollX;
+
+    box.style.top = `${top}px`;
+    box.style.left = `${left}px`;
+    box.style.width = `${Math.max(rect.width, 220)}px`;
+  }
+
+  function getCurrentWordInfo(inputEl) {
+    const val = inputEl.value || '';
+    const pos = inputEl.selectionStart || 0;
+
+    let start = pos - 1;
+    while (start >= 0 && val[start] !== ' ' && val[start] !== '\n') {
+      start--;
+    }
+    start++;
+
+    let end = pos;
+    while (end < val.length && val[end] !== ' ' && val[end] !== '\n') {
+      end++;
+    }
+
+    const word = val.substring(start, end);
+    return { word, start, end };
+  }
+
+  async function updateSuggestions(inputEl) {
+    if (!inputEl) return;
+    const info = getCurrentWordInfo(inputEl);
+    activeWordObj = info;
+    const rawWord = info.word.trim();
+
+    if (!rawWord || /[\u0B80-\u0BFF]/.test(rawWord)) {
+      hideSuggestionBox();
+      return;
+    }
+
+    let googleItems = await fetchGoogleInputToolsTamil(rawWord);
+    let googleList = googleItems.map(item => item.ta);
+
+    let localDict = getDictionarySuggestions(rawWord).map(item => item.ta);
+    let phoneticFallback = transliterateWord(rawWord);
+
+    let combined = [];
+    if (googleList.length > 0) {
+      combined.push(...googleList);
+    }
+    if (localDict.length > 0) {
+      combined.push(...localDict);
+    }
+    if (phoneticFallback && !combined.includes(phoneticFallback)) {
+      combined.push(phoneticFallback);
+    }
+
+    const finalCandidates = Array.from(new Set(combined.filter(Boolean))).slice(0, 5);
+
+    if (finalCandidates.length === 0) {
+      hideSuggestionBox();
+      return;
+    }
+
+    currentSuggestions = finalCandidates;
+    selectedIndex = 0;
+    renderSuggestionBox(inputEl, finalCandidates);
+  }
+
+  function renderSuggestionBox(inputEl, suggestions) {
+    const box = getOrCreateSuggestionBox();
+    positionSuggestionBox(inputEl);
+
+    box.innerHTML = `
+      <div class="px-2 py-1 text-[10px] font-bold text-amber-400 border-b border-slate-700/60 flex items-center justify-between bg-slate-950/80 rounded-t-lg">
+        <span>🇮🇳 Google Tamil Suggestions</span>
+        <span class="text-slate-400 font-normal">Space / Enter / 1-5</span>
+      </div>
+      <div class="py-1 space-y-0.5">
+        ${suggestions.map((item, idx) => `
+          <div data-idx="${idx}" class="suggestion-item px-2.5 py-1.5 rounded-lg flex items-center justify-between text-xs cursor-pointer transition ${idx === selectedIndex ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800 text-slate-200'}">
+            <span><strong class="text-[11px] opacity-70 mr-1.5">${idx + 1}.</strong> <span class="text-sm font-semibold">${item}</span></span>
+            <span class="text-[10px] opacity-60 font-mono">${idx === selectedIndex ? '⏎ Select' : ''}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    box.classList.remove('hidden');
+
+    box.querySelectorAll('.suggestion-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const idx = parseInt(el.getAttribute('data-idx'), 10);
+        applySuggestion(idx);
+      });
+    });
+  }
+
+  function applySuggestion(index) {
+    if (!activeInputEl || !currentSuggestions[index]) return;
+    const selectedTamil = currentSuggestions[index];
+    const val = activeInputEl.value || '';
+    const { start, end } = activeWordObj;
+
+    const before = val.substring(0, start);
+    const after = val.substring(end);
+    const newVal = before + selectedTamil + after;
+
+    activeInputEl.value = newVal;
+    const newPos = start + selectedTamil.length;
+    activeInputEl.setSelectionRange(newPos, newPos);
+
+    activeInputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    hideSuggestionBox();
+  }
+
+  function bindInputs() {
+    const inputs = document.querySelectorAll('.ta-type-input, input[data-tamil="true"]');
+    inputs.forEach(input => {
+      if (input.dataset.taBound === 'true') return;
+      input.dataset.taBound = 'true';
+
+      input.addEventListener('focus', () => {
+        activeInputEl = input;
+      });
+
+      input.addEventListener('blur', () => {
+        setTimeout(() => {
+          hideSuggestionBox();
+        }, 220);
+      });
+
+      input.addEventListener('input', () => {
+        activeInputEl = input;
+        if (fetchTimer) clearTimeout(fetchTimer);
+        fetchTimer = setTimeout(() => {
+          updateSuggestions(input);
+        }, 120);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        activeInputEl = input;
+        const box = document.getElementById('tamil-suggestion-box');
+        const isBoxVisible = box && !box.classList.contains('hidden') && currentSuggestions.length > 0;
+
+        if (!isBoxVisible) return;
+
+        if (/^[1-5]$/.test(e.key)) {
+          const numIdx = parseInt(e.key, 10) - 1;
+          if (currentSuggestions[numIdx]) {
+            e.preventDefault();
+            applySuggestion(numIdx);
+            return;
+          }
+        }
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
+          renderSuggestionBox(input, currentSuggestions);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+          renderSuggestionBox(input, currentSuggestions);
+        } else if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          applySuggestion(selectedIndex);
+        } else if (e.key === ' ') {
+          if (selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
+            e.preventDefault();
+            applySuggestion(selectedIndex);
+            const val = activeInputEl.value;
+            const pos = activeInputEl.selectionStart;
+            activeInputEl.value = val.substring(0, pos) + ' ' + val.substring(pos);
+            activeInputEl.setSelectionRange(pos + 1, pos + 1);
+          }
+        } else if (e.key === 'Escape') {
+          hideSuggestionBox();
+        }
+      });
+    });
+  }
+
   // Load custom dict on initialization
   (function initCustomDict() {
     const custom = getCustomDict();
@@ -353,7 +566,9 @@
     getCustomDict,
     addCustomWord,
     removeCustomWord,
-    getAllDictionaryWords
+    getAllDictionaryWords,
+    bindInputs,
+    hideSuggestionBox
   };
 })();
 

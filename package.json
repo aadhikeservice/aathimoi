@@ -1,12 +1,47 @@
 {
-  "name": "aadhi-moi",
+  "name": "aathi-moi",
   "version": "1.0.0",
-  "description": "Aadhi Moi Collection & Management System",
-  "main": "server.js",
+  "description": "ஆதி மொய் (Aathi Moi) - Offline Desktop Edition",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "start-desktop": "npx electron .",
+    "build-exe": "npx electron-builder --win nsis",
+    "dist": "npx electron-builder"
   },
-  "keywords": [],
-  "author": "",
+  "build": {
+    "appId": "com.aathimoi.desktop",
+    "productName": "AathiMoi",
+    "files": [
+      "**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/assets/logo.jpg"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aathi Moi"
+    }
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.0"
+  },
+  "keywords": [
+    "aathi-moi",
+    "offline-pos",
+    "receipt-management"
+  ],
+  "author": "Aathi Moi Team",
   "license": "ISC"
 }

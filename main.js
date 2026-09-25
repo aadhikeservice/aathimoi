@@ -30,6 +30,9 @@ function createWindow() {
 
   mainWindow.setMenuBarVisibility(false);
 
+  // Clear HTTP cache so UI updates immediately
+  mainWindow.webContents.session.clearCache().catch(() => {});
+
   // Open external links (such as WhatsApp Web/Desktop) in OS default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);

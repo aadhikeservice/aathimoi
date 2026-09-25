@@ -1,6 +1,6 @@
 {
   "name": "aathi-moi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ஆதி மொய் (Aathi Moi) - Offline Desktop Edition",
   "main": "main.js",
   "scripts": {
@@ -19,8 +19,7 @@
       "output": "dist"
     },
     "win": {
-      "target": "nsis",
-      "icon": "public/assets/logo.jpg"
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": false,

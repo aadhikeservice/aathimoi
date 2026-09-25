@@ -1218,7 +1218,13 @@ ${html}
 
   const contentType = getContentType(finalFile);
   const isText = ['.html', '.js', '.css', '.json', '.svg'].includes(path.extname(finalFile).toLowerCase());
-  res.writeHead(200, { 'Content-Type': isText ? `${contentType}; charset=utf-8` : contentType });
+  const headers = { 'Content-Type': isText ? `${contentType}; charset=utf-8` : contentType };
+  if (isText) {
+    headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    headers['Pragma'] = 'no-cache';
+    headers['Expires'] = '0';
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(finalFile).pipe(res);
 });
 

@@ -616,6 +616,24 @@
         font-size: 11.5pt;
         color: #000000;
       }
+      .col-vantha .col-mode-val, .col-vantha .upi-tag, .col-vantha .mode-tag {
+        font-size: 8pt;
+        font-weight: 700;
+        display: block;
+        line-height: 1.15;
+        margin-top: 2px;
+        text-align: right;
+        color: #1e3a8a;
+      }
+      @media print {
+        .col-vantha .col-mode-val, .col-vantha .upi-tag, .col-vantha .mode-tag {
+          color: #000000 !important;
+          display: block !important;
+          visibility: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
 
       /* விஷேசத்திற்கு பின் columns (அவர் இருப்பு, நாம் செய்தது, நமது இருப்பு) */
       .col-vishesha-sub {
@@ -862,6 +880,16 @@
           const job = toSearchableUnicode(cfg.getJob ? cfg.getJob(r) : r.job);
           const subName = toSearchableUnicode(cfg.getSubName ? cfg.getSubName(r) : (r.name1 || r.name2));
           const phone = (r.phone || r.mobile || '').trim();
+          let rawMode = cfg.getMode ? cfg.getMode(r) : (r.mode || '');
+          if (typeof rawMode !== 'string') rawMode = String(rawMode || '');
+          rawMode = rawMode.trim();
+          let displayMode = rawMode;
+          if (!displayMode || displayMode.toLowerCase() === 'cash' || displayMode === 'ரொக்கம்') {
+            displayMode = 'ரொக்கம்';
+          } else if (displayMode.toUpperCase() === 'UPI' || displayMode === 'யூ.பி.ஐ') {
+            displayMode = 'யூ.பி.ஐ';
+          }
+          const mode = toSearchableUnicode(displayMode || 'ரொக்கம்');
 
           // Format Primary Name Line: Initial + Name + Secondary Name (Name 1) + Mobile (as per image)
           // Text should not wrap for Initial, Name, Name1 per user request
@@ -894,6 +922,7 @@
               <td class="col-seitha"></td>
               <td class="col-vantha">
                 <div class="amt-val">${amt.toLocaleString('en-IN')}</div>
+                <div class="col-mode-val" style="font-size: 8pt; font-weight: 700; line-height: 1.15; margin-top: 2px; text-align: right; color: ${mode === 'யூ.பி.ஐ' ? '#1e3a8a' : '#334155'};">${escapeHtml(mode)}</div>
               </td>
               <td class="col-vishesha-cell col-vishesha-1"></td>
               <td class="col-vishesha-cell col-vishesha-2"></td>

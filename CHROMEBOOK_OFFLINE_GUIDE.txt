@@ -1,0 +1,49 @@
+======================================================================
+   ஆதி மொய் (Aathi Moi) - OFFLINE CHROMEBOOK EDITION GUIDE
+======================================================================
+
+You can run this project 100% OFFLINE on any Chromebook (ChromeOS)
+using any of the 3 methods below (no Linux or coding setup required):
+
+----------------------------------------------------------------------
+METHOD 1: INSTANT SINGLE-CLICK OFFLINE FILE (EASIEST - NO INSTALL)
+----------------------------------------------------------------------
+1. Copy the folder "AathiMoi_Chromebook_Offline" (or the single file
+   "AathiMoi_Chromebook_Standalone.html") to your Chromebook's
+   "My Files" (or "Downloads" / USB Pen Drive).
+2. Open the ChromeOS "Files" app and double-click:
+   - "AathiMoi_Chromebook_Standalone.html"  (100% self-contained single file)
+     OR
+   - "index.html" inside the "AathiMoi_Chromebook_Offline" folder.
+3. The software opens immediately in Google Chrome and works 100% offline!
+   - Default Admin Login:  Username: admin      | Password: 1234
+   - Default AdminUser:    Username: adminuser  | Password: 1234
+
+----------------------------------------------------------------------
+METHOD 2: INSTALL AS STANDALONE CHROMEBOOK DESKTOP APP (WITH APP ICON)
+----------------------------------------------------------------------
+To get a dedicated desktop window and app icon on your Chromebook:
+1. Copy the "AathiMoi_Chromebook_Offline" folder to "My Files" on your
+   Chromebook (do not delete the folder after installing).
+2. Open Google Chrome on your Chromebook and type in the address bar:
+   chrome://extensions
+3. Turn ON the "Developer mode" switch in the top-right corner.
+4. Click the "Load unpacked" button in the top-left corner.
+5. Select the "AathiMoi_Chromebook_Offline" folder and click "Open".
+6. Pin the "ஆதி மொய் (Aathi Moi)" icon to your Chrome toolbar or click
+   it anytime to open Aathi Moi in a full-screen standalone desktop window!
+
+----------------------------------------------------------------------
+METHOD 3: SAVE BACKUP FILES & PDF REPORTS ON CHROMEBOOK
+----------------------------------------------------------------------
+- Local Folder / Google Drive Backup on Chromebook:
+  Click "Select Local Folder" in Moi Entry and pick your "My Files/Backup"
+  folder or "Google Drive -> My Drive -> moi -> Backup" inside the
+  Chromebook Files app. All receipts and event folders will automatically
+  save there!
+- Downloading PDF Reports Offline on Chromebook:
+  When you click any "Download PDF" button (Overall Book, Ledger, Index,
+  Cover Page, Cash Denomination, Payout, or Note Entry), ChromeOS opens
+  its built-in print dialog with the exact report title pre-filled.
+  Select Destination -> "Save as PDF" and click "Save".
+======================================================================

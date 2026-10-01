@@ -2747,15 +2747,32 @@
         await delay(80);
       }
 
-      // 1b. Upload local receipts
+      // 1b. Upload local receipts to Google Drive & Sheets (both event folder & backup/offline/<username>/receipt)
       for (let j = 0; j < localReceipts.length; j++) {
         setSyncStatus(`Uploading Receipt ${j + 1}/${localReceipts.length}...`);
         const rcpt = localReceipts[j];
         try {
-          await syncToGas('saveReceipt', { receipt: rcpt });
           const ev = localEvents.find(e => e.id === rcpt.eventId || e.eventName === rcpt.eventName || e.memberName === rcpt.eventName);
-          saveReceiptFileToDrive(ev ? (ev.displayName1 || ev.memberName || '') : '', rcpt).catch(() => {});
-        } catch (e) {}
+          const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
+          const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : (ev && ev.displayName1 ? (ev.memberName || '') : '');
+          const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
+
+          const receiptHtml = buildSingleReceiptHtml(rcpt, ev);
+          await syncToGas('saveReceipt', {
+            eventName: folderTitle,
+            receipt: rcpt,
+            receiptHtml,
+            isOffline: true,
+            source: 'offline_sync',
+            username: rcpt.createdBy || (state.currentUser && state.currentUser.username) || 'admin'
+          });
+
+          if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
+            saveReceiptToChosenLocalFolder(rcpt, true).catch(() => {});
+          }
+        } catch (e) {
+          console.warn('Sync receipt error:', e);
+        }
         await delay(80);
       }
 
@@ -3265,39 +3282,19 @@
     await syncToGas('createEvent', { event: typeof eventData === 'object' ? eventData : { memberName: eventData } });
   }
 
-  async function saveReceiptFileToDrive(eventName, receiptData) {
-    let savedLocally = false;
-    if (state.hasLocalServer !== false) {
-      try {
-        const localSaveFolderPath = state.localSaveFolderPath || localStorage.getItem('aathi_moi_local_folder_path') || '';
-        const localSaveFolderName = state.localSaveFolderName || localStorage.getItem('aathi_moi_local_folder_name') || '';
-        const res = await fetch('/api/receipts/save-file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ eventName, receiptData, localSaveFolderPath, localSaveFolderName })
-        });
-        if (res.ok) {
-          savedLocally = true;
-          const data = await res.json().catch(() => null);
-          if (data && data.resolvedLocalDir && !state.localSaveFolderPath) {
-            state.localSaveFolderPath = data.resolvedLocalDir;
-            localStorage.setItem('aathi_moi_local_folder_path', data.resolvedLocalDir);
-          }
-        }
-      } catch (e) {
-        console.warn('Local Node API unavailable:', e);
-      }
-    }
+  function buildSingleReceiptHtml(rcpt, ev) {
+    if (!rcpt) return '';
+    const eventObj = ev || (state.events ? state.events.find(e => e.id === rcpt.eventId) : null);
+    const majorName = rcpt.displayName1 || (eventObj ? eventObj.displayName1 : '') || rcpt.memberName || (eventObj ? eventObj.memberName : '') || 'Event';
+    const name1 = rcpt.displayName1 ? (rcpt.memberName || (eventObj ? eventObj.memberName : '')) : (eventObj && eventObj.displayName1 ? (eventObj.memberName || '') : '');
+    const eventTitle = rcpt.eventTitle || (eventObj ? eventObj.eventTitle : '') || '';
 
-    const ev = state.events.find(e => e.id === receiptData.eventId);
-    const majorName = receiptData.displayName1 || (ev ? ev.displayName1 : '') || receiptData.memberName || (ev ? ev.memberName : '') || eventName || 'Event';
-    const name1 = receiptData.displayName1 ? (receiptData.memberName || (ev ? ev.memberName : '')) : '';
-
-    const receiptHtml = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="ta">
 <head>
   <meta charset="UTF-8">
-  <title>ஆதி மொய் - ரசீது #${receiptData.billNo}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ஆதி மொய் - ரசீது #${rcpt.billNo}</title>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; display: flex; justify-content: center; }
     .card { border: 2px solid #8B0000; padding: 24px; max-width: 420px; width: 100%; border-radius: 12px; background: #FFF8DC; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
@@ -3316,26 +3313,58 @@
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
     <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
-    <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
-    <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
+    <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
+    <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
-    <div class="row"><span class="bold">பெயர்:</span> <span>${receiptData.initial ? receiptData.initial + '. ' : ''}${receiptData.name || ''}${receiptData.name1 ? ' ' + receiptData.name1 : ''}${receiptData.job ? ' - ' + receiptData.job : ''}</span></div>
-    <div class="row"><span class="bold">இடம்:</span> <span>${receiptData.place || ''}</span></div>
-    ${receiptData.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${receiptData.relationship}</span></div>` : ''}
+    ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
+    <div class="row"><span class="bold">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name || ''}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
+    <div class="row"><span class="bold">இடம்:</span> <span>${rcpt.place || ''}</span></div>
+    ${rcpt.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
     <div class="amount-box">
       <div class="amount-title">தொகை</div>
-      <div class="amount-val">₹${parseFloat(receiptData.amount || 0).toLocaleString('en-IN')}</div>
-      <div class="amount-words">(${receiptData.amountWords || ''})</div>
+      <div class="amount-val">₹${parseFloat(rcpt.amount || 0).toLocaleString('en-IN')}</div>
+      <div class="amount-words">(${rcpt.amountWords || ''})</div>
     </div>
-    <div class="row"><span class="bold">செலுத்திய முறை:</span> <span>${receiptData.mode || 'ரொக்கம்'}</span></div>
+    <div class="row"><span class="bold">செலுத்திய முறை:</span> <span>${rcpt.mode || 'ரொக்கம்'}</span></div>
     <div class="footer">தங்கள் வருகைக்கு நன்றி</div>
   </div>
 </body>
 </html>`;
+  }
 
-    // Local / Chromebook / Online File System Access API backup (<Event Master>/<Bill No>.html)
-    const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
+  async function saveReceiptFileToDrive(folderTitleClean, receiptData) {
+    let savedLocally = false;
+    const ev = (state.events && receiptData.eventId) ? state.events.find(e => e.id === receiptData.eventId) : null;
+    const majorName = receiptData.displayName1 || (ev ? ev.displayName1 : '') || receiptData.memberName || (ev ? ev.memberName : '') || 'Event';
+    const name1 = receiptData.displayName1 ? (receiptData.memberName || (ev ? ev.memberName : '')) : (ev && ev.displayName1 ? (ev.memberName || '') : '');
+    const folderTitle = folderTitleClean || ((majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName);
+
+    if (state.hasLocalServer !== false) {
+      try {
+        const localSaveFolderPath = state.localSaveFolderPath || localStorage.getItem('aathi_moi_local_folder_path') || '';
+        const localSaveFolderName = state.localSaveFolderName || localStorage.getItem('aathi_moi_local_folder_name') || '';
+        const res = await fetch('/api/receipts/save-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventName: folderTitle, receiptData, localSaveFolderPath, localSaveFolderName })
+        });
+        if (res.ok) {
+          savedLocally = true;
+          const data = await res.json().catch(() => null);
+          if (data && data.resolvedLocalDir && !state.localSaveFolderPath) {
+            state.localSaveFolderPath = data.resolvedLocalDir;
+            localStorage.setItem('aathi_moi_local_folder_path', data.resolvedLocalDir);
+          }
+        }
+      } catch (e) {
+        console.warn('Local Node API unavailable:', e);
+      }
+    }
+
+    const receiptHtml = buildSingleReceiptHtml(receiptData, ev);
+
+    // Local / Chromebook / Online File System Access API backup (<Event Master>/<Bill No>.html & offline/<user>/receipt/<Bill No>.html)
     if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
       try {
         const safeEventFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
@@ -3355,13 +3384,31 @@
         const wUser = await usrFileHandle.createWritable();
         await wUser.write(receiptHtml);
         await wUser.close();
+
+        // Also write directly inside offline user receipt path: "offline/<username>/receipt"
+        try {
+          const offDir = await state.localSaveDirHandle.getDirectoryHandle('offline', { create: true });
+          const userDir = await offDir.getDirectoryHandle(safeUserFolder, { create: true });
+          const rcptDir = await userDir.getDirectoryHandle('receipt', { create: true });
+          const fHandleRcpt = await rcptDir.getFileHandle(safeBillFile, { create: true });
+          const wOff = await fHandleRcpt.createWritable();
+          await wOff.write(receiptHtml);
+          await wOff.close();
+        } catch (eOffLocal) {}
       } catch (fsErr) {
         console.warn('Local disk folder hierarchy save notice:', fsErr);
       }
     }
 
     // Sync receipt HTML & row to Google Apps Script (Google Drive)
-    await syncToGas('saveReceipt', { eventName: folderTitle, receipt: receiptData, receiptHtml });
+    await syncToGas('saveReceipt', {
+      eventName: folderTitle,
+      receipt: receiptData,
+      receiptHtml,
+      isOffline: true,
+      source: 'offline_sync',
+      username: receiptData.createdBy || (state.currentUser && state.currentUser.username) || 'admin'
+    });
   }
 
   // Role Access Helpers
@@ -9107,48 +9154,7 @@
       const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
       const safeEventFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
 
-      const htmlContent = `<!DOCTYPE html>
-<html lang="ta">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ஆதி மொய் - ரசீது #${rcpt.billNo}</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; display: flex; justify-content: center; }
-    .card { border: 2px solid #8B0000; padding: 24px; max-width: 420px; width: 100%; border-radius: 12px; background: #FFF8DC; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    h2 { color: #8B0000; text-align: center; margin-top: 0; margin-bottom: 6px; font-size: 22px; font-weight: bold; }
-    .subtitle { text-align: center; font-size: 13px; color: #555; margin-bottom: 16px; border-bottom: 1px solid #8B0000; padding-bottom: 8px; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #d1c7a5; padding-bottom: 6px; font-size: 14px; }
-    .bold { font-weight: bold; color: #333; }
-    .amount-box { background: #8B0000; color: #FFF; padding: 12px; border-radius: 8px; text-align: center; margin: 16px 0; }
-    .amount-title { font-size: 14px; text-transform: uppercase; font-weight: bold; }
-    .amount-val { font-size: 26px; font-weight: 900; margin: 4px 0; }
-    .amount-words { font-size: 13px; font-style: italic; opacity: 0.9; }
-    .footer { text-align: center; margin-top: 16px; font-size: 13px; font-weight: bold; color: #8B0000; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
-    <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
-    <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
-    <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
-    ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
-    ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
-    <div class="row"><span class="bold">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name || ''}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
-    <div class="row"><span class="bold">இடம்:</span> <span>${rcpt.place || ''}</span></div>
-    ${rcpt.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
-    <div class="amount-box">
-      <div class="amount-title">தொகை</div>
-      <div class="amount-val">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</div>
-      <div class="amount-words">(${rcpt.amountWords || ''})</div>
-    </div>
-    <div class="row"><span class="bold">செலுத்திய முறை:</span> <span>${rcpt.mode || 'ரொக்கம்'}</span></div>
-    <div class="footer">தங்கள் வருகைக்கு நன்றி</div>
-  </div>
-</body>
-</html>`;
+      const htmlContent = buildSingleReceiptHtml(rcpt, ev);
 
       // 1. If browser directory handle is active, write into Event Master subfolder
       if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
@@ -9158,6 +9164,20 @@
         const writable = await fileHandle.createWritable();
         await writable.write(htmlContent);
         await writable.close();
+
+        // Also save to offline user receipt path: "offline/<username>/receipt"
+        try {
+          const safeUser = String(rcpt.createdBy || (state.currentUser && state.currentUser.username) || 'admin').replace(/[\\/:*?"<>|]/g, '_').trim() || 'admin';
+          const offDir = await state.localSaveDirHandle.getDirectoryHandle('offline', { create: true });
+          const uDir = await offDir.getDirectoryHandle(safeUser, { create: true });
+          const rDir = await uDir.getDirectoryHandle('receipt', { create: true });
+          const fHandleOff = await rDir.getFileHandle(fileName, { create: true });
+          const wOff = await fHandleOff.createWritable();
+          await wOff.write(htmlContent);
+          await wOff.close();
+        } catch (eOffLocal) {
+          console.warn('Local offline directory save notice:', eOffLocal);
+        }
       }
 
       // 2. Also ensure receipt is synced to Google Drive in the Event Master folder!

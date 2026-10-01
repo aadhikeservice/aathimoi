@@ -600,6 +600,49 @@ function getOrCreateUserDriveFolder(rcpt) {
   }
 }
 
+// Helper to locate or create Google Drive folder path: "Backup/offline/<username>/receipt"
+// Matches 'offline', 'Offline', 'ofline', 'Ofline' case-insensitively
+function getOrCreateOfflineUserReceiptFolder(username) {
+  var backupFolder = getOrCreateBackupFolder(); // moi/Backup
+  var safeUser = (username || 'admin').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'admin';
+
+  // 1. Find or create 'offline' (also accepts 'ofline')
+  var offlineFolder;
+  var offFolders = backupFolder.getFoldersByName('offline');
+  if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Offline');
+  if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('ofline');
+  if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Ofline');
+  if (offFolders.hasNext()) {
+    offlineFolder = offFolders.next();
+  } else {
+    offlineFolder = backupFolder.createFolder('offline');
+  }
+
+  // 2. Find or create '<user name>'
+  var userFolder;
+  var uFolders = offlineFolder.getFoldersByName(safeUser);
+  if (!uFolders.hasNext()) uFolders = offlineFolder.getFoldersByName(safeUser.toLowerCase());
+  if (uFolders.hasNext()) {
+    userFolder = uFolders.next();
+  } else {
+    userFolder = offlineFolder.createFolder(safeUser);
+  }
+
+  // 3. Find or create 'receipt'
+  var receiptFolder;
+  var rFolders = userFolder.getFoldersByName('receipt');
+  if (!rFolders.hasNext()) rFolders = userFolder.getFoldersByName('Receipt');
+  if (!rFolders.hasNext()) rFolders = userFolder.getFoldersByName('receipts');
+  if (!rFolders.hasNext()) rFolders = userFolder.getFoldersByName('Receipts');
+  if (rFolders.hasNext()) {
+    receiptFolder = rFolders.next();
+  } else {
+    receiptFolder = userFolder.createFolder('receipt');
+  }
+
+  return receiptFolder;
+}
+
 // ==========================================
 // 4. GOOGLE DRIVE HTML RECEIPT GENERATOR
 // ==========================================
@@ -661,18 +704,31 @@ function createReceiptHtmlInDrive(rcpt, customHtml) {
       '</html>';
   }
 
-  // Save directly in the Event Master folder in Google Drive
+  // 1. Save directly in the Event Master folder in Google Drive
   var eventFolder = getOrCreateEventDriveFolder(rcpt);
   var htmlBlob = Utilities.newBlob(htmlText, 'text/html', fileName + '.html');
   eventFolder.createFile(htmlBlob);
 
-  // Also save in user subfolder if available
+  // 2. Also save in user subfolder if available
   try {
     var userFolder = getOrCreateUserDriveFolder(rcpt);
     if (userFolder && userFolder.getId() !== eventFolder.getId()) {
       userFolder.createFile(htmlBlob);
     }
   } catch (e) {}
+
+  // 3. Also save in offline user receipt path: "backup - ofline - <user name> - receipt"
+  try {
+    var offlineReceiptFolder = getOrCreateOfflineUserReceiptFolder(rcpt.createdBy || 'admin');
+    if (offlineReceiptFolder) {
+      offlineReceiptFolder.createFile(htmlBlob);
+      // Save structured JSON receipt data as well
+      var jsonBlob = Utilities.newBlob(JSON.stringify(rcpt, null, 2), 'application/json', fileName + '.json');
+      offlineReceiptFolder.createFile(jsonBlob);
+    }
+  } catch (eOff) {
+    Logger.log('Offline receipt path save notice: ' + eOff.toString());
+  }
 }
 
 function getOrCreatePayoutUserDriveFolder(payout) {

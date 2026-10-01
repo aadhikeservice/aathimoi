@@ -329,7 +329,7 @@ function saveReceiptToUserLocalFolder(receiptData, localSaveFolderPath, localSav
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -417,7 +417,7 @@ function saveSingleReceiptToBackup(receiptData) {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -434,6 +434,22 @@ function saveSingleReceiptToBackup(receiptData) {
 </html>`;
         fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
       }
+
+      // Also save in offline user receipt path: "Backup/offline/<username>/receipt"
+      try {
+        const offlineDir = path.join(backupDir, 'offline', username, 'receipt');
+        if (!fs.existsSync(offlineDir)) {
+          fs.mkdirSync(offlineDir, { recursive: true });
+        }
+        const offJsonPath = path.join(offlineDir, `${baseFileName}.json`);
+        if (!fs.existsSync(offJsonPath)) {
+          fs.writeFileSync(offJsonPath, JSON.stringify(receiptData, null, 2), 'utf-8');
+        }
+        const offHtmlPath = path.join(offlineDir, `${baseFileName}.html`);
+        if (!fs.existsSync(offHtmlPath)) {
+          fs.writeFileSync(offHtmlPath, htmlContent, 'utf-8');
+        }
+      } catch (eOff) {}
     });
   } catch (err) {
     console.warn('[Backup Saver] Error saving receipt to backup:', err.message);
@@ -506,7 +522,7 @@ function saveSinglePayoutToBackup(payoutData) {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="sub">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="sub">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="title-banner">பட்டுவாடா ரசீது (Payout Receipt)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${String(payoutData.id || '').replace(/^payout_/, '')}</span></div>
     <div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>${payoutData.createdBy || 'admin'}</span></div>
@@ -1025,7 +1041,7 @@ const server = http.createServer((req, res) => {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -1041,6 +1057,26 @@ const server = http.createServer((req, res) => {
 </body>
 </html>`;
         fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
+
+        // Also save to offline user receipt path: "Backup/offline/<username>/receipt"
+        try {
+          const offlineReceiptDir = path.join(backupDir, 'offline', username, 'receipt');
+          if (!fs.existsSync(offlineReceiptDir)) {
+            fs.mkdirSync(offlineReceiptDir, { recursive: true });
+          }
+          fs.writeFileSync(path.join(offlineReceiptDir, `${baseFileName}.json`), JSON.stringify(receiptData, null, 2), 'utf-8');
+          fs.writeFileSync(path.join(offlineReceiptDir, `${baseFileName}.html`), htmlContent, 'utf-8');
+
+          // If Google Drive Desktop exists, mirror to G:\My Drive\moi\Backup\offline\<username>\receipt
+          const driveOfflineDir = path.join('G:\\My Drive\\moi\\Backup', 'offline', username, 'receipt');
+          if (fs.existsSync('G:\\My Drive\\moi\\Backup')) {
+            if (!fs.existsSync(driveOfflineDir)) {
+              fs.mkdirSync(driveOfflineDir, { recursive: true });
+            }
+            fs.writeFileSync(path.join(driveOfflineDir, `${baseFileName}.json`), JSON.stringify(receiptData, null, 2), 'utf-8');
+            fs.writeFileSync(path.join(driveOfflineDir, `${baseFileName}.html`), htmlContent, 'utf-8');
+          }
+        } catch (eOff) {}
 
         // Also save to user's selected Local Disk Folder if configured
         const localResult = saveReceiptToUserLocalFolder(receiptData, localSaveFolderPath, localSaveFolderName);

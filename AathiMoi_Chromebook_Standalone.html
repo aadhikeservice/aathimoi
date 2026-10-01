@@ -2443,16 +2443,34 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
         width: 100%;
       }
       .rpt-header .ev-title {
-        font-size: 13.5pt;
-        font-weight: 800;
+        font-size: 14pt;
+        font-weight: 900;
         color: #0F172A;
         margin: 2px 0 1px 0;
         letter-spacing: normal !important;
+        line-height: 1.2;
+      }
+      .rpt-header .ev-member-name1 {
+        font-size: 12pt;
+        font-weight: 800;
+        color: #1E293B;
+        margin: 2px 0 2px 0;
+        letter-spacing: normal !important;
+        line-height: 1.2;
+      }
+      .rpt-header .ev-celebration {
+        font-size: 10.5pt;
+        font-weight: 800;
+        color: #8B0000;
+        margin: 2px 0 2px 0;
+        letter-spacing: normal !important;
+        line-height: 1.2;
       }
       .rpt-header .ev-meta {
-        font-size: 11pt;
+        font-size: 10pt;
         font-weight: 700;
         color: #334155;
+        margin-top: 2px;
         letter-spacing: normal !important;
       }
 
@@ -2859,8 +2877,12 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       const isLastPage = (pi === totalPages - 1);
       const pageAmt = pageTotals[pi];
 
-      // Page 1 displays full Event Master data; subsequent pages display compact brand bar alone
+      // Page 1 displays full Event Master data: Member Name first, Member Name 1 below it, then celebration title / subtitle
       const isFirstDataPage = (pi === 0);
+      const displayMemberName = cfg.primaryMemberName || cfg.memberName || (cfg.displayName1 ? cfg.displayName1 : '') || (cfg.eventTitle && !cfg.secondaryMemberName && !cfg.memberName1 ? cfg.eventTitle : '');
+      const displayMemberName1 = cfg.secondaryMemberName || cfg.memberName1 || '';
+      const displayCelebration = cfg.eventCelebrationTitle || cfg.celebrationTitle || (cfg.primaryMemberName ? (cfg.eventTitle || '') : '');
+
       const pageHeaderHtml = isFirstDataPage ? `
         <div class="rpt-header">
           <div class="org-title" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -2869,7 +2891,9 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
           </div>
           <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
           <div class="header-divider"></div>
-          ${cfg.eventTitle ? `<div class="ev-title">${toSearchableUnicode(cfg.eventTitle)}</div>` : ''}
+          ${displayMemberName ? `<div class="ev-title">${toSearchableUnicode(displayMemberName)}</div>` : ''}
+          ${displayMemberName1 ? `<div class="ev-member-name1">${toSearchableUnicode(displayMemberName1)}</div>` : ''}
+          ${displayCelebration ? `<div class="ev-celebration">${toSearchableUnicode(displayCelebration)}</div>` : ''}
           ${cfg.eventSubtitle ? `<div class="ev-meta">${toSearchableUnicode(cfg.eventSubtitle)}</div>` : ''}
         </div>
       ` : `
@@ -3158,8 +3182,9 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       if (!str) return '';
       return String(str).normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
     }
-    const memberName = (ev && (ev.memberName || ev.name)) || '';
-    const memberName1 = (ev && (ev.displayName1 || ev.memberName1)) || '';
+    // Member Name is saved in ev.displayName1 (or ev.memberName/ev.name for legacy), Member Name 1 in ev.memberName
+    const primaryMemberName = (ev && ev.displayName1) ? ev.displayName1 : ((ev && (ev.memberName || ev.name)) || '');
+    const secondaryMemberName = (ev && ev.displayName1) ? (ev.memberName || ev.memberName1 || '') : '';
     const eventTitle = (ev && (ev.eventTitle || ev.title)) || '';
     const place = (ev && ev.place) || '-';
     const rawDate = (ev && (ev.eventDate || ev.date)) || '';
@@ -3188,13 +3213,13 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
         <div style="position: relative; z-index: 1; margin: auto 0; width: 100%; padding-top: 145px;">
           <div style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(4px); padding: 26px 22px; border-radius: 22px; border: 2.5px solid #b45309; margin: 0 auto; max-width: 76%; box-shadow: 0 8px 25px rgba(180, 83, 9, 0.2);">
             
-            <!-- 1. Member Name & Member Name 1 -->
+            <!-- 1. Member Name & Member Name 1 (Member Name first, Member Name 1 below) -->
             <div style="font-size: 30pt; font-weight: 900; color: #78350f; line-height: 1.25;">
-              ${toSearchableUnicode(memberName)}
+              ${toSearchableUnicode(primaryMemberName)}
             </div>
-            ${memberName1 ? `
+            ${secondaryMemberName ? `
               <div style="font-size: 24pt; font-weight: 800; color: #92400e; margin-top: 6px; line-height: 1.25;">
-                ${toSearchableUnicode(memberName1)}
+                ${toSearchableUnicode(secondaryMemberName)}
               </div>
             ` : ''}
 
@@ -3302,9 +3327,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       });
     }
 
-    const hostHeader = (activeEv && activeEv.displayName1)
-      ? `${activeEv.displayName1}${activeEv.memberName ? ' - ' + activeEv.memberName : ''}`
-      : ((activeEv && activeEv.memberName) || 'Aathi Moi');
+    const primaryMemberName = (activeEv && activeEv.displayName1) ? activeEv.displayName1 : ((activeEv && activeEv.memberName) || 'Aathi Moi');
+    const secondaryMemberName = (activeEv && activeEv.displayName1 && activeEv.memberName) ? activeEv.memberName : '';
 
     return `
       <div class="a4-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; box-sizing: border-box; padding: 25px; margin-bottom: 20px; font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: #fff; color: #000;">
@@ -3318,8 +3342,13 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)
           </div>
           <h2 style="font-size: 15pt; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
-            ${toSearchableUnicode(hostHeader)}
+            ${toSearchableUnicode(primaryMemberName)}
           </h2>
+          ${secondaryMemberName ? `
+            <div style="font-size: 13pt; font-weight: 700; color: #1E293B; margin: 2px 0 2px 0;">
+              ${toSearchableUnicode(secondaryMemberName)}
+            </div>
+          ` : ''}
           <div style="font-size: 10.5pt; font-weight: 700; color: #334155; margin-top: 4px;">
             <span>${toSearchableUnicode((activeEv && activeEv.place) || '')}</span> ${activeEv && activeEv.place && activeEv.phone ? '&nbsp;|&nbsp;' : ''}
             <span>${activeEv && activeEv.phone ? (formatPhoneWithCountryCode(activeEv.phone) || activeEv.phone) : ''}</span> ${(activeEv && (activeEv.place || activeEv.phone)) && activeEv.eventDate ? '&nbsp;|&nbsp;' : ''}
@@ -5829,7 +5858,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                   ${savedEvents.length === 0 ? '<tr><td colspan="4" class="px-4 py-4 text-xs text-slate-500">No active saved events found.</td></tr>' : ''}
                   ${savedEvents.map(ev => `
                     <tr>
-                      <td class="px-4 py-3 font-bold text-amber-300">${ev.displayName1 || ev.memberName || ''}${ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : ''}</td>
+                      <td class="px-4 py-3">
+                        <div class="font-bold text-amber-300">${ev.displayName1 || ev.memberName || ''}</div>
+                        ${(ev.displayName1 && ev.memberName) ? `<div class="text-xs text-slate-300 font-semibold mt-0.5">${ev.memberName}</div>` : ''}
+                      </td>
                       <td class="px-4 py-3">${ev.place}</td>
                       <td class="px-4 py-3 font-mono text-emerald-400 font-semibold">${ev.eventDate || '-'}</td>
                       <td class="px-4 py-3">
@@ -6072,7 +6104,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                 <div class="p-4 rounded-xl bg-slate-900/70 border ${ev.id === state.activeEventId ? 'border-amber-500' : 'border-slate-800'} space-y-3">
                   <div class="flex justify-between items-start">
                     <div>
-                      <h4 class="font-bold text-amber-300 text-base">${ev.displayName1 || ev.memberName || ''}${ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : ''}</h4>
+                      <h4 class="font-bold text-amber-300 text-base">${ev.displayName1 || ev.memberName || ''}</h4>
+                      ${(ev.displayName1 && ev.memberName) ? `<p class="text-xs text-slate-300 font-semibold mt-0.5">${ev.memberName}</p>` : ''}
                       <p class="text-xs text-emerald-400 font-semibold mt-0.5"><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1"></i> Date: ${ev.eventDate || '-'}</p>
                     </div>
                     ${ev.id === state.activeEventId ? '<span class="px-2 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded-md font-bold border border-amber-500/40">Active</span>' : ''}
@@ -6121,7 +6154,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                 <div class="p-4 rounded-xl bg-slate-900/80 border border-emerald-500/40 space-y-3">
                   <div class="flex justify-between items-start">
                     <div>
-                      <h4 class="font-bold text-amber-300 text-base">${ev.displayName1 || ev.memberName || ''}${ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : ''}</h4>
+                      <h4 class="font-bold text-amber-300 text-base">${ev.displayName1 || ev.memberName || ''}</h4>
+                      ${(ev.displayName1 && ev.memberName) ? `<p class="text-xs text-slate-300 font-semibold mt-0.5">${ev.memberName}</p>` : ''}
                       <p class="text-xs text-emerald-400 font-semibold mt-0.5"><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1"></i> Date: ${ev.eventDate || '-'}</p>
                     </div>
                     <span class="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-300 rounded-md font-extrabold border border-emerald-500/40">Completed</span>
@@ -6623,8 +6657,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     const totalMoi  = totalCash + totalUpi;
     const totalPayout = eventPayouts.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
 
-    const evName = `${ev.displayName1 || ev.memberName || ''}${ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : ''}`;
-    const evMeta = [ev.place, ev.phone, formatDateDMY(ev.eventDate)].filter(Boolean).join(' | ');
+    const primaryMemberName = ev.displayName1 || ev.memberName || '';
+    const secondaryMemberName = (ev.displayName1 && ev.memberName) ? ev.memberName : (ev.memberName1 || '');
+    const celebrationTitle = ev.eventTitle || ev.title || '';
+    const evMeta = [ev.place, formatPhoneWithCountryCode(ev.phone) || ev.phone, formatDateDMY(ev.eventDate)].filter(Boolean).join(' | ');
 
     const html = buildOverallReportHtml({
       entries:      receipts,
@@ -6637,7 +6673,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       getBillNo:    r => r.billNo || '',
       getAmount:    r => parseFloat(r.amount) || 0,
       getMode:      r => r.mode || '',
-      eventTitle:   evName,
+      primaryMemberName,
+      secondaryMemberName,
+      eventCelebrationTitle: celebrationTitle,
+      eventTitle:   [primaryMemberName, secondaryMemberName].filter(Boolean).join(' - '),
       eventSubtitle: evMeta,
       totalCash, totalUpi, totalMoi, totalPayout,
       ROWS_PER_PAGE: 12
@@ -7373,7 +7412,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                     <tr>
                       <td class="px-4 py-3 font-medium text-slate-100">${u.username}</td>
                       <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs bg-slate-800 text-slate-300 rounded">USER</span></td>
-                      <td class="px-4 py-3 text-amber-300 font-medium">${ev ? ev.memberName + ' (' + ev.place + ')' : 'Not Assigned'}</td>
+                      <td class="px-4 py-3 text-amber-300 font-medium">${ev ? ((ev.displayName1 || ev.memberName) + (ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : '') + ' (' + ev.place + ')') : 'Not Assigned'}</td>
                       <td class="px-4 py-3 font-mono text-emerald-400 font-semibold">${ev && ev.eventDate ? ev.eventDate : '-'}</td>
                       <td class="px-4 py-3 font-mono text-amber-300 font-bold">${u.startingBillNo || '-'}</td>
                       <td class="px-4 py-3 text-right space-x-3">
@@ -12535,7 +12574,9 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       const allPayouts = state.payouts.filter(p => !state.activeEventId || p.eventId === state.activeEventId);
       const totalPayout = allPayouts.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
 
-      const evName = `${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}`;
+      const primaryMemberName = activeEv.displayName1 || activeEv.memberName || '';
+      const secondaryMemberName = (activeEv.displayName1 && activeEv.memberName) ? activeEv.memberName : (activeEv.memberName1 || '');
+      const celebrationTitle = activeEv.eventTitle || activeEv.title || '';
       const evMeta = [activeEv.place, formatPhoneWithCountryCode(activeEv.phone) || activeEv.phone, formatDateDMY(activeEv.eventDate)].filter(Boolean).join(' | ');
 
       // 1. First / Cover Page
@@ -12553,7 +12594,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
         getBillNo: r => r.billNo || '',
         getAmount: r => parseFloat(r.amount) || 0,
         getMode: r => r.mode || '',
-        eventTitle: evName,
+        primaryMemberName,
+        secondaryMemberName,
+        eventCelebrationTitle: celebrationTitle,
+        eventTitle: [primaryMemberName, secondaryMemberName].filter(Boolean).join(' - '),
         eventSubtitle: evMeta,
         totalCash,
         totalUpi,
@@ -12672,7 +12716,9 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
       const filterTag = filterParts.length > 0 ? `[Filter: ${filterParts.join(' | ')}]` : `[Filtered: All Entries]`;
 
-      const evName = `${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}`;
+      const primaryMemberName = activeEv.displayName1 || activeEv.memberName || '';
+      const secondaryMemberName = (activeEv.displayName1 && activeEv.memberName) ? activeEv.memberName : (activeEv.memberName1 || '');
+      const celebrationTitle = activeEv.eventTitle || activeEv.title || '';
       const evMeta = [activeEv.place, formatPhoneWithCountryCode(activeEv.phone) || activeEv.phone, formatDateDMY(activeEv.eventDate), filterTag].filter(Boolean).join(' | ');
 
       const html = buildOverallReportHtml({
@@ -12686,7 +12732,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
         getBillNo: r => r.billNo || '',
         getAmount: r => parseFloat(r.amount) || 0,
         getMode: r => r.mode || '',
-        eventTitle: evName,
+        primaryMemberName,
+        secondaryMemberName,
+        eventCelebrationTitle: celebrationTitle,
+        eventTitle: [primaryMemberName, secondaryMemberName].filter(Boolean).join(' - '),
         eventSubtitle: evMeta,
         totalCash,
         totalUpi,
@@ -12742,7 +12791,9 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       const allPayouts = state.payouts.filter(p => !state.activeEventId || p.eventId === state.activeEventId);
       const totalPayout = allPayouts.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
 
-      const evName = `${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}`;
+      const primaryMemberName = activeEv.displayName1 || activeEv.memberName || '';
+      const secondaryMemberName = (activeEv.displayName1 && activeEv.memberName) ? activeEv.memberName : (activeEv.memberName1 || '');
+      const celebrationTitle = activeEv.eventTitle || activeEv.title || '';
       const evMeta = [activeEv.place, formatPhoneWithCountryCode(activeEv.phone) || activeEv.phone, formatDateDMY(activeEv.eventDate)].filter(Boolean).join(' | ');
 
       const html = buildOverallReportHtml({
@@ -12756,7 +12807,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
         getBillNo: r => r.billNo || '',
         getAmount: r => parseFloat(r.amount) || 0,
         getMode: r => r.mode || '',
-        eventTitle: evName,
+        primaryMemberName,
+        secondaryMemberName,
+        eventCelebrationTitle: celebrationTitle,
+        eventTitle: [primaryMemberName, secondaryMemberName].filter(Boolean).join(' - '),
         eventSubtitle: evMeta,
         totalCash,
         totalUpi,
@@ -14441,6 +14495,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       getBillNo: e => e.billNo || e.receiptNo || '',
       getAmount: e => parseFloat(e.amount) || 0,
       getMode: () => 'ரொக்கம்',
+      primaryMemberName: activeNoteEv.name,
+      eventCelebrationTitle: activeNoteEv.title || '',
       eventTitle: evTitle,
       eventSubtitle: evSubtitle,
       totalCash: totalAmount,
@@ -14524,6 +14580,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       getBillNo: e => e.billNo || e.receiptNo || '',
       getAmount: e => parseFloat(e.amount) || 0,
       getMode: () => 'ரொக்கம்',
+      primaryMemberName: activeNoteEv.name,
+      eventCelebrationTitle: activeNoteEv.title || '',
       eventTitle: evTitle,
       eventSubtitle: evSubtitle,
       totalCash: totalAmount,
@@ -14725,8 +14783,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       }
     }
 
-    const memberName = ev.memberName || ev.name || '';
-    const memberName1 = ev.displayName1 || ev.memberName1 || '';
+    const primaryMemberName = (ev && ev.displayName1) ? ev.displayName1 : ((ev && (ev.memberName || ev.name)) || '');
+    const secondaryMemberName = (ev && ev.displayName1) ? (ev.memberName || ev.memberName1 || '') : '';
     const eventTitle = ev.eventTitle || ev.title || '';
     const place = ev.place || '-';
     const rawDate = ev.eventDate || ev.date || '';
@@ -14737,7 +14795,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     const firstPageHtml = buildFirstPageHtml(ev);
 
     const origTitle = document.title;
-    const evFileTitle = [memberName1, memberName].filter(Boolean).join(' - ') || eventTitle || 'Aathi_Moi_Report';
+    const evFileTitle = [primaryMemberName, secondaryMemberName].filter(Boolean).join(' - ') || eventTitle || 'Aathi_Moi_Report';
     
     const triggerFirstPagePrint = () => {
       document.title = `${evFileTitle} - Cover`;

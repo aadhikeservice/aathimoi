@@ -157,16 +157,16 @@
   <div id="a4-report-print-area" class="hidden"></div>
 
   <!-- Scripts -->
-  <script src="js/defaultDb.js?v=20260930_sync_v8"></script>
-  <script src="js/tamilTransliterate.js?v=20260930_sync_v8"></script>
-  <script src="js/tamilWords.js?v=20260930_sync_v8"></script>
-  <script src="js/activation.js?v=20260930_sync_v8"></script>
-  <script src="js/app.js?v=20260930_sync_v8"></script>
+  <script src="js/defaultDb.js?v=20261001_v10"></script>
+  <script src="js/tamilTransliterate.js?v=20261001_v10"></script>
+  <script src="js/tamilWords.js?v=20261001_v10"></script>
+  <script src="js/activation.js?v=20261001_v10"></script>
+  <script src="js/app.js?v=20261001_v10"></script>
   <script>
     if ('caches' in window) {
       caches.keys().then(function (keys) {
         keys.forEach(function (k) {
-          if (k !== 'aathi-moi-chromebook-offline-v8') {
+          if (k !== 'aathi-moi-chromebook-offline-v10') {
             caches.delete(k);
           }
         });
@@ -174,8 +174,8 @@
     }
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
       navigator.serviceWorker.addEventListener('message', function (event) {
-        if (event.data && event.data.type === 'AATHI_SW_UPDATED' && !sessionStorage.getItem('aathi_sw_reloaded_v8')) {
-          sessionStorage.setItem('aathi_sw_reloaded_v8', '1');
+        if (event.data && event.data.type === 'AATHI_SW_UPDATED' && !sessionStorage.getItem('aathi_sw_reloaded_v10')) {
+          sessionStorage.setItem('aathi_sw_reloaded_v10', '1');
           window.location.reload();
         }
       });

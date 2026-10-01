@@ -156,7 +156,7 @@ function doPost(e) {
     var action = contents.action || 'saveReceipt';
 
     if (action === 'saveReceipt') {
-      var result = saveMoiReceipt(contents.receipt);
+      var result = saveMoiReceipt(contents.receipt, contents.receiptHtml);
       return createJsonResponse({ status: 'success', receipt: result });
     }
 
@@ -234,7 +234,7 @@ function createJsonResponse(obj) {
 // ==========================================
 // 3. RECEIPT & PAYOUT BUSINESS LOGIC
 // ==========================================
-function saveMoiReceipt(rcpt) {
+function saveMoiReceipt(rcpt, receiptHtml) {
   if (!rcpt) throw new Error("Receipt data object missing");
   var ss = getSs();
   var sheet = ss.getSheetByName('Receipts');
@@ -279,9 +279,9 @@ function saveMoiReceipt(rcpt) {
     now.toISOString()
   ]);
 
-  // Create HTML Receipt in Google Drive Event Folder
+  // Create HTML Receipt directly in Google Drive Event Master Folder
   try {
-    createReceiptHtmlInDrive(rcpt);
+    createReceiptHtmlInDrive(rcpt, receiptHtml);
   } catch (err) {
     Logger.log('Drive HTML generation notice: ' + err.toString());
   }
@@ -534,29 +534,37 @@ function getOrCreateEventDriveFolder(rcpt) {
   var eventSheet = ss.getSheetByName('Events');
   var backupFolder = getOrCreateBackupFolder();
 
+  var rMajor = rcpt.displayName1 || rcpt.memberName || rcpt.eventName || 'Event';
+  var rSub = rcpt.displayName1 ? (rcpt.memberName || '') : '';
+  var calcFolderTitle = (rMajor && rSub && rMajor !== rSub) ? (rMajor + ' - ' + rSub) : rMajor;
+
   if (eventSheet) {
     var data = eventSheet.getDataRange().getValues();
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
       var rowEventId = row[0];
-      var rowMemberName = row[1];
+      var rowDisplayName1 = row[1];
+      var rowMemberName = row[2];
       
       if ((rcpt.eventId && rowEventId == rcpt.eventId) || 
-          (rcpt.memberName && rowMemberName == rcpt.memberName) || 
-          (rcpt.eventName && rowMemberName == rcpt.eventName)) {
+          (rcpt.displayName1 && (rowDisplayName1 == rcpt.displayName1 || rowMemberName == rcpt.displayName1)) ||
+          (rcpt.memberName && (rowMemberName == rcpt.memberName || rowDisplayName1 == rcpt.memberName)) || 
+          (rcpt.eventName && (rowDisplayName1 == rcpt.eventName || rowMemberName == rcpt.eventName || calcFolderTitle == rowDisplayName1))) {
         
-        var folderId = row[8]; // Column 9 is Drive Folder ID
+        var folderId = row[10]; // Column 11 is Drive Folder ID
         if (folderId && folderId.toString().trim() !== '') {
           try {
             return DriveApp.getFolderById(folderId.toString().trim());
           } catch (e) {}
         }
 
-        // Create folder now inside Backup and save folderId to sheet column 9
+        // Create folder now inside Backup and save folderId to sheet column 11
         try {
-          var folderTitle = (rcpt.displayName1 ? (rcpt.displayName1 + ' - ') : '') + (rowMemberName || rcpt.memberName || rcpt.eventName || 'Event');
+          var major = rowDisplayName1 || rMajor;
+          var sub = rowMemberName || rSub;
+          var folderTitle = (major && sub && major !== sub) ? (major + ' - ' + sub) : major;
           var newFolder = backupFolder.createFolder(folderTitle);
-          eventSheet.getRange(i + 1, 9).setValue(newFolder.getId());
+          eventSheet.getRange(i + 1, 11).setValue(newFolder.getId());
           return newFolder;
         } catch (err) {}
       }
@@ -565,12 +573,11 @@ function getOrCreateEventDriveFolder(rcpt) {
 
   // Fallback: Create folder by event title inside Backup if not found
   try {
-    var folderTitle = (rcpt.displayName1 ? (rcpt.displayName1 + ' - ') : '') + (rcpt.memberName || rcpt.eventName || 'Event');
-    var existingFolders = backupFolder.getFoldersByName(folderTitle);
+    var existingFolders = backupFolder.getFoldersByName(calcFolderTitle);
     if (existingFolders.hasNext()) {
       return existingFolders.next();
     } else {
-      return backupFolder.createFolder(folderTitle);
+      return backupFolder.createFolder(calcFolderTitle);
     }
   } catch (e) {
     return backupFolder;
@@ -594,10 +601,9 @@ function getOrCreateUserDriveFolder(rcpt) {
 }
 
 // ==========================================
-// ==========================================
 // 4. GOOGLE DRIVE HTML RECEIPT GENERATOR
 // ==========================================
-function createReceiptHtmlInDrive(rcpt) {
+function createReceiptHtmlInDrive(rcpt, customHtml) {
   var majorName = rcpt.displayName1 || rcpt.memberName || rcpt.eventName || 'Event';
   var name1 = rcpt.displayName1 ? (rcpt.memberName || '') : '';
   var sanitize = function(str) {
@@ -606,55 +612,67 @@ function createReceiptHtmlInDrive(rcpt) {
 
   var fileName = sanitize(rcpt.billNo || ('Receipt_' + Date.now()));
 
-  var htmlText = '<!DOCTYPE html>\n' +
-    '<html lang="ta">\n' +
-    '<head>\n' +
-    '  <meta charset="UTF-8">\n' +
-    '  <title>ஆதி மொய் - ரசீது #' + escapeXml(rcpt.billNo || '') + '</title>\n' +
-    '  <style>\n' +
-    '    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; background-color: #f8fafc; }\n' +
-    '    .card { border: 2px solid #8B0000; padding: 24px; max-width: 450px; margin: 0 auto; border-radius: 12px; background: #FFF8DC; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }\n' +
-    '    .header { text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 10px; margin-bottom: 15px; }\n' +
-    '    h2 { color: #8B0000; font-size: 22pt; margin: 0; font-weight: bold; }\n' +
-    '    .sub { font-size: 10pt; font-weight: bold; color: #333; margin-top: 4px; }\n' +
-    '    .event-title { font-size: 16pt; font-weight: bold; color: #8B0000; margin-top: 8px; }\n' +
-    '    .event-sub { font-size: 13pt; font-weight: bold; color: #0F172A; }\n' +
-    '    .row { display: flex; justify-content: space-between; font-size: 11pt; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; color: #1E293B; }\n' +
-    '    .bold { font-weight: bold; }\n' +
-    '    .amount-box { border-top: 2px solid #8B0000; border-bottom: 2px solid #8B0000; padding: 10px 0; margin-top: 15px; text-align: center; }\n' +
-    '    .amount-val { font-size: 24pt; font-weight: bold; color: #15803D; }\n' +
-    '    .amount-words { font-size: 11pt; font-style: italic; font-weight: bold; color: #334155; margin-top: 4px; }\n' +
-    '    .footer { text-align: center; margin-top: 15px; font-size: 10pt; font-weight: bold; color: #8B0000; }\n' +
-    '  </style>\n' +
-    '</head>\n' +
-    '<body>\n' +
-    '  <div class="card">\n' +
-    '    <div class="header">\n' +
-    '      <h2>ஆதி மொய்</h2>\n' +
-    '      <div class="sub">கருணாக்கமுத்தன்பட்டி 9865607179</div>\n' +
-    '      <div class="event-title">' + escapeXml(majorName) + '</div>\n' +
-    (name1 ? '      <div class="event-sub">' + escapeXml(name1) + '</div>\n' : '') +
-    '      <div class="sub">' + escapeXml(rcpt.place || '') + '</div>\n' +
-    '    </div>\n' +
-    '    <div class="row"><span class="bold">ரசீது எண்:</span> <span class="bold" style="color:#8B0000;">#' + escapeXml(rcpt.billNo || '') + '</span></div>\n' +
-    '    <div class="row"><span class="bold">தேதி:</span> <span>' + escapeXml((rcpt.date || '') + ' ' + (rcpt.time || '')) + '</span></div>\n' +
-    '    <div class="row"><span class="bold">பெயர்:</span> <span>' + escapeXml((rcpt.name || '') + (rcpt.name1 ? ' ' + rcpt.name1 : '')) + '</span></div>\n' +
-    '    <div class="row"><span class="bold">இடம்:</span> <span>' + escapeXml(rcpt.place || '') + '</span></div>\n' +
-    (rcpt.relationship ? '    <div class="row"><span class="bold">உறவு:</span> <span>' + escapeXml(rcpt.relationship) + '</span></div>\n' : '') +
-    '    <div class="amount-box">\n' +
-    '      <div style="font-size: 14pt; font-weight: bold; color: #8B0000;">தொகை:</div>\n' +
-    '      <div class="amount-val">₹' + escapeXml(rcpt.amount || '0') + '</div>\n' +
-    '      <div class="amount-words">(' + escapeXml(rcpt.amountWords || '') + ')</div>\n' +
-    '    </div>\n' +
-    '    <div class="row" style="margin-top: 10px;"><span class="bold">செலுத்திய முறை:</span> <span>' + escapeXml(rcpt.mode || 'Cash') + '</span></div>\n' +
-    '    <div class="footer">தங்கள் வருகைக்கு நன்றி</div>\n' +
-    '  </div>\n' +
-    '</body>\n' +
-    '</html>';
+  var htmlText = customHtml;
+  if (!htmlText) {
+    htmlText = '<!DOCTYPE html>\n' +
+      '<html lang="ta">\n' +
+      '<head>\n' +
+      '  <meta charset="UTF-8">\n' +
+      '  <title>ஆதி மொய் - ரசீது #' + escapeXml(rcpt.billNo || '') + '</title>\n' +
+      '  <style>\n' +
+      '    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; background-color: #f8fafc; }\n' +
+      '    .card { border: 2px solid #8B0000; padding: 24px; max-width: 450px; margin: 0 auto; border-radius: 12px; background: #FFF8DC; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }\n' +
+      '    .header { text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 10px; margin-bottom: 15px; }\n' +
+      '    h2 { color: #8B0000; font-size: 22pt; margin: 0; font-weight: bold; }\n' +
+      '    .sub { font-size: 10pt; font-weight: bold; color: #333; margin-top: 4px; }\n' +
+      '    .event-title { font-size: 16pt; font-weight: bold; color: #8B0000; margin-top: 8px; }\n' +
+      '    .event-sub { font-size: 13pt; font-weight: bold; color: #0F172A; }\n' +
+      '    .row { display: flex; justify-content: space-between; font-size: 11pt; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; color: #1E293B; }\n' +
+      '    .bold { font-weight: bold; }\n' +
+      '    .amount-box { border-top: 2px solid #8B0000; border-bottom: 2px solid #8B0000; padding: 10px 0; margin-top: 15px; text-align: center; }\n' +
+      '    .amount-val { font-size: 24pt; font-weight: bold; color: #15803D; }\n' +
+      '    .amount-words { font-size: 11pt; font-style: italic; font-weight: bold; color: #334155; margin-top: 4px; }\n' +
+      '    .footer { text-align: center; margin-top: 15px; font-size: 10pt; font-weight: bold; color: #8B0000; }\n' +
+      '  </style>\n' +
+      '</head>\n' +
+      '<body>\n' +
+      '  <div class="card">\n' +
+      '    <div class="header">\n' +
+      '      <h2>ஆதி மொய்</h2>\n' +
+      '      <div class="sub">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>\n' +
+      '      <div class="event-title">' + escapeXml(majorName) + '</div>\n' +
+      (name1 ? '      <div class="event-sub">' + escapeXml(name1) + '</div>\n' : '') +
+      '      <div class="sub">' + escapeXml(rcpt.place || '') + '</div>\n' +
+      '    </div>\n' +
+      '    <div class="row"><span class="bold">ரசீது எண்:</span> <span class="bold" style="color:#8B0000;">#' + escapeXml(rcpt.billNo || '') + '</span></div>\n' +
+      '    <div class="row"><span class="bold">தேதி:</span> <span>' + escapeXml((rcpt.date || '') + ' ' + (rcpt.time || '')) + '</span></div>\n' +
+      '    <div class="row"><span class="bold">பெயர்:</span> <span>' + escapeXml((rcpt.name || '') + (rcpt.name1 ? ' ' + rcpt.name1 : '')) + '</span></div>\n' +
+      '    <div class="row"><span class="bold">இடம்:</span> <span>' + escapeXml(rcpt.place || '') + '</span></div>\n' +
+      (rcpt.relationship ? '    <div class="row"><span class="bold">உறவு:</span> <span>' + escapeXml(rcpt.relationship) + '</span></div>\n' : '') +
+      '    <div class="amount-box">\n' +
+      '      <div style="font-size: 14pt; font-weight: bold; color: #8B0000;">தொகை:</div>\n' +
+      '      <div class="amount-val">₹' + escapeXml(rcpt.amount || '0') + '</div>\n' +
+      '      <div class="amount-words">(' + escapeXml(rcpt.amountWords || '') + ')</div>\n' +
+      '    </div>\n' +
+      '    <div class="row" style="margin-top: 10px;"><span class="bold">செலுத்திய முறை:</span> <span>' + escapeXml(rcpt.mode || 'Cash') + '</span></div>\n' +
+      '    <div class="footer">தங்கள் வருகைக்கு நன்றி</div>\n' +
+      '  </div>\n' +
+      '</body>\n' +
+      '</html>';
+  }
 
-  var targetFolder = getOrCreateUserDriveFolder(rcpt);
+  // Save directly in the Event Master folder in Google Drive
+  var eventFolder = getOrCreateEventDriveFolder(rcpt);
   var htmlBlob = Utilities.newBlob(htmlText, 'text/html', fileName + '.html');
-  targetFolder.createFile(htmlBlob);
+  eventFolder.createFile(htmlBlob);
+
+  // Also save in user subfolder if available
+  try {
+    var userFolder = getOrCreateUserDriveFolder(rcpt);
+    if (userFolder && userFolder.getId() !== eventFolder.getId()) {
+      userFolder.createFile(htmlBlob);
+    }
+  } catch (e) {}
 }
 
 function getOrCreatePayoutUserDriveFolder(payout) {

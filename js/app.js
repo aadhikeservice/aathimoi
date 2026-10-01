@@ -994,7 +994,7 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)</div>
           <div class="header-divider"></div>
           ${displayMemberName ? `<div class="ev-title">${toSearchableUnicode(displayMemberName)}</div>` : ''}
           ${displayMemberName1 ? `<div class="ev-member-name1">${toSearchableUnicode(displayMemberName1)}</div>` : ''}
@@ -1007,7 +1007,7 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)</div>
         </div>
       `;
 
@@ -1359,7 +1359,7 @@
               <span>${toSearchableUnicode('ஆதி மொய்')}</span>
             </div>
             <div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')}</div>
-            <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">+91 9865607179, 99946 96900, 79041 43508</div>
+            <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">(98656 07179)</div>
           </div>
         </div>
 
@@ -1444,7 +1444,7 @@
             <h1 style="font-size: 22pt; font-weight: 900; color: #8B0000; margin: 0; line-height: 1.15;">${toSearchableUnicode('ஆதி மொய்')}</h1>
           </div>
           <div style="font-size: 11pt; font-weight: 800; color: #8B0000; margin-top: 3px;">
-            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)
+            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)
           </div>
           <h2 style="font-size: 15pt; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
             ${toSearchableUnicode(primaryMemberName)}
@@ -1824,7 +1824,7 @@
               ${toSearchableUnicode('எங்களை தொடர்புகொள்ள')}
             </div>
             <div style="font-size: 12pt; font-weight: 900; letter-spacing: 0.5px; color: #000;">
-              (+91 9865607179, 99946 96900, 79041 43508)
+              (98656 07179)
             </div>
           </div>
         </div>
@@ -3315,7 +3315,7 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -3334,26 +3334,34 @@
 </body>
 </html>`;
 
-    // Chromebook / Browser File System Access API hierarchy backup (<Event Master>/<User>/<Bill No>.html)
+    // Local / Chromebook / Online File System Access API backup (<Event Master>/<Bill No>.html)
+    const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
     if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
       try {
-        const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
         const safeEventFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
         const safeUserFolder = String(receiptData.createdBy || (state.currentUser && state.currentUser.username) || 'admin').replace(/[\\/:*?"<>|]/g, '_').trim() || 'admin';
-        const safeBillFile = `${String(receiptData.billNo || 'Receipt').replace(/[\\/:*?"<>|]/g, '_').trim()}.html`;
+        const safeBillFile = `Receipt_${String(receiptData.billNo || 'Receipt').replace(/[\\/:*?"<>|]/g, '_').trim()}_${String(receiptData.name || 'Moi').replace(/[\\/:*?"<>|]/g, '_').trim()}.html`;
         const evDir = await state.localSaveDirHandle.getDirectoryHandle(safeEventFolder, { create: true });
-        const usrDir = await evDir.getDirectoryHandle(safeUserFolder, { create: true });
-        const fHandle = await usrDir.getFileHandle(safeBillFile, { create: true });
+        
+        // Write directly inside the Event Master folder
+        const fHandle = await evDir.getFileHandle(safeBillFile, { create: true });
         const w = await fHandle.createWritable();
         await w.write(receiptHtml);
         await w.close();
+
+        // Also write inside user subfolder
+        const usrDir = await evDir.getDirectoryHandle(safeUserFolder, { create: true });
+        const usrFileHandle = await usrDir.getFileHandle(safeBillFile, { create: true });
+        const wUser = await usrFileHandle.createWritable();
+        await wUser.write(receiptHtml);
+        await wUser.close();
       } catch (fsErr) {
-        console.warn('Chromebook folder hierarchy save notice:', fsErr);
+        console.warn('Local disk folder hierarchy save notice:', fsErr);
       }
     }
 
     // Sync receipt HTML & row to Google Apps Script (Google Drive)
-    await syncToGas('saveReceipt', { eventName: majorName, receipt: receiptData, receiptHtml });
+    await syncToGas('saveReceipt', { eventName: folderTitle, receipt: receiptData, receiptHtml });
   }
 
   // Role Access Helpers
@@ -3905,72 +3913,6 @@
   // ==========================================
   // 1. LOGIN PANEL & DRIVE EVENTS DISPLAY
   // ==========================================
-  function renderLoginDriveEventsList() {
-    const activeEvents = (state.events || []).filter(ev => !isEventDeletedInState(ev));
-    if (activeEvents.length === 0) {
-      return `
-        <div class="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-center">
-          <p class="text-xs font-medium text-slate-300">No Event Masters in Storage</p>
-          <p class="text-[11px] text-amber-400/90 mt-1">Click <strong class="text-emerald-300">Sync from Drive</strong> to download event masters stored in Google Drive.</p>
-        </div>
-      `;
-    }
-
-    const itemsHtml = activeEvents.map(ev => {
-      const memberName = (ev.memberName || '').trim();
-      const memberName1 = (ev.displayName1 || '').trim();
-      const title = (ev.eventTitle || ev.eventName || 'நிகழ்ச்சி').trim();
-      const date = (ev.eventDate || '').trim();
-      const place = (ev.place || '').trim();
-      const countReceipts = (state.receipts || []).filter(r => 
-        (r.eventId && r.eventId === ev.id) || 
-        (memberName && r.eventName === memberName) || 
-        (memberName1 && r.eventName === memberName1)
-      ).length;
-
-      let nameHtml = '';
-      if (memberName && memberName1 && memberName !== memberName1) {
-        nameHtml = `
-          <div class="font-bold text-amber-300 text-xs">${escapeHtml(memberName)}</div>
-          <div class="text-[11px] text-slate-300">${escapeHtml(memberName1)}</div>
-        `;
-      } else {
-        nameHtml = `<div class="font-bold text-amber-300 text-xs">${escapeHtml(memberName || memberName1 || title)}</div>`;
-      }
-
-      return `
-        <div class="p-2.5 rounded-xl bg-slate-800/90 border border-amber-500/20 hover:border-amber-400/50 transition flex items-center justify-between text-left">
-          <div class="space-y-0.5 min-w-0 pr-2">
-            ${nameHtml}
-            <div class="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 pt-0.5">
-              <span class="text-amber-200/80 font-medium">${escapeHtml(title)}</span>
-              ${place ? `<span>• ${escapeHtml(place)}</span>` : ''}
-              ${date ? `<span>• ${escapeHtml(date)}</span>` : ''}
-            </div>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-300 border border-amber-400/30">
-              ${countReceipts} ரசீது
-            </span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    return `
-      <div class="text-[11px] font-semibold text-slate-300 mb-2 flex items-center justify-between">
-        <span class="flex items-center gap-1.5">
-          <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>Event Masters in Storage (${activeEvents.length}):</span>
-        </span>
-        <span class="text-emerald-400 text-[10px] font-bold">Drive Synced</span>
-      </div>
-      <div class="max-h-52 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
-        ${itemsHtml}
-      </div>
-    `;
-  }
-
   function renderLoginPanel() {
     const isLight = state.currentTheme === 'light';
     return `
@@ -4012,24 +3954,6 @@
               Login
             </button>
           </form>
-
-          <!-- Google Drive Sync & Event Masters Storage Section -->
-          <div class="mt-6 pt-5 border-t border-slate-700/50">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center space-x-1.5">
-                <i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i>
-                <span class="text-xs font-bold text-slate-200">Google Drive Storage</span>
-              </div>
-              <button type="button" id="btn-login-sync" onclick="window.appSyncAllToDrive(this)" class="px-3 py-1.5 rounded-xl border border-emerald-500/50 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 hover:text-white transition text-xs font-bold shadow-md cursor-pointer flex items-center space-x-1.5">
-                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Sync from Drive</span>
-              </button>
-            </div>
-
-            <div id="login-drive-events-container">
-              ${renderLoginDriveEventsList()}
-            </div>
-          </div>
         </div>
       </div>
     `;
@@ -7449,7 +7373,7 @@
             ${getThermalLogoSvgHtml()}
             <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
           </div>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</p>
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
@@ -7911,7 +7835,7 @@
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <h2 style="font-size: 15pt; font-weight: bold; margin: 0; color: #000;">ஆதி மொய்</h2>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</p>
           ${majorName ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${majorName}</h3>` : ''}
           ${name1 ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${name1}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10pt; font-weight: 900; margin: 1px 0; color: #000;">${evTitle}</p>` : ''}
@@ -8241,7 +8165,7 @@
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)';
     const eventHeader = (eventObj && eventObj.displayName1) || rcpt.displayName1 
       ? `${(eventObj && eventObj.displayName1) || rcpt.displayName1}${eventObj && eventObj.memberName ? ' - ' + eventObj.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (eventObj ? eventObj.memberName : (rcpt.memberName || ''));
@@ -8425,7 +8349,7 @@
     // Header Subtitle
     ctx.fillStyle = '#fecaca';
     ctx.font = 'bold 13px "Mukta Malar", "Nirmala UI", sans-serif';
-    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)', width / 2, 62);
+    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)', width / 2, 62);
 
     // Event Title & Place
     const evTitle = (ev && ev.displayName1) ? (ev.displayName1 + (ev.memberName ? ' - ' + ev.memberName : '')) : ((ev && ev.memberName) || (rcpt && rcpt.displayName1) || 'Aathi Moi Event');
@@ -8819,7 +8743,7 @@
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)';
     const eventHeader = (ev && ev.displayName1) || rcpt.displayName1 
       ? `${(ev && ev.displayName1) || rcpt.displayName1}${ev && ev.memberName ? ' - ' + ev.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (ev ? ev.memberName : (rcpt.memberName || ''));
@@ -9126,6 +9050,17 @@
 
         await syncActiveEventReceiptsToLocalFolder();
 
+        // 1. In Google Drive, ensure Event Master folder exists in Backup folder
+        const activeEv = state.activeEventId ? state.events.find(e => e.id === state.activeEventId) : (state.events && state.events[0]);
+        if (activeEv) {
+          try {
+            await syncToGas('createEvent', { event: activeEv });
+          } catch (evGasErr) {
+            console.warn('GAS createEvent on local folder select error:', evGasErr);
+          }
+        }
+
+        // 2. Save active event receipts into local Event Master folder and sync to Google Drive
         const activeReceipts = state.activeEventId
           ? state.receipts.filter(r => r.eventId === state.activeEventId)
           : state.receipts;
@@ -9134,7 +9069,7 @@
         }
 
         if (typeof window.showToast === 'function') {
-          window.showToast(`✓ Selected local folder: "${dirHandle.name}". Receipts are automatically saved here!`, 'success');
+          window.showToast(`✓ Selected local folder: "${dirHandle.name}". Event folder created & receipts backed up to Google Drive!`, 'success');
         }
         renderApp();
       } catch (err) {
@@ -9167,16 +9102,12 @@
     try {
       const ev = state.events.find(e => e.id === rcpt.eventId);
       const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
-      const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
+      const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : (ev && ev.displayName1 ? (ev.memberName || '') : '');
       const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
+      const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
+      const safeEventFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
 
-      // If browser directory handle is active, also write directly via FileSystemDirectoryHandle
-      if (state.localSaveDirHandle) {
-        const fileName = `Receipt_${rcpt.billNo || '0'}_${rcpt.name || 'Moi'}.html`.replace(/[\\/:*?"<>|]/g, '_');
-        const fileHandle = await state.localSaveDirHandle.getFileHandle(fileName, { create: true });
-        const writable = await fileHandle.createWritable();
-
-        const htmlContent = `<!DOCTYPE html>
+      const htmlContent = `<!DOCTYPE html>
 <html lang="ta">
 <head>
   <meta charset="UTF-8">
@@ -9199,7 +9130,7 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -9219,12 +9150,25 @@
 </body>
 </html>`;
 
+      // 1. If browser directory handle is active, write into Event Master subfolder
+      if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
+        const eventDirHandle = await state.localSaveDirHandle.getDirectoryHandle(safeEventFolder, { create: true });
+        const fileName = `Receipt_${rcpt.billNo || '0'}_${rcpt.name || 'Moi'}.html`.replace(/[\\/:*?"<>|]/g, '_');
+        const fileHandle = await eventDirHandle.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
         await writable.write(htmlContent);
         await writable.close();
       }
 
+      // 2. Also ensure receipt is synced to Google Drive in the Event Master folder!
+      try {
+        await saveReceiptFileToDrive(folderTitle, rcpt);
+      } catch (driveErr) {
+        console.warn('Sync receipt to Google Drive notice:', driveErr);
+      }
+
       if (!silent && typeof window.showToast === 'function') {
-        window.showToast(`✓ Saved #${rcpt.billNo} into local folder "${folderLabel || state.localSaveFolderPath}"`, 'success');
+        window.showToast(`✓ Saved #${rcpt.billNo} into local folder "${folderLabel || state.localSaveFolderPath}" & synced to Google Drive`, 'success');
       }
     } catch (err) {
       console.warn('Auto-save to chosen local folder error:', err);
@@ -9277,7 +9221,7 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -11187,7 +11131,7 @@
                 <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
                 <h1 style="font-size: 20pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
               </div>
-              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (98656 07179)</div>
               <h2 style="font-size: 14pt; font-weight: bold; color: #0F172A; margin: 4px 0 2px 0;">
                 ${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}
               </h2>
@@ -13016,7 +12960,7 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <h1 style="font-size: 22pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
           </div>
-          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (98656 07179)</div>
           <h2 style="font-size: 15pt; font-weight: bold; color: #0F172A; margin: 6px 0 2px 0;">${activeNoteEv.name} (${activeNoteEv.place})</h2>
           <div style="font-size: 10.5pt; font-weight: bold; color: #334155; margin-top: 4px;">
             <span>தேதி: ${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' ? ` &nbsp;|&nbsp; <span>ஊர்: ${selectedPlace}</span>` : ''}

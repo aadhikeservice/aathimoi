@@ -2889,7 +2889,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)</div>
           <div class="header-divider"></div>
           ${displayMemberName ? `<div class="ev-title">${toSearchableUnicode(displayMemberName)}</div>` : ''}
           ${displayMemberName1 ? `<div class="ev-member-name1">${toSearchableUnicode(displayMemberName1)}</div>` : ''}
@@ -2902,7 +2902,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)</div>
         </div>
       `;
 
@@ -3254,7 +3254,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               <span>${toSearchableUnicode('ஆதி மொய்')}</span>
             </div>
             <div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')}</div>
-            <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">+91 9865607179, 99946 96900, 79041 43508</div>
+            <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">(98656 07179)</div>
           </div>
         </div>
 
@@ -3339,7 +3339,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <h1 style="font-size: 22pt; font-weight: 900; color: #8B0000; margin: 0; line-height: 1.15;">${toSearchableUnicode('ஆதி மொய்')}</h1>
           </div>
           <div style="font-size: 11pt; font-weight: 800; color: #8B0000; margin-top: 3px;">
-            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)
+            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)
           </div>
           <h2 style="font-size: 15pt; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
             ${toSearchableUnicode(primaryMemberName)}
@@ -3719,7 +3719,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               ${toSearchableUnicode('எங்களை தொடர்புகொள்ள')}
             </div>
             <div style="font-size: 12pt; font-weight: 900; letter-spacing: 0.5px; color: #000;">
-              (+91 9865607179, 99946 96900, 79041 43508)
+              (98656 07179)
             </div>
           </div>
         </div>
@@ -4266,10 +4266,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
   function isEventDeletedInState(ev) {
     if (!ev) return true;
     const evId = String(ev.id || ev.eventid || ev['Event ID'] || '').trim();
-    const d1 = String(ev.displayName1 || ev.membername || ev['Member Name'] || '').trim();
-    const m1 = String(ev.memberName || ev.membername1 || ev['Member Name 1'] || '').trim();
-    const eName = String(ev.eventName || '').trim();
-    if (!d1 && !m1 && !eName) return true;
+    const primaryName = String(ev.memberName || ev.membername || ev['Member Name'] || '').trim();
+    const name1 = String(ev.displayName1 || ev.membername1 || ev['Member Name 1'] || '').trim();
+    const eName = String(ev.eventName || ev.eventTitle || ev.eventtitle || '').trim();
+    if (!primaryName && !name1 && !eName) return true;
 
     const deletedIds = state.deletedEventIds || [];
     if (evId && deletedIds.includes(evId)) return true;
@@ -4277,20 +4277,13 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     const deletedNames = (state.deletedEventNames || []).map(x => String(x).toLowerCase().replace(/\s+/g, ' ').trim());
     const candidates = [
       eName,
-      d1,
-      m1,
-      (d1 && m1 && d1 !== m1) ? `${d1} - ${m1}` : ''
+      primaryName,
+      name1,
+      (primaryName && name1 && primaryName !== name1) ? `${primaryName} - ${name1}` : '',
+      (name1 && primaryName && name1 !== primaryName) ? `${name1} - ${primaryName}` : ''
     ].map(s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean);
     if (candidates.some(c => deletedNames.includes(c))) return true;
 
-    if (state.deletedAllBefore) {
-      const cutoffTs = new Date(state.deletedAllBefore).getTime();
-      if (!isNaN(cutoffTs) && cutoffTs > 0) {
-        const idMatch = evId.match(/^ev_(\d+)/);
-        const evTs = idMatch ? parseInt(idMatch[1], 10) : (ev.createdAt ? new Date(ev.createdAt).getTime() : 0);
-        if (!evTs || evTs <= cutoffTs) return true;
-      }
-    }
     return false;
   }
 
@@ -4589,131 +4582,344 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  window.appSyncAllToDrive = async function () {
+  window.appSyncAllToDrive = async function (triggerBtn) {
     const gasUrl = getGasUrl();
     if (!gasUrl) {
-      if (typeof window.showToast === 'function') {
-        window.showToast('Please configure Google Apps Script Web App URL in Cloud Settings', 'error');
-      } else {
-        alert('Please configure Google Apps Script Web App URL in Cloud Settings');
-      }
-      window.appOpenGasSettingsModal();
+      const msg = 'Please configure Google Apps Script Web App URL in Cloud Settings';
+      if (typeof window.showToast === 'function') window.showToast(msg, 'error');
+      else alert(msg);
+      if (typeof window.appOpenGasSettingsModal === 'function') window.appOpenGasSettingsModal();
       return;
     }
 
-    const btn = document.getElementById('btn-sync-drive');
-    const originalContent = btn ? btn.innerHTML : '';
+    if (!navigator.onLine) {
+      const offMsg = 'Offline Mode Notice: You are currently offline. Please connect to the internet to sync with Google Drive.';
+      if (typeof window.showToast === 'function') window.showToast(offMsg, 'warning');
+      else alert(offMsg);
+      return;
+    }
+
+    const headerBtn = document.getElementById('btn-sync-drive');
+    const loginBtn = document.getElementById('btn-login-sync');
+    const activeBtn = triggerBtn || headerBtn || loginBtn;
+
+    const originalHeaderHtml = headerBtn ? headerBtn.innerHTML : '';
+    const originalLoginHtml = loginBtn ? loginBtn.innerHTML : '';
+    const originalActiveHtml = activeBtn ? activeBtn.innerHTML : '';
+
+    const setSyncStatus = (msg) => {
+      if (headerBtn) {
+        headerBtn.disabled = true;
+        headerBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">${msg}</span>`;
+      }
+      if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span>${msg}</span>`;
+      }
+      if (activeBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
+        activeBtn.disabled = true;
+        activeBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span>${msg}</span>`;
+      }
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    setSyncStatus('Starting Sync...');
 
     try {
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Scanning Local...</span>`;
-        if (window.lucide) lucide.createIcons();
+      // Step 1: Upload offline/local items to Google Drive & Sheets
+      const localEvents = (state.events || []).filter(e => !isEventDeletedInState(e));
+      const localReceipts = state.receipts || [];
+      const localPayouts = state.payouts || [];
+      const localNoteEvents = state.noteEvents || [];
+      const localNoteEntries = state.noteEntries || [];
+
+      // 1a. Upload local events
+      for (let i = 0; i < localEvents.length; i++) {
+        setSyncStatus(`Uploading Event ${i + 1}/${localEvents.length}...`);
+        try {
+          await syncToGas('createEvent', { event: localEvents[i] });
+        } catch (e) {}
+        await delay(80);
       }
 
-      // 1. Fetch latest DB to trigger scanBackupFolder() on server
-      await fetchDb();
-
-      // Refresh UI if available
-      if (typeof renderCurrentPanel === 'function') {
-        renderCurrentPanel();
+      // 1b. Upload local receipts
+      for (let j = 0; j < localReceipts.length; j++) {
+        setSyncStatus(`Uploading Receipt ${j + 1}/${localReceipts.length}...`);
+        const rcpt = localReceipts[j];
+        try {
+          await syncToGas('saveReceipt', { receipt: rcpt });
+          const ev = localEvents.find(e => e.id === rcpt.eventId || e.eventName === rcpt.eventName || e.memberName === rcpt.eventName);
+          saveReceiptFileToDrive(ev ? (ev.displayName1 || ev.memberName || '') : '', rcpt).catch(() => {});
+        } catch (e) {}
+        await delay(80);
       }
 
-      const totalEvents = state.events ? state.events.length : 0;
-      const totalReceipts = state.receipts ? state.receipts.length : 0;
-      const totalPayouts = state.payouts ? state.payouts.length : 0;
-      const totalNoteEvents = state.noteEvents ? state.noteEvents.length : 0;
-      const totalNoteEntries = state.noteEntries ? state.noteEntries.length : 0;
-      const totalItems = totalEvents + totalReceipts + totalPayouts + totalNoteEvents + totalNoteEntries;
-
-      if (totalItems === 0) {
-        if (typeof window.showToast === 'function') {
-          window.showToast('No entries found to sync to Drive.', 'info');
-        } else {
-          alert('No entries found to sync to Drive.');
-        }
-        return;
+      // 1c. Upload local payouts
+      for (let k = 0; k < localPayouts.length; k++) {
+        setSyncStatus(`Uploading Payout ${k + 1}/${localPayouts.length}...`);
+        try {
+          await syncToGas('savePayout', { payout: localPayouts[k] });
+        } catch (e) {}
+        await delay(80);
       }
 
-      // 2. Sync Events
-      if (state.events && state.events.length > 0) {
-        for (let i = 0; i < state.events.length; i++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Event ${i + 1}/${state.events.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('createEvent', { event: state.events[i] });
-          await delay(250);
-        }
+      // 1d. Upload note events & entries
+      for (let m = 0; m < localNoteEvents.length; m++) {
+        try {
+          await syncToGas('createNoteEvent', { noteEvent: localNoteEvents[m] });
+        } catch (e) {}
+        await delay(80);
       }
-
-      // 3. Sync Receipts (Creates HTML file in Drive & Appends row in Sheets)
-      if (state.receipts && state.receipts.length > 0) {
-        for (let j = 0; j < state.receipts.length; j++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Receipt ${j + 1}/${state.receipts.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('saveReceipt', { receipt: state.receipts[j] });
-          await delay(250);
-        }
-      }
-
-      // 4. Sync Payouts
-      if (state.payouts && state.payouts.length > 0) {
-        for (let k = 0; k < state.payouts.length; k++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Payout ${k + 1}/${state.payouts.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('savePayout', { payout: state.payouts[k] });
-          await delay(250);
-        }
-      }
-
-      // 5. Sync Note Events
-      if (state.noteEvents && state.noteEvents.length > 0) {
-        for (let m = 0; m < state.noteEvents.length; m++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Note Event ${m + 1}/${state.noteEvents.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('createNoteEvent', { noteEvent: state.noteEvents[m] });
-          await delay(250);
-        }
-      }
-
-      // 6. Sync Note Entries
-      if (state.noteEntries && state.noteEntries.length > 0) {
-        for (let n = 0; n < state.noteEntries.length; n++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Note Entry ${n + 1}/${state.noteEntries.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          const ne = state.noteEntries[n];
-          const activeNev = state.noteEvents.find(ev => ev.id === ne.noteEventId);
-          const nevName = activeNev ? activeNev.name : 'General';
+      for (let n = 0; n < localNoteEntries.length; n++) {
+        const ne = localNoteEntries[n];
+        const nev = localNoteEvents.find(ev => ev.id === ne.noteEventId);
+        const nevName = nev ? nev.name : 'General';
+        try {
           await saveNoteEntryFileToDrive(nevName, ne);
-          await delay(250);
+        } catch (e) {}
+        await delay(80);
+      }
+
+      // Step 2: Download latest database from Google Drive & Sheets
+      setSyncStatus('Downloading from Drive...');
+      const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getDb';
+      const res = await fetch(fetchUrl);
+      if (!res.ok) {
+        throw new Error('Failed to connect to Google Drive Web App (HTTP ' + res.status + ')');
+      }
+
+      const json = await res.json();
+      if (json.status !== 'success' || !json.data) {
+        throw new Error(json.message || 'Invalid response from Google Drive Web App');
+      }
+
+      const onlineData = json.data;
+      const deletedIdsSet = new Set((state.deletedEventIds || []).map(x => String(x).trim()));
+      const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
+
+      let addedEventsCount = 0;
+      let updatedEventsCount = 0;
+      let addedReceiptsCount = 0;
+      let addedPayoutsCount = 0;
+
+      // 2a. Merge Events
+      if (Array.isArray(onlineData.events)) {
+        onlineData.events.forEach(dev => {
+          const devId = String(dev.id || dev.eventid || dev['Event ID'] || '').trim();
+          const devPrimaryName = String(dev.memberName || dev.membername || dev['Member Name'] || '').trim();
+          const devName1 = String(dev.displayName1 || dev.membername1 || dev['Member Name 1'] || '').trim();
+          const devTitle = String(dev.eventTitle || dev.eventtitle || dev['Event Title'] || dev.eventName || dev.eventname || '').trim();
+          const devPlace = String(dev.place || dev['Place'] || '').trim();
+          const devPhone = String(dev.phone || dev['Phone'] || '').trim();
+          const devDate = String(dev.eventDate || dev.eventdate || dev['Event Date'] || '').trim();
+          const devBillNo = String(dev.billNo || dev.billno || dev['Bill No'] || '').trim();
+          const devUpi = String(dev.upiId || dev.upiid || dev['UPI ID'] || '').trim();
+          const devStatus = String(dev.status || dev['Status'] || 'pending').trim();
+          const devAssigned = String(dev.assignedUsername || dev.assigneduser || dev['Assigned User'] || '').trim();
+          const devFolder = String(dev.folderId || dev.drivefolderid || dev['Drive Folder ID'] || '').trim();
+
+          if (!devPrimaryName && !devName1 && !devTitle) return;
+
+          // Check if deleted
+          if (isEventDeletedInState(dev)) return;
+          if (devId && deletedIdsSet.has(devId)) return;
+          if (devPrimaryName && deletedNamesSet.has(devPrimaryName.toLowerCase().replace(/\s+/g, ' '))) return;
+          if (devName1 && deletedNamesSet.has(devName1.toLowerCase().replace(/\s+/g, ' '))) return;
+
+          const existing = state.events.find(ev => 
+            (devId && ev.id === devId) ||
+            (devPrimaryName && (ev.memberName || '').toLowerCase() === devPrimaryName.toLowerCase()) ||
+            (devName1 && (ev.displayName1 || '').toLowerCase() === devName1.toLowerCase())
+          );
+
+          if (existing) {
+            if (devPrimaryName && !existing.memberName) existing.memberName = devPrimaryName;
+            if (devName1 && !existing.displayName1) existing.displayName1 = devName1;
+            if (devTitle && !existing.eventTitle) existing.eventTitle = devTitle;
+            if (devPlace && !existing.place) existing.place = devPlace;
+            if (devPhone && !existing.phone) existing.phone = devPhone;
+            if (devDate && !existing.eventDate) existing.eventDate = devDate;
+            if (devBillNo && !existing.billNo) existing.billNo = devBillNo;
+            if (devUpi && !existing.upiId) existing.upiId = devUpi;
+            if (devFolder && !existing.folderId) existing.folderId = devFolder;
+            updatedEventsCount++;
+          } else {
+            state.events.push({
+              id: devId || ('ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+              memberName: devPrimaryName || devName1,
+              displayName1: devName1 || devPrimaryName,
+              eventTitle: devTitle || 'நிகழ்ச்சி',
+              eventName: devTitle || devPrimaryName || 'Event',
+              place: devPlace,
+              phone: devPhone,
+              eventDate: devDate || new Date().toISOString().split('T')[0],
+              billNo: devBillNo,
+              upiId: devUpi,
+              status: devStatus || 'pending',
+              assignedUsername: devAssigned,
+              folderId: devFolder
+            });
+            addedEventsCount++;
+          }
+        });
+      }
+
+      // 2b. Merge Receipts
+      if (Array.isArray(onlineData.receipts)) {
+        const activeEvList = state.events.filter(e => !isEventDeletedInState(e));
+        onlineData.receipts.forEach(drcpt => {
+          const bNo = String(drcpt.billNo || drcpt.billno || drcpt['Bill No'] || '').trim();
+          if (!bNo) return;
+          const rEvId = String(drcpt.eventId || drcpt.eventid || '').trim();
+          const rEvName = String(drcpt.eventName || drcpt.eventname || drcpt['Event Name'] || '').trim();
+
+          if (rEvId && deletedIdsSet.has(rEvId)) return;
+          if (rEvName && deletedNamesSet.has(rEvName.toLowerCase().replace(/\s+/g, ' '))) return;
+
+          const matchedEv = activeEvList.find(e => 
+            (rEvId && e.id === rEvId) ||
+            (rEvName && (
+              (e.memberName && e.memberName.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.displayName1 && e.displayName1.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.eventTitle && e.eventTitle.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.eventName && e.eventName.toLowerCase() === rEvName.toLowerCase())
+            ))
+          );
+
+          const targetEventId = matchedEv ? matchedEv.id : rEvId;
+          const targetEventName = matchedEv ? (matchedEv.memberName || matchedEv.displayName1 || matchedEv.eventName) : rEvName;
+
+          const exists = state.receipts.some(r => String(r.billNo).trim() === bNo && (!targetEventId || r.eventId === targetEventId));
+          if (!exists) {
+            state.receipts.push({
+              id: 'rcpt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              billNo: bNo,
+              eventId: targetEventId,
+              eventName: targetEventName,
+              place: drcpt.place || drcpt['Place'] || '',
+              initial: drcpt.initial || drcpt['Initial'] || '',
+              name: drcpt.name || drcpt['Name'] || '',
+              job: drcpt.job || drcpt['Job'] || '',
+              name1: drcpt.name1 || drcpt['Name 1'] || '',
+              relationship: drcpt.relationship || drcpt['Relationship'] || '',
+              mobile: drcpt.mobile || drcpt.mobilenumber || drcpt.phone || drcpt['Mobile Number'] || '',
+              amount: parseFloat(drcpt.amount || drcpt['Amount (₹)'] || 0),
+              amountWords: drcpt.amountWords || drcpt.amountwords || drcpt['Amount in Words'] || '',
+              mode: drcpt.mode || drcpt['Mode'] || 'Cash',
+              upiTxTime: drcpt.upiTxTime || drcpt.upitxtime || '',
+              createdBy: drcpt.createdBy || drcpt.createdby || 'admin',
+              date: drcpt.date || drcpt['Date'] || '',
+              time: drcpt.time || drcpt['Time'] || ''
+            });
+            addedReceiptsCount++;
+          }
+        });
+      }
+
+      // 2c. Merge Payouts
+      if (Array.isArray(onlineData.payouts)) {
+        onlineData.payouts.forEach(dpo => {
+          const poId = String(dpo.id || dpo.payoutid || '').trim();
+          if (!poId) return;
+          const exists = state.payouts.some(p => p.id === poId);
+          if (!exists) {
+            state.payouts.push({
+              id: poId,
+              eventId: dpo.eventId || dpo.eventid || '',
+              eventName: dpo.eventName || dpo.eventname || '',
+              category: dpo.category || 'General',
+              description: dpo.description || '',
+              amount: parseFloat(dpo.amount || 0),
+              paidTo: dpo.paidTo || dpo.paidto || '',
+              paymentMode: dpo.paymentMode || dpo.paymentmode || 'Cash',
+              createdBy: dpo.createdBy || dpo.createdby || 'admin',
+              date: dpo.date || '',
+              time: dpo.time || ''
+            });
+            addedPayoutsCount++;
+          }
+        });
+      }
+
+      // 2d. Merge Users
+      if (Array.isArray(onlineData.users)) {
+        onlineData.users.forEach(du => {
+          const uName = String(du.username || du['Username'] || '').trim().toLowerCase();
+          if (!uName) return;
+          const exists = state.users.find(u => (u.username || '').toLowerCase() === uName);
+          if (!exists) {
+            state.users.push({
+              id: du.id || du.userid || du['User ID'] || ('usr_' + Date.now()),
+              username: du.username || du['Username'],
+              password: du.password || du['Password'] || '1234',
+              role: du.role || du['Role'] || 'user',
+              assignedEventId: du.assignedEventId || du.assignedeventid || du['Assigned Event ID'] || '',
+              startingBillNo: du.startingBillNo || du.setbillno || du['Set Bill No'] || ''
+            });
+          }
+        });
+      }
+
+      // Ensure local server creates backup folders
+      if (state.hasLocalServer !== false) {
+        for (const ev of state.events) {
+          try {
+            await fetch('/api/events/ensure-folder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                eventName: ev.eventName,
+                displayName1: ev.displayName1,
+                memberName: ev.memberName
+              })
+            });
+          } catch (e) {}
         }
       }
 
-      if (typeof window.showToast === 'function') {
-        window.showToast(`Successfully synced ${totalItems} item(s) to Google Drive & Sheets!`, 'success');
+      // Save merged database state locally
+      await saveDb();
+
+      // Step 3: Refresh UI
+      if (state.currentUser) {
+        renderApp();
       } else {
-        alert(`Successfully synced ${totalItems} item(s) to Google Drive & Sheets!`);
+        const container = document.getElementById('login-drive-events-container');
+        if (container && typeof renderLoginDriveEventsList === 'function') {
+          container.innerHTML = renderLoginDriveEventsList();
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+
+      const activeTotalEvents = state.events.filter(e => !isEventDeletedInState(e)).length;
+      const successMsg = `Google Drive Sync Completed! Active Event Masters: ${activeTotalEvents} (${addedEventsCount} new). Total Receipts: ${state.receipts.length}.`;
+      if (typeof window.showToast === 'function') {
+        window.showToast(successMsg, 'success');
+      } else {
+        alert(`✅ Google Drive Sync Completed Successfully!\n\n• Active Event Masters: ${activeTotalEvents} (${addedEventsCount} new downloaded)\n• Receipts: ${state.receipts.length} (${addedReceiptsCount} new downloaded)\n• Payouts: ${state.payouts.length}\n\nGoogle Drive, Sheets, and local storage are fully synced!`);
       }
     } catch (err) {
       console.error('Error during Google Drive sync:', err);
+      const errMsg = 'Google Drive Sync Notice: ' + err.message;
       if (typeof window.showToast === 'function') {
-        window.showToast('Sync completed with warnings or offline status.', 'warning');
+        window.showToast(errMsg, 'error');
+      } else {
+        alert(errMsg);
       }
     } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
-        if (window.lucide) lucide.createIcons();
+      if (headerBtn) {
+        headerBtn.disabled = false;
+        headerBtn.innerHTML = originalHeaderHtml;
       }
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = originalLoginHtml;
+      }
+      if (activeBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
+        activeBtn.disabled = false;
+        activeBtn.innerHTML = originalActiveHtml;
+      }
+      if (window.lucide) window.lucide.createIcons();
     }
   };
 
@@ -5004,7 +5210,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -5023,26 +5229,34 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 </body>
 </html>`;
 
-    // Chromebook / Browser File System Access API hierarchy backup (<Event Master>/<User>/<Bill No>.html)
+    // Local / Chromebook / Online File System Access API backup (<Event Master>/<Bill No>.html)
+    const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
     if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
       try {
-        const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
         const safeEventFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
         const safeUserFolder = String(receiptData.createdBy || (state.currentUser && state.currentUser.username) || 'admin').replace(/[\\/:*?"<>|]/g, '_').trim() || 'admin';
-        const safeBillFile = `${String(receiptData.billNo || 'Receipt').replace(/[\\/:*?"<>|]/g, '_').trim()}.html`;
+        const safeBillFile = `Receipt_${String(receiptData.billNo || 'Receipt').replace(/[\\/:*?"<>|]/g, '_').trim()}_${String(receiptData.name || 'Moi').replace(/[\\/:*?"<>|]/g, '_').trim()}.html`;
         const evDir = await state.localSaveDirHandle.getDirectoryHandle(safeEventFolder, { create: true });
-        const usrDir = await evDir.getDirectoryHandle(safeUserFolder, { create: true });
-        const fHandle = await usrDir.getFileHandle(safeBillFile, { create: true });
+        
+        // Write directly inside the Event Master folder
+        const fHandle = await evDir.getFileHandle(safeBillFile, { create: true });
         const w = await fHandle.createWritable();
         await w.write(receiptHtml);
         await w.close();
+
+        // Also write inside user subfolder
+        const usrDir = await evDir.getDirectoryHandle(safeUserFolder, { create: true });
+        const usrFileHandle = await usrDir.getFileHandle(safeBillFile, { create: true });
+        const wUser = await usrFileHandle.createWritable();
+        await wUser.write(receiptHtml);
+        await wUser.close();
       } catch (fsErr) {
-        console.warn('Chromebook folder hierarchy save notice:', fsErr);
+        console.warn('Local disk folder hierarchy save notice:', fsErr);
       }
     }
 
     // Sync receipt HTML & row to Google Apps Script (Google Drive)
-    await syncToGas('saveReceipt', { eventName: majorName, receipt: receiptData, receiptHtml });
+    await syncToGas('saveReceipt', { eventName: folderTitle, receipt: receiptData, receiptHtml });
   }
 
   // Role Access Helpers
@@ -5451,76 +5665,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     }
   }
 
-  // Sync All Offline Data to Google Drive & Google Sheets
-  window.appSyncAllToDrive = async function () {
-    const gasUrl = getGasUrl();
-    if (!gasUrl) {
-      alert("Google Drive Backup Web App URL not configured!\n\nPlease click 'Cloud Settings' and paste your Google Apps Script Web App URL first.");
-      window.appOpenGasSettingsModal();
-      return;
-    }
 
-    if (!navigator.onLine) {
-      alert("Offline Mode Notice:\n\nYour internet connection is currently offline. Please connect to the internet and click 'Sync Drive' again to upload your offline entries to Google Drive.");
-      return;
-    }
-
-    const syncBtn = document.getElementById('btn-sync-drive');
-    const originalContent = syncBtn ? syncBtn.innerHTML : '';
-
-    const setSyncStatus = (msg) => {
-      if (syncBtn) {
-        syncBtn.disabled = true;
-        syncBtn.innerHTML = `
-          <i data-lucide="loader-2" class="w-4 h-4 text-emerald-400 animate-spin"></i>
-          <span class="hidden sm:inline">${msg}</span>
-        `;
-        if (window.lucide) window.lucide.createIcons();
-      }
-    };
-
-    setSyncStatus("Starting Sync...");
-
-    try {
-      const events = state.events || [];
-      const receipts = state.receipts || [];
-      const payouts = state.payouts || [];
-
-      // 1. Sync Events first to ensure Google Drive folders exist
-      for (let i = 0; i < events.length; i++) {
-        setSyncStatus(`Syncing Event ${i + 1}/${events.length}...`);
-        await syncToGas('createEvent', { event: events[i] });
-      }
-
-      // 2. Sync Receipts (creates rows in Sheets + HTML files in Drive)
-      for (let j = 0; j < receipts.length; j++) {
-        setSyncStatus(`Syncing Receipt ${j + 1}/${receipts.length}...`);
-        const rcpt = receipts[j];
-        const ev = events.find(e => e.id === rcpt.eventId);
-        await syncToGas('saveReceipt', { receipt: rcpt });
-        saveReceiptFileToDrive(ev ? ev.memberName : '', rcpt).catch(() => {});
-      }
-
-      // 3. Sync Payouts
-      for (let k = 0; k < payouts.length; k++) {
-        setSyncStatus(`Syncing Payout ${k + 1}/${payouts.length}...`);
-        await syncToGas('savePayout', { payout: payouts[k] });
-      }
-
-      // Save database state
-      await saveDb();
-
-      alert(`✅ Google Drive Sync Completed Successfully!\n\nAll offline entries have been uploaded to Google Drive & Sheets:\n• ${events.length} Event Folder(s)\n• ${receipts.length} Saved Receipt File(s) (.html)\n• ${payouts.length} Payout Expense Entry(ies)\n\nGoogle Sheets and Google Drive folders (moi ➔ Backup) are up-to-date!`);
-    } catch (err) {
-      alert('Notice syncing to Google Drive: ' + err.message);
-    } finally {
-      if (syncBtn) {
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = originalContent;
-        if (window.lucide) window.lucide.createIcons();
-      }
-    }
-  };
 
   // ==========================================
   // CLOUD SETTINGS PANEL
@@ -5661,13 +5806,13 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
   };
 
   // ==========================================
-  // 1. LOGIN PANEL
+  // 1. LOGIN PANEL & DRIVE EVENTS DISPLAY
   // ==========================================
   function renderLoginPanel() {
     const isLight = state.currentTheme === 'light';
     return `
-      <div class="flex items-center justify-center min-h-[80vh]">
-        <div class="glass-card w-full max-w-md p-8 relative overflow-hidden">
+      <div class="flex items-center justify-center min-h-[85vh] py-6">
+        <div class="glass-card w-full max-w-md p-8 relative overflow-hidden shadow-2xl">
           <div class="absolute -top-10 -right-10 w-40 h-40 crimson-gradient-bg rounded-full blur-3xl opacity-40"></div>
 
           <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-700/40">
@@ -5678,7 +5823,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             </button>
           </div>
 
-          <div class="text-center mb-8">
+          <div class="text-center mb-6">
             <div class="flex items-center justify-center gap-3 mb-2">
               <img src="${getWebsiteLogoDataUri()}" alt="ஆதி மொய் Logo" class="w-14 h-14 rounded-full object-contain border-2 border-amber-400 shadow-xl bg-white flex-shrink-0" />
               <h2 class="text-3xl font-extrabold gold-gradient-text">ஆதி மொய்</h2>
@@ -5687,20 +5832,20 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <p class="text-xs font-semibold text-amber-400/90 mt-0.5">Group of Perumu</p>
           </div>
 
-          <form id="login-form" class="space-y-5">
+          <form id="login-form" class="space-y-4">
             <div id="login-error" class="hidden p-3 rounded-lg bg-rose-900/40 border border-rose-700/50 text-rose-300 text-xs font-medium"></div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-2">Username</label>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Username</label>
               <input type="text" id="login-username" class="input-styled" placeholder="Enter Username" required>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-2">Password</label>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
               <input type="password" id="login-password" class="input-styled" placeholder="Enter Password" required>
             </div>
 
-            <button type="submit" class="gold-button w-full py-3 rounded-xl text-sm uppercase tracking-wider font-bold">
+            <button type="submit" class="gold-button w-full py-3 rounded-xl text-sm uppercase tracking-wider font-bold shadow-lg">
               Login
             </button>
           </form>
@@ -6466,22 +6611,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             if (devName && deletedNamesSet.has(devName.toLowerCase().replace(/\s+/g, ' ').trim())) return;
             if (devName1 && deletedNamesSet.has(devName1.toLowerCase().replace(/\s+/g, ' ').trim())) return;
             if (fullCombined && deletedNamesSet.has(fullCombined)) return;
-            if (deletedBeforeTs > 0) {
-              const idMatch = devId.match(/^ev_(\d+)/);
-              const evTs = idMatch ? parseInt(idMatch[1], 10) : (dev.createdAt ? new Date(dev.createdAt).getTime() : 0);
-              if (!evTs || evTs <= deletedBeforeTs) return;
-            }
 
-            // If Google Drive Desktop is mounted on this PC, only allow importing events whose folder actually exists in Google Drive Backup
-            if (hasGoogleDrive) {
-              const candNames = [
-                fullCombined,
-                devName.toLowerCase().replace(/\s+/g, ' ').trim(),
-                devName1.toLowerCase().replace(/\s+/g, ' ').trim()
-              ].filter(Boolean);
-              const folderExistsInDrive = candNames.some(c => driveFoldersLower.has(c));
-              if (!folderExistsInDrive) return;
-            }
 
             const existing = state.events.find(ev => 
               (devId && ev.id === devId) || 
@@ -9138,7 +9268,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             ${getThermalLogoSvgHtml()}
             <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
           </div>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</p>
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
@@ -9600,7 +9730,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <h2 style="font-size: 15pt; font-weight: bold; margin: 0; color: #000;">ஆதி மொய்</h2>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</p>
           ${majorName ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${majorName}</h3>` : ''}
           ${name1 ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${name1}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10pt; font-weight: 900; margin: 1px 0; color: #000;">${evTitle}</p>` : ''}
@@ -9930,7 +10060,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)';
     const eventHeader = (eventObj && eventObj.displayName1) || rcpt.displayName1 
       ? `${(eventObj && eventObj.displayName1) || rcpt.displayName1}${eventObj && eventObj.memberName ? ' - ' + eventObj.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (eventObj ? eventObj.memberName : (rcpt.memberName || ''));
@@ -10114,7 +10244,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     // Header Subtitle
     ctx.fillStyle = '#fecaca';
     ctx.font = 'bold 13px "Mukta Malar", "Nirmala UI", sans-serif';
-    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)', width / 2, 62);
+    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)', width / 2, 62);
 
     // Event Title & Place
     const evTitle = (ev && ev.displayName1) ? (ev.displayName1 + (ev.memberName ? ' - ' + ev.memberName : '')) : ((ev && ev.memberName) || (rcpt && rcpt.displayName1) || 'Aathi Moi Event');
@@ -10508,7 +10638,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)';
     const eventHeader = (ev && ev.displayName1) || rcpt.displayName1 
       ? `${(ev && ev.displayName1) || rcpt.displayName1}${ev && ev.memberName ? ' - ' + ev.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (ev ? ev.memberName : (rcpt.memberName || ''));
@@ -10815,6 +10945,17 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
         await syncActiveEventReceiptsToLocalFolder();
 
+        // 1. In Google Drive, ensure Event Master folder exists in Backup folder
+        const activeEv = state.activeEventId ? state.events.find(e => e.id === state.activeEventId) : (state.events && state.events[0]);
+        if (activeEv) {
+          try {
+            await syncToGas('createEvent', { event: activeEv });
+          } catch (evGasErr) {
+            console.warn('GAS createEvent on local folder select error:', evGasErr);
+          }
+        }
+
+        // 2. Save active event receipts into local Event Master folder and sync to Google Drive
         const activeReceipts = state.activeEventId
           ? state.receipts.filter(r => r.eventId === state.activeEventId)
           : state.receipts;
@@ -10823,7 +10964,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
         }
 
         if (typeof window.showToast === 'function') {
-          window.showToast(`✓ Selected local folder: "${dirHandle.name}". Receipts are automatically saved here!`, 'success');
+          window.showToast(`✓ Selected local folder: "${dirHandle.name}". Event folder created & receipts backed up to Google Drive!`, 'success');
         }
         renderApp();
       } catch (err) {
@@ -10856,16 +10997,12 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     try {
       const ev = state.events.find(e => e.id === rcpt.eventId);
       const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
-      const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
+      const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : (ev && ev.displayName1 ? (ev.memberName || '') : '');
       const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
+      const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
+      const safeEventFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
 
-      // If browser directory handle is active, also write directly via FileSystemDirectoryHandle
-      if (state.localSaveDirHandle) {
-        const fileName = `Receipt_${rcpt.billNo || '0'}_${rcpt.name || 'Moi'}.html`.replace(/[\\/:*?"<>|]/g, '_');
-        const fileHandle = await state.localSaveDirHandle.getFileHandle(fileName, { create: true });
-        const writable = await fileHandle.createWritable();
-
-        const htmlContent = `<!DOCTYPE html>
+      const htmlContent = `<!DOCTYPE html>
 <html lang="ta">
 <head>
   <meta charset="UTF-8">
@@ -10888,7 +11025,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -10908,12 +11045,25 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 </body>
 </html>`;
 
+      // 1. If browser directory handle is active, write into Event Master subfolder
+      if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
+        const eventDirHandle = await state.localSaveDirHandle.getDirectoryHandle(safeEventFolder, { create: true });
+        const fileName = `Receipt_${rcpt.billNo || '0'}_${rcpt.name || 'Moi'}.html`.replace(/[\\/:*?"<>|]/g, '_');
+        const fileHandle = await eventDirHandle.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
         await writable.write(htmlContent);
         await writable.close();
       }
 
+      // 2. Also ensure receipt is synced to Google Drive in the Event Master folder!
+      try {
+        await saveReceiptFileToDrive(folderTitle, rcpt);
+      } catch (driveErr) {
+        console.warn('Sync receipt to Google Drive notice:', driveErr);
+      }
+
       if (!silent && typeof window.showToast === 'function') {
-        window.showToast(`✓ Saved #${rcpt.billNo} into local folder "${folderLabel || state.localSaveFolderPath}"`, 'success');
+        window.showToast(`✓ Saved #${rcpt.billNo} into local folder "${folderLabel || state.localSaveFolderPath}" & synced to Google Drive`, 'success');
       }
     } catch (err) {
       console.warn('Auto-save to chosen local folder error:', err);
@@ -10966,7 +11116,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -12876,7 +13026,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                 <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
                 <h1 style="font-size: 20pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
               </div>
-              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (98656 07179)</div>
               <h2 style="font-size: 14pt; font-weight: bold; color: #0F172A; margin: 4px 0 2px 0;">
                 ${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}
               </h2>
@@ -14705,7 +14855,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <h1 style="font-size: 22pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
           </div>
-          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
+          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (98656 07179)</div>
           <h2 style="font-size: 15pt; font-weight: bold; color: #0F172A; margin: 6px 0 2px 0;">${activeNoteEv.name} (${activeNoteEv.place})</h2>
           <div style="font-size: 10.5pt; font-weight: bold; color: #334155; margin-top: 4px;">
             <span>தேதி: ${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' ? ` &nbsp;|&nbsp; <span>ஊர்: ${selectedPlace}</span>` : ''}

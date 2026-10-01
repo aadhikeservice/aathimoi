@@ -296,6 +296,7 @@ function saveReceiptToUserLocalFolder(receiptData, localSaveFolderPath, localSav
 
     const majorName = receiptData.displayName1 || receiptData.memberName || receiptData.eventName || 'Event';
     const name1 = receiptData.displayName1 ? (receiptData.memberName || '') : '';
+    const eventTitle = receiptData.eventTitle || '';
     const htmlFileName = `Receipt_${receiptData.billNo || '0'}_${receiptData.name || 'Moi'}.html`.replace(/[\\/:*?"<>|]/g, '_');
     const htmlFilePath = path.join(targetDir, htmlFileName);
 
@@ -322,11 +323,12 @@ function saveReceiptToUserLocalFolder(receiptData, localSaveFolderPath, localSav
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
+    ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${receiptData.initial ? receiptData.initial + '. ' : ''}${receiptData.name || ''}${receiptData.job ? ' - ' + receiptData.job : ''}${receiptData.name1 ? ' ' + receiptData.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${receiptData.place || ''}</span></div>
     ${receiptData.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${receiptData.relationship}</span></div>` : ''}
@@ -409,10 +411,12 @@ function saveSingleReceiptToBackup(receiptData) {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
+    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
+    ${receiptData.eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${receiptData.eventTitle}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${receiptData.initial ? receiptData.initial + '. ' : ''}${receiptData.name || ''}${receiptData.job ? ' - ' + receiptData.job : ''}${receiptData.name1 ? ' ' + receiptData.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${receiptData.place || ''}</span></div>
     <div class="row"><span class="bold">உறவு:</span> <span>${receiptData.relationship || '-'}</span></div>
@@ -496,7 +500,7 @@ function saveSinglePayoutToBackup(payoutData) {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="sub">கருணாக்கமுத்தன்பட்டி (+91 9865607179)</div>
+    <div class="sub">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="title-banner">பட்டுவாடா ரசீது (Payout Receipt)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${String(payoutData.id || '').replace(/^payout_/, '')}</span></div>
     <div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>${payoutData.createdBy || 'admin'}</span></div>
@@ -986,10 +990,12 @@ const server = http.createServer((req, res) => {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
+    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
+    ${receiptData.eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${receiptData.eventTitle}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${receiptData.initial ? receiptData.initial + '. ' : ''}${receiptData.name}${receiptData.job ? ' - ' + receiptData.job : ''}${receiptData.name1 ? ' ' + receiptData.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${receiptData.place}</span></div>
     <div class="row"><span class="bold">உறவு:</span> <span>${receiptData.relationship || '-'}</span></div>

@@ -972,7 +972,7 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179)</div>
+          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
           <div class="header-divider"></div>
           ${cfg.eventTitle ? `<div class="ev-title">${toSearchableUnicode(cfg.eventTitle)}</div>` : ''}
           ${cfg.eventSubtitle ? `<div class="ev-meta">${toSearchableUnicode(cfg.eventSubtitle)}</div>` : ''}
@@ -983,7 +983,7 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179)</div>
+          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
         </div>
       `;
 
@@ -1334,7 +1334,7 @@
               <span>${toSearchableUnicode('ஆதி மொய்')}</span>
             </div>
             <div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')}</div>
-            <div style="font-size: 14.5pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">+91-9865607179</div>
+            <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">+91 9865607179, 99946 96900, 79041 43508</div>
           </div>
         </div>
 
@@ -1419,8 +1419,8 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <h1 style="font-size: 22pt; font-weight: 900; color: #8B0000; margin: 0; line-height: 1.15;">${toSearchableUnicode('ஆதி மொய்')}</h1>
           </div>
-          <div style="font-size: 11.5pt; font-weight: 800; color: #8B0000; margin-top: 3px;">
-            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179)
+          <div style="font-size: 11pt; font-weight: 800; color: #8B0000; margin-top: 3px;">
+            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)
           </div>
           <h2 style="font-size: 15pt; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
             ${toSearchableUnicode(hostHeader)}
@@ -1794,8 +1794,8 @@
             <div style="font-size: 12pt; font-weight: 800; color: #000; margin-bottom: 2px;">
               ${toSearchableUnicode('எங்களை தொடர்புகொள்ள')}
             </div>
-            <div style="font-size: 13pt; font-weight: 900; letter-spacing: 0.5px; color: #000;">
-              (+91 9865607179)
+            <div style="font-size: 12pt; font-weight: 900; letter-spacing: 0.5px; color: #000;">
+              (+91 9865607179, 99946 96900, 79041 43508)
             </div>
           </div>
         </div>
@@ -3080,7 +3080,7 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -7189,6 +7189,13 @@
   function printThermalReceipt(rcpt, ev, singleCopy = false, onAfterPrintCallback = null, waUrl = null) {
     if (!rcpt) return;
 
+    const activeEv = ev || (state.events ? state.events.find(e => e.id === rcpt.eventId) : null);
+    const disp1 = (activeEv && activeEv.displayName1) || rcpt.displayName1 || '';
+    const memName = activeEv ? activeEv.memberName : (rcpt.memberName || '');
+    const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
+    const evTitle = (activeEv && activeEv.eventTitle) || rcpt.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
+    const evPlace = (activeEv && activeEv.place) || rcpt.eventPlace || '';
+
     // First Copy (Customer Copy - Page 1)
     const copy1Html = `
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
@@ -7197,10 +7204,11 @@
             ${getThermalLogoSvgHtml()}
             <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
           </div>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179)</p>
-          ${((ev && ev.displayName1) || rcpt.displayName1) ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${(ev && ev.displayName1) || rcpt.displayName1}</h3>` : ''}
-          <h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${ev ? ev.memberName : (rcpt.memberName || '')}</h4>
-          <p style="font-size: 9pt; font-weight: bold; margin: 0; color: #000;">${ev ? ev.place : (rcpt.place || '')}</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</p>
+          ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
+          ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
+          ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
+          ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2;">${evPlace}</p>` : ''}
         </div>
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px;">
@@ -7645,9 +7653,12 @@
   function printPayoutThermalReceipt(payout, ev) {
     if (!payout) return;
 
-    const majorName = (ev && ev.displayName1) || payout.displayName1 || (ev && ev.memberName) || payout.memberName || (ev && ev.eventName) || '';
-    const name1 = (ev && ev.displayName1) ? ((ev && ev.memberName) || payout.memberName || '') : '';
-    const evPlace = (ev && ev.place) || payout.place || '';
+    const activeEv = ev || (state.events ? state.events.find(e => e.id === payout.eventId) : null);
+    const majorName = (activeEv && activeEv.displayName1) || payout.displayName1 || (activeEv && activeEv.memberName) || payout.memberName || (activeEv && activeEv.eventName) || '';
+    const name1 = (activeEv && activeEv.displayName1) ? ((activeEv && activeEv.memberName) || payout.memberName || '') : '';
+    const candidateCombined = [majorName, name1].filter(Boolean).join(' - ');
+    const evTitle = (activeEv && activeEv.eventTitle) || payout.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== majorName && activeEv.eventName !== name1 && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
+    const evPlace = (activeEv && activeEv.place) || payout.place || '';
     const payoutWords = window.TamilWords ? window.TamilWords.amountToTamilWords(payout.amount) : (payout.amount + ' ரூபாய் மட்டுமே');
     const voucherNo = payout.id ? String(payout.id).replace(/^payout_/, '') : '';
 
@@ -7655,9 +7666,10 @@
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <h2 style="font-size: 15pt; font-weight: bold; margin: 0; color: #000;">ஆதி மொய்</h2>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</p>
           ${majorName ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${majorName}</h3>` : ''}
           ${name1 ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${name1}</h4>` : ''}
+          ${evTitle ? `<p style="font-size: 10pt; font-weight: 900; margin: 1px 0; color: #000;">${evTitle}</p>` : ''}
           ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 0; color: #000;">${evPlace}</p>` : ''}
         </div>
 
@@ -7978,17 +7990,18 @@
     const eventObj = ev || (state.events ? state.events.find(e => e.id === rcpt.eventId) : null) || {
       memberName: rcpt.memberName || '',
       displayName1: rcpt.displayName1 || '',
-      place: rcpt.place || '',
-      eventName: rcpt.eventName || ''
+      place: rcpt.eventPlace || rcpt.place || '',
+      eventName: rcpt.eventName || '',
+      eventTitle: rcpt.eventTitle || ''
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)';
     const eventHeader = (eventObj && eventObj.displayName1) || rcpt.displayName1 
       ? `${(eventObj && eventObj.displayName1) || rcpt.displayName1}${eventObj && eventObj.memberName ? ' - ' + eventObj.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (eventObj ? eventObj.memberName : (rcpt.memberName || ''));
-    const eventPlace = (eventObj && eventObj.place) || rcpt.place || '';
-    const eventTitle = (eventObj && eventObj.eventName) || rcpt.eventName || '';
+    const eventPlace = (eventObj && eventObj.place) || rcpt.eventPlace || '';
+    const eventTitle = (eventObj && eventObj.eventTitle) || rcpt.eventTitle || (eventObj && eventObj.eventName && eventObj.eventName !== eventHeader ? eventObj.eventName : '');
     const donorName = `${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}`;
 
     return [
@@ -8167,7 +8180,7 @@
     // Header Subtitle
     ctx.fillStyle = '#fecaca';
     ctx.font = 'bold 13px "Mukta Malar", "Nirmala UI", sans-serif';
-    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179)', width / 2, 62);
+    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)', width / 2, 62);
 
     // Event Title & Place
     const evTitle = (ev && ev.displayName1) ? (ev.displayName1 + (ev.memberName ? ' - ' + ev.memberName : '')) : ((ev && ev.memberName) || (rcpt && rcpt.displayName1) || 'Aathi Moi Event');
@@ -8175,11 +8188,13 @@
     ctx.font = 'bold 17px "Mukta Malar", "Nirmala UI", sans-serif';
     ctx.fillText(fitText(ctx, evTitle, width - 40), width / 2, 92);
 
-    const evPlace = (ev && ev.place) || (rcpt && rcpt.place) || '';
-    if (evPlace) {
+    const specificEvTitle = (ev && ev.eventTitle) || rcpt.eventTitle || '';
+    const evPlace = (ev && ev.place) || rcpt.eventPlace || (rcpt && rcpt.place) || '';
+    const evSubLine = [specificEvTitle, evPlace].filter(Boolean).join(' | ');
+    if (evSubLine) {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 13px "Mukta Malar", "Nirmala UI", sans-serif';
-      ctx.fillText(evPlace, width / 2, 114);
+      ctx.fillText(evSubLine, width / 2, 114);
     }
 
     // Gold divider
@@ -8373,6 +8388,8 @@
         displayName1: activeEv.displayName1 || '',
         eventName: activeEv.eventName,
         memberName: activeEv.memberName,
+        eventTitle: activeEv.eventTitle || '',
+        eventPlace: activeEv.place || '',
         place,
         initial,
         name,
@@ -8551,17 +8568,18 @@
     const ev = state.events.find(e => e.id === rcpt.eventId) || {
       memberName: rcpt.memberName || '',
       displayName1: rcpt.displayName1 || '',
-      place: rcpt.place || '',
-      eventName: rcpt.eventName || ''
+      place: rcpt.eventPlace || rcpt.place || '',
+      eventName: rcpt.eventName || '',
+      eventTitle: rcpt.eventTitle || ''
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (+91 9865607179, 99946 96900, 79041 43508)';
     const eventHeader = (ev && ev.displayName1) || rcpt.displayName1 
       ? `${(ev && ev.displayName1) || rcpt.displayName1}${ev && ev.memberName ? ' - ' + ev.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (ev ? ev.memberName : (rcpt.memberName || ''));
-    const eventPlace = (ev && ev.place) || rcpt.place || '';
-    const eventTitle = (ev && ev.eventName) || rcpt.eventName || '';
+    const eventPlace = (ev && ev.place) || rcpt.eventPlace || '';
+    const eventTitle = (ev && ev.eventTitle) || rcpt.eventTitle || (ev && ev.eventName && ev.eventName !== eventHeader ? ev.eventName : '');
     
     const donorName = `${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}`;
 
@@ -8905,6 +8923,7 @@
       const ev = state.events.find(e => e.id === rcpt.eventId);
       const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
       const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
+      const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
 
       // If browser directory handle is active, also write directly via FileSystemDirectoryHandle
       if (state.localSaveDirHandle) {
@@ -8935,11 +8954,12 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
+    ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name || ''}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${rcpt.place || ''}</span></div>
     ${rcpt.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
@@ -8987,6 +9007,7 @@
     const ev = state.events.find(e => e.id === rcpt.eventId);
     const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
+    const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
 
     const htmlContent = `<!DOCTYPE html>
 <html lang="ta">
@@ -9011,11 +9032,12 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (+91 9865607179, 99946 96900, 79041 43508)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
+    ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name || ''}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${rcpt.place || ''}</span></div>
     ${rcpt.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
@@ -10905,7 +10927,7 @@
                 <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
                 <h1 style="font-size: 20pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
               </div>
-              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179)</div>
+              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
               <h2 style="font-size: 14pt; font-weight: bold; color: #0F172A; margin: 4px 0 2px 0;">
                 ${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}
               </h2>
@@ -12730,7 +12752,7 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <h1 style="font-size: 22pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
           </div>
-          <div style="font-size: 11.5pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179)</div>
+          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (+91 9865607179, 99946 96900, 79041 43508)</div>
           <h2 style="font-size: 15pt; font-weight: bold; color: #0F172A; margin: 6px 0 2px 0;">${activeNoteEv.name} (${activeNoteEv.place})</h2>
           <div style="font-size: 10.5pt; font-weight: bold; color: #334155; margin-top: 4px;">
             <span>தேதி: ${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' ? ` &nbsp;|&nbsp; <span>ஊர்: ${selectedPlace}</span>` : ''}

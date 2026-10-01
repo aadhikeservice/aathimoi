@@ -2371,10 +2371,10 @@
   function isEventDeletedInState(ev) {
     if (!ev) return true;
     const evId = String(ev.id || ev.eventid || ev['Event ID'] || '').trim();
-    const d1 = String(ev.displayName1 || ev.membername || ev['Member Name'] || '').trim();
-    const m1 = String(ev.memberName || ev.membername1 || ev['Member Name 1'] || '').trim();
-    const eName = String(ev.eventName || '').trim();
-    if (!d1 && !m1 && !eName) return true;
+    const primaryName = String(ev.memberName || ev.membername || ev['Member Name'] || '').trim();
+    const name1 = String(ev.displayName1 || ev.membername1 || ev['Member Name 1'] || '').trim();
+    const eName = String(ev.eventName || ev.eventTitle || ev.eventtitle || '').trim();
+    if (!primaryName && !name1 && !eName) return true;
 
     const deletedIds = state.deletedEventIds || [];
     if (evId && deletedIds.includes(evId)) return true;
@@ -2382,20 +2382,13 @@
     const deletedNames = (state.deletedEventNames || []).map(x => String(x).toLowerCase().replace(/\s+/g, ' ').trim());
     const candidates = [
       eName,
-      d1,
-      m1,
-      (d1 && m1 && d1 !== m1) ? `${d1} - ${m1}` : ''
+      primaryName,
+      name1,
+      (primaryName && name1 && primaryName !== name1) ? `${primaryName} - ${name1}` : '',
+      (name1 && primaryName && name1 !== primaryName) ? `${name1} - ${primaryName}` : ''
     ].map(s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean);
     if (candidates.some(c => deletedNames.includes(c))) return true;
 
-    if (state.deletedAllBefore) {
-      const cutoffTs = new Date(state.deletedAllBefore).getTime();
-      if (!isNaN(cutoffTs) && cutoffTs > 0) {
-        const idMatch = evId.match(/^ev_(\d+)/);
-        const evTs = idMatch ? parseInt(idMatch[1], 10) : (ev.createdAt ? new Date(ev.createdAt).getTime() : 0);
-        if (!evTs || evTs <= cutoffTs) return true;
-      }
-    }
     return false;
   }
 
@@ -2694,131 +2687,344 @@
 
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  window.appSyncAllToDrive = async function () {
+  window.appSyncAllToDrive = async function (triggerBtn) {
     const gasUrl = getGasUrl();
     if (!gasUrl) {
-      if (typeof window.showToast === 'function') {
-        window.showToast('Please configure Google Apps Script Web App URL in Cloud Settings', 'error');
-      } else {
-        alert('Please configure Google Apps Script Web App URL in Cloud Settings');
-      }
-      window.appOpenGasSettingsModal();
+      const msg = 'Please configure Google Apps Script Web App URL in Cloud Settings';
+      if (typeof window.showToast === 'function') window.showToast(msg, 'error');
+      else alert(msg);
+      if (typeof window.appOpenGasSettingsModal === 'function') window.appOpenGasSettingsModal();
       return;
     }
 
-    const btn = document.getElementById('btn-sync-drive');
-    const originalContent = btn ? btn.innerHTML : '';
+    if (!navigator.onLine) {
+      const offMsg = 'Offline Mode Notice: You are currently offline. Please connect to the internet to sync with Google Drive.';
+      if (typeof window.showToast === 'function') window.showToast(offMsg, 'warning');
+      else alert(offMsg);
+      return;
+    }
+
+    const headerBtn = document.getElementById('btn-sync-drive');
+    const loginBtn = document.getElementById('btn-login-sync');
+    const activeBtn = triggerBtn || headerBtn || loginBtn;
+
+    const originalHeaderHtml = headerBtn ? headerBtn.innerHTML : '';
+    const originalLoginHtml = loginBtn ? loginBtn.innerHTML : '';
+    const originalActiveHtml = activeBtn ? activeBtn.innerHTML : '';
+
+    const setSyncStatus = (msg) => {
+      if (headerBtn) {
+        headerBtn.disabled = true;
+        headerBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">${msg}</span>`;
+      }
+      if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span>${msg}</span>`;
+      }
+      if (activeBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
+        activeBtn.disabled = true;
+        activeBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span>${msg}</span>`;
+      }
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    setSyncStatus('Starting Sync...');
 
     try {
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Scanning Local...</span>`;
-        if (window.lucide) lucide.createIcons();
+      // Step 1: Upload offline/local items to Google Drive & Sheets
+      const localEvents = (state.events || []).filter(e => !isEventDeletedInState(e));
+      const localReceipts = state.receipts || [];
+      const localPayouts = state.payouts || [];
+      const localNoteEvents = state.noteEvents || [];
+      const localNoteEntries = state.noteEntries || [];
+
+      // 1a. Upload local events
+      for (let i = 0; i < localEvents.length; i++) {
+        setSyncStatus(`Uploading Event ${i + 1}/${localEvents.length}...`);
+        try {
+          await syncToGas('createEvent', { event: localEvents[i] });
+        } catch (e) {}
+        await delay(80);
       }
 
-      // 1. Fetch latest DB to trigger scanBackupFolder() on server
-      await fetchDb();
-
-      // Refresh UI if available
-      if (typeof renderCurrentPanel === 'function') {
-        renderCurrentPanel();
+      // 1b. Upload local receipts
+      for (let j = 0; j < localReceipts.length; j++) {
+        setSyncStatus(`Uploading Receipt ${j + 1}/${localReceipts.length}...`);
+        const rcpt = localReceipts[j];
+        try {
+          await syncToGas('saveReceipt', { receipt: rcpt });
+          const ev = localEvents.find(e => e.id === rcpt.eventId || e.eventName === rcpt.eventName || e.memberName === rcpt.eventName);
+          saveReceiptFileToDrive(ev ? (ev.displayName1 || ev.memberName || '') : '', rcpt).catch(() => {});
+        } catch (e) {}
+        await delay(80);
       }
 
-      const totalEvents = state.events ? state.events.length : 0;
-      const totalReceipts = state.receipts ? state.receipts.length : 0;
-      const totalPayouts = state.payouts ? state.payouts.length : 0;
-      const totalNoteEvents = state.noteEvents ? state.noteEvents.length : 0;
-      const totalNoteEntries = state.noteEntries ? state.noteEntries.length : 0;
-      const totalItems = totalEvents + totalReceipts + totalPayouts + totalNoteEvents + totalNoteEntries;
-
-      if (totalItems === 0) {
-        if (typeof window.showToast === 'function') {
-          window.showToast('No entries found to sync to Drive.', 'info');
-        } else {
-          alert('No entries found to sync to Drive.');
-        }
-        return;
+      // 1c. Upload local payouts
+      for (let k = 0; k < localPayouts.length; k++) {
+        setSyncStatus(`Uploading Payout ${k + 1}/${localPayouts.length}...`);
+        try {
+          await syncToGas('savePayout', { payout: localPayouts[k] });
+        } catch (e) {}
+        await delay(80);
       }
 
-      // 2. Sync Events
-      if (state.events && state.events.length > 0) {
-        for (let i = 0; i < state.events.length; i++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Event ${i + 1}/${state.events.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('createEvent', { event: state.events[i] });
-          await delay(250);
-        }
+      // 1d. Upload note events & entries
+      for (let m = 0; m < localNoteEvents.length; m++) {
+        try {
+          await syncToGas('createNoteEvent', { noteEvent: localNoteEvents[m] });
+        } catch (e) {}
+        await delay(80);
       }
-
-      // 3. Sync Receipts (Creates HTML file in Drive & Appends row in Sheets)
-      if (state.receipts && state.receipts.length > 0) {
-        for (let j = 0; j < state.receipts.length; j++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Receipt ${j + 1}/${state.receipts.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('saveReceipt', { receipt: state.receipts[j] });
-          await delay(250);
-        }
-      }
-
-      // 4. Sync Payouts
-      if (state.payouts && state.payouts.length > 0) {
-        for (let k = 0; k < state.payouts.length; k++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Payout ${k + 1}/${state.payouts.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('savePayout', { payout: state.payouts[k] });
-          await delay(250);
-        }
-      }
-
-      // 5. Sync Note Events
-      if (state.noteEvents && state.noteEvents.length > 0) {
-        for (let m = 0; m < state.noteEvents.length; m++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Note Event ${m + 1}/${state.noteEvents.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          await syncToGas('createNoteEvent', { noteEvent: state.noteEvents[m] });
-          await delay(250);
-        }
-      }
-
-      // 6. Sync Note Entries
-      if (state.noteEntries && state.noteEntries.length > 0) {
-        for (let n = 0; n < state.noteEntries.length; n++) {
-          if (btn) {
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">Sync Note Entry ${n + 1}/${state.noteEntries.length}...</span>`;
-            if (window.lucide) lucide.createIcons();
-          }
-          const ne = state.noteEntries[n];
-          const activeNev = state.noteEvents.find(ev => ev.id === ne.noteEventId);
-          const nevName = activeNev ? activeNev.name : 'General';
+      for (let n = 0; n < localNoteEntries.length; n++) {
+        const ne = localNoteEntries[n];
+        const nev = localNoteEvents.find(ev => ev.id === ne.noteEventId);
+        const nevName = nev ? nev.name : 'General';
+        try {
           await saveNoteEntryFileToDrive(nevName, ne);
-          await delay(250);
+        } catch (e) {}
+        await delay(80);
+      }
+
+      // Step 2: Download latest database from Google Drive & Sheets
+      setSyncStatus('Downloading from Drive...');
+      const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getDb';
+      const res = await fetch(fetchUrl);
+      if (!res.ok) {
+        throw new Error('Failed to connect to Google Drive Web App (HTTP ' + res.status + ')');
+      }
+
+      const json = await res.json();
+      if (json.status !== 'success' || !json.data) {
+        throw new Error(json.message || 'Invalid response from Google Drive Web App');
+      }
+
+      const onlineData = json.data;
+      const deletedIdsSet = new Set((state.deletedEventIds || []).map(x => String(x).trim()));
+      const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
+
+      let addedEventsCount = 0;
+      let updatedEventsCount = 0;
+      let addedReceiptsCount = 0;
+      let addedPayoutsCount = 0;
+
+      // 2a. Merge Events
+      if (Array.isArray(onlineData.events)) {
+        onlineData.events.forEach(dev => {
+          const devId = String(dev.id || dev.eventid || dev['Event ID'] || '').trim();
+          const devPrimaryName = String(dev.memberName || dev.membername || dev['Member Name'] || '').trim();
+          const devName1 = String(dev.displayName1 || dev.membername1 || dev['Member Name 1'] || '').trim();
+          const devTitle = String(dev.eventTitle || dev.eventtitle || dev['Event Title'] || dev.eventName || dev.eventname || '').trim();
+          const devPlace = String(dev.place || dev['Place'] || '').trim();
+          const devPhone = String(dev.phone || dev['Phone'] || '').trim();
+          const devDate = String(dev.eventDate || dev.eventdate || dev['Event Date'] || '').trim();
+          const devBillNo = String(dev.billNo || dev.billno || dev['Bill No'] || '').trim();
+          const devUpi = String(dev.upiId || dev.upiid || dev['UPI ID'] || '').trim();
+          const devStatus = String(dev.status || dev['Status'] || 'pending').trim();
+          const devAssigned = String(dev.assignedUsername || dev.assigneduser || dev['Assigned User'] || '').trim();
+          const devFolder = String(dev.folderId || dev.drivefolderid || dev['Drive Folder ID'] || '').trim();
+
+          if (!devPrimaryName && !devName1 && !devTitle) return;
+
+          // Check if deleted
+          if (isEventDeletedInState(dev)) return;
+          if (devId && deletedIdsSet.has(devId)) return;
+          if (devPrimaryName && deletedNamesSet.has(devPrimaryName.toLowerCase().replace(/\s+/g, ' '))) return;
+          if (devName1 && deletedNamesSet.has(devName1.toLowerCase().replace(/\s+/g, ' '))) return;
+
+          const existing = state.events.find(ev => 
+            (devId && ev.id === devId) ||
+            (devPrimaryName && (ev.memberName || '').toLowerCase() === devPrimaryName.toLowerCase()) ||
+            (devName1 && (ev.displayName1 || '').toLowerCase() === devName1.toLowerCase())
+          );
+
+          if (existing) {
+            if (devPrimaryName && !existing.memberName) existing.memberName = devPrimaryName;
+            if (devName1 && !existing.displayName1) existing.displayName1 = devName1;
+            if (devTitle && !existing.eventTitle) existing.eventTitle = devTitle;
+            if (devPlace && !existing.place) existing.place = devPlace;
+            if (devPhone && !existing.phone) existing.phone = devPhone;
+            if (devDate && !existing.eventDate) existing.eventDate = devDate;
+            if (devBillNo && !existing.billNo) existing.billNo = devBillNo;
+            if (devUpi && !existing.upiId) existing.upiId = devUpi;
+            if (devFolder && !existing.folderId) existing.folderId = devFolder;
+            updatedEventsCount++;
+          } else {
+            state.events.push({
+              id: devId || ('ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+              memberName: devPrimaryName || devName1,
+              displayName1: devName1 || devPrimaryName,
+              eventTitle: devTitle || 'நிகழ்ச்சி',
+              eventName: devTitle || devPrimaryName || 'Event',
+              place: devPlace,
+              phone: devPhone,
+              eventDate: devDate || new Date().toISOString().split('T')[0],
+              billNo: devBillNo,
+              upiId: devUpi,
+              status: devStatus || 'pending',
+              assignedUsername: devAssigned,
+              folderId: devFolder
+            });
+            addedEventsCount++;
+          }
+        });
+      }
+
+      // 2b. Merge Receipts
+      if (Array.isArray(onlineData.receipts)) {
+        const activeEvList = state.events.filter(e => !isEventDeletedInState(e));
+        onlineData.receipts.forEach(drcpt => {
+          const bNo = String(drcpt.billNo || drcpt.billno || drcpt['Bill No'] || '').trim();
+          if (!bNo) return;
+          const rEvId = String(drcpt.eventId || drcpt.eventid || '').trim();
+          const rEvName = String(drcpt.eventName || drcpt.eventname || drcpt['Event Name'] || '').trim();
+
+          if (rEvId && deletedIdsSet.has(rEvId)) return;
+          if (rEvName && deletedNamesSet.has(rEvName.toLowerCase().replace(/\s+/g, ' '))) return;
+
+          const matchedEv = activeEvList.find(e => 
+            (rEvId && e.id === rEvId) ||
+            (rEvName && (
+              (e.memberName && e.memberName.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.displayName1 && e.displayName1.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.eventTitle && e.eventTitle.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.eventName && e.eventName.toLowerCase() === rEvName.toLowerCase())
+            ))
+          );
+
+          const targetEventId = matchedEv ? matchedEv.id : rEvId;
+          const targetEventName = matchedEv ? (matchedEv.memberName || matchedEv.displayName1 || matchedEv.eventName) : rEvName;
+
+          const exists = state.receipts.some(r => String(r.billNo).trim() === bNo && (!targetEventId || r.eventId === targetEventId));
+          if (!exists) {
+            state.receipts.push({
+              id: 'rcpt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              billNo: bNo,
+              eventId: targetEventId,
+              eventName: targetEventName,
+              place: drcpt.place || drcpt['Place'] || '',
+              initial: drcpt.initial || drcpt['Initial'] || '',
+              name: drcpt.name || drcpt['Name'] || '',
+              job: drcpt.job || drcpt['Job'] || '',
+              name1: drcpt.name1 || drcpt['Name 1'] || '',
+              relationship: drcpt.relationship || drcpt['Relationship'] || '',
+              mobile: drcpt.mobile || drcpt.mobilenumber || drcpt.phone || drcpt['Mobile Number'] || '',
+              amount: parseFloat(drcpt.amount || drcpt['Amount (₹)'] || 0),
+              amountWords: drcpt.amountWords || drcpt.amountwords || drcpt['Amount in Words'] || '',
+              mode: drcpt.mode || drcpt['Mode'] || 'Cash',
+              upiTxTime: drcpt.upiTxTime || drcpt.upitxtime || '',
+              createdBy: drcpt.createdBy || drcpt.createdby || 'admin',
+              date: drcpt.date || drcpt['Date'] || '',
+              time: drcpt.time || drcpt['Time'] || ''
+            });
+            addedReceiptsCount++;
+          }
+        });
+      }
+
+      // 2c. Merge Payouts
+      if (Array.isArray(onlineData.payouts)) {
+        onlineData.payouts.forEach(dpo => {
+          const poId = String(dpo.id || dpo.payoutid || '').trim();
+          if (!poId) return;
+          const exists = state.payouts.some(p => p.id === poId);
+          if (!exists) {
+            state.payouts.push({
+              id: poId,
+              eventId: dpo.eventId || dpo.eventid || '',
+              eventName: dpo.eventName || dpo.eventname || '',
+              category: dpo.category || 'General',
+              description: dpo.description || '',
+              amount: parseFloat(dpo.amount || 0),
+              paidTo: dpo.paidTo || dpo.paidto || '',
+              paymentMode: dpo.paymentMode || dpo.paymentmode || 'Cash',
+              createdBy: dpo.createdBy || dpo.createdby || 'admin',
+              date: dpo.date || '',
+              time: dpo.time || ''
+            });
+            addedPayoutsCount++;
+          }
+        });
+      }
+
+      // 2d. Merge Users
+      if (Array.isArray(onlineData.users)) {
+        onlineData.users.forEach(du => {
+          const uName = String(du.username || du['Username'] || '').trim().toLowerCase();
+          if (!uName) return;
+          const exists = state.users.find(u => (u.username || '').toLowerCase() === uName);
+          if (!exists) {
+            state.users.push({
+              id: du.id || du.userid || du['User ID'] || ('usr_' + Date.now()),
+              username: du.username || du['Username'],
+              password: du.password || du['Password'] || '1234',
+              role: du.role || du['Role'] || 'user',
+              assignedEventId: du.assignedEventId || du.assignedeventid || du['Assigned Event ID'] || '',
+              startingBillNo: du.startingBillNo || du.setbillno || du['Set Bill No'] || ''
+            });
+          }
+        });
+      }
+
+      // Ensure local server creates backup folders
+      if (state.hasLocalServer !== false) {
+        for (const ev of state.events) {
+          try {
+            await fetch('/api/events/ensure-folder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                eventName: ev.eventName,
+                displayName1: ev.displayName1,
+                memberName: ev.memberName
+              })
+            });
+          } catch (e) {}
         }
       }
 
-      if (typeof window.showToast === 'function') {
-        window.showToast(`Successfully synced ${totalItems} item(s) to Google Drive & Sheets!`, 'success');
+      // Save merged database state locally
+      await saveDb();
+
+      // Step 3: Refresh UI
+      if (state.currentUser) {
+        renderApp();
       } else {
-        alert(`Successfully synced ${totalItems} item(s) to Google Drive & Sheets!`);
+        const container = document.getElementById('login-drive-events-container');
+        if (container && typeof renderLoginDriveEventsList === 'function') {
+          container.innerHTML = renderLoginDriveEventsList();
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+
+      const activeTotalEvents = state.events.filter(e => !isEventDeletedInState(e)).length;
+      const successMsg = `Google Drive Sync Completed! Active Event Masters: ${activeTotalEvents} (${addedEventsCount} new). Total Receipts: ${state.receipts.length}.`;
+      if (typeof window.showToast === 'function') {
+        window.showToast(successMsg, 'success');
+      } else {
+        alert(`✅ Google Drive Sync Completed Successfully!\n\n• Active Event Masters: ${activeTotalEvents} (${addedEventsCount} new downloaded)\n• Receipts: ${state.receipts.length} (${addedReceiptsCount} new downloaded)\n• Payouts: ${state.payouts.length}\n\nGoogle Drive, Sheets, and local storage are fully synced!`);
       }
     } catch (err) {
       console.error('Error during Google Drive sync:', err);
+      const errMsg = 'Google Drive Sync Notice: ' + err.message;
       if (typeof window.showToast === 'function') {
-        window.showToast('Sync completed with warnings or offline status.', 'warning');
+        window.showToast(errMsg, 'error');
+      } else {
+        alert(errMsg);
       }
     } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
-        if (window.lucide) lucide.createIcons();
+      if (headerBtn) {
+        headerBtn.disabled = false;
+        headerBtn.innerHTML = originalHeaderHtml;
       }
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = originalLoginHtml;
+      }
+      if (activeBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
+        activeBtn.disabled = false;
+        activeBtn.innerHTML = originalActiveHtml;
+      }
+      if (window.lucide) window.lucide.createIcons();
     }
   };
 
@@ -3556,76 +3762,7 @@
     }
   }
 
-  // Sync All Offline Data to Google Drive & Google Sheets
-  window.appSyncAllToDrive = async function () {
-    const gasUrl = getGasUrl();
-    if (!gasUrl) {
-      alert("Google Drive Backup Web App URL not configured!\n\nPlease click 'Cloud Settings' and paste your Google Apps Script Web App URL first.");
-      window.appOpenGasSettingsModal();
-      return;
-    }
 
-    if (!navigator.onLine) {
-      alert("Offline Mode Notice:\n\nYour internet connection is currently offline. Please connect to the internet and click 'Sync Drive' again to upload your offline entries to Google Drive.");
-      return;
-    }
-
-    const syncBtn = document.getElementById('btn-sync-drive');
-    const originalContent = syncBtn ? syncBtn.innerHTML : '';
-
-    const setSyncStatus = (msg) => {
-      if (syncBtn) {
-        syncBtn.disabled = true;
-        syncBtn.innerHTML = `
-          <i data-lucide="loader-2" class="w-4 h-4 text-emerald-400 animate-spin"></i>
-          <span class="hidden sm:inline">${msg}</span>
-        `;
-        if (window.lucide) window.lucide.createIcons();
-      }
-    };
-
-    setSyncStatus("Starting Sync...");
-
-    try {
-      const events = state.events || [];
-      const receipts = state.receipts || [];
-      const payouts = state.payouts || [];
-
-      // 1. Sync Events first to ensure Google Drive folders exist
-      for (let i = 0; i < events.length; i++) {
-        setSyncStatus(`Syncing Event ${i + 1}/${events.length}...`);
-        await syncToGas('createEvent', { event: events[i] });
-      }
-
-      // 2. Sync Receipts (creates rows in Sheets + HTML files in Drive)
-      for (let j = 0; j < receipts.length; j++) {
-        setSyncStatus(`Syncing Receipt ${j + 1}/${receipts.length}...`);
-        const rcpt = receipts[j];
-        const ev = events.find(e => e.id === rcpt.eventId);
-        await syncToGas('saveReceipt', { receipt: rcpt });
-        saveReceiptFileToDrive(ev ? ev.memberName : '', rcpt).catch(() => {});
-      }
-
-      // 3. Sync Payouts
-      for (let k = 0; k < payouts.length; k++) {
-        setSyncStatus(`Syncing Payout ${k + 1}/${payouts.length}...`);
-        await syncToGas('savePayout', { payout: payouts[k] });
-      }
-
-      // Save database state
-      await saveDb();
-
-      alert(`✅ Google Drive Sync Completed Successfully!\n\nAll offline entries have been uploaded to Google Drive & Sheets:\n• ${events.length} Event Folder(s)\n• ${receipts.length} Saved Receipt File(s) (.html)\n• ${payouts.length} Payout Expense Entry(ies)\n\nGoogle Sheets and Google Drive folders (moi ➔ Backup) are up-to-date!`);
-    } catch (err) {
-      alert('Notice syncing to Google Drive: ' + err.message);
-    } finally {
-      if (syncBtn) {
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = originalContent;
-        if (window.lucide) window.lucide.createIcons();
-      }
-    }
-  };
 
   // ==========================================
   // CLOUD SETTINGS PANEL
@@ -3766,13 +3903,79 @@
   };
 
   // ==========================================
-  // 1. LOGIN PANEL
+  // 1. LOGIN PANEL & DRIVE EVENTS DISPLAY
   // ==========================================
+  function renderLoginDriveEventsList() {
+    const activeEvents = (state.events || []).filter(ev => !isEventDeletedInState(ev));
+    if (activeEvents.length === 0) {
+      return `
+        <div class="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-center">
+          <p class="text-xs font-medium text-slate-300">No Event Masters in Storage</p>
+          <p class="text-[11px] text-amber-400/90 mt-1">Click <strong class="text-emerald-300">Sync from Drive</strong> to download event masters stored in Google Drive.</p>
+        </div>
+      `;
+    }
+
+    const itemsHtml = activeEvents.map(ev => {
+      const memberName = (ev.memberName || '').trim();
+      const memberName1 = (ev.displayName1 || '').trim();
+      const title = (ev.eventTitle || ev.eventName || 'நிகழ்ச்சி').trim();
+      const date = (ev.eventDate || '').trim();
+      const place = (ev.place || '').trim();
+      const countReceipts = (state.receipts || []).filter(r => 
+        (r.eventId && r.eventId === ev.id) || 
+        (memberName && r.eventName === memberName) || 
+        (memberName1 && r.eventName === memberName1)
+      ).length;
+
+      let nameHtml = '';
+      if (memberName && memberName1 && memberName !== memberName1) {
+        nameHtml = `
+          <div class="font-bold text-amber-300 text-xs">${escapeHtml(memberName)}</div>
+          <div class="text-[11px] text-slate-300">${escapeHtml(memberName1)}</div>
+        `;
+      } else {
+        nameHtml = `<div class="font-bold text-amber-300 text-xs">${escapeHtml(memberName || memberName1 || title)}</div>`;
+      }
+
+      return `
+        <div class="p-2.5 rounded-xl bg-slate-800/90 border border-amber-500/20 hover:border-amber-400/50 transition flex items-center justify-between text-left">
+          <div class="space-y-0.5 min-w-0 pr-2">
+            ${nameHtml}
+            <div class="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span class="text-amber-200/80 font-medium">${escapeHtml(title)}</span>
+              ${place ? `<span>• ${escapeHtml(place)}</span>` : ''}
+              ${date ? `<span>• ${escapeHtml(date)}</span>` : ''}
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-300 border border-amber-400/30">
+              ${countReceipts} ரசீது
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="text-[11px] font-semibold text-slate-300 mb-2 flex items-center justify-between">
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Event Masters in Storage (${activeEvents.length}):</span>
+        </span>
+        <span class="text-emerald-400 text-[10px] font-bold">Drive Synced</span>
+      </div>
+      <div class="max-h-52 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+        ${itemsHtml}
+      </div>
+    `;
+  }
+
   function renderLoginPanel() {
     const isLight = state.currentTheme === 'light';
     return `
-      <div class="flex items-center justify-center min-h-[80vh]">
-        <div class="glass-card w-full max-w-md p-8 relative overflow-hidden">
+      <div class="flex items-center justify-center min-h-[85vh] py-6">
+        <div class="glass-card w-full max-w-md p-8 relative overflow-hidden shadow-2xl">
           <div class="absolute -top-10 -right-10 w-40 h-40 crimson-gradient-bg rounded-full blur-3xl opacity-40"></div>
 
           <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-700/40">
@@ -3783,7 +3986,7 @@
             </button>
           </div>
 
-          <div class="text-center mb-8">
+          <div class="text-center mb-6">
             <div class="flex items-center justify-center gap-3 mb-2">
               <img src="${getWebsiteLogoDataUri()}" alt="ஆதி மொய் Logo" class="w-14 h-14 rounded-full object-contain border-2 border-amber-400 shadow-xl bg-white flex-shrink-0" />
               <h2 class="text-3xl font-extrabold gold-gradient-text">ஆதி மொய்</h2>
@@ -3792,23 +3995,41 @@
             <p class="text-xs font-semibold text-amber-400/90 mt-0.5">Group of Perumu</p>
           </div>
 
-          <form id="login-form" class="space-y-5">
+          <form id="login-form" class="space-y-4">
             <div id="login-error" class="hidden p-3 rounded-lg bg-rose-900/40 border border-rose-700/50 text-rose-300 text-xs font-medium"></div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-2">Username</label>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Username</label>
               <input type="text" id="login-username" class="input-styled" placeholder="Enter Username" required>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-2">Password</label>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
               <input type="password" id="login-password" class="input-styled" placeholder="Enter Password" required>
             </div>
 
-            <button type="submit" class="gold-button w-full py-3 rounded-xl text-sm uppercase tracking-wider font-bold">
+            <button type="submit" class="gold-button w-full py-3 rounded-xl text-sm uppercase tracking-wider font-bold shadow-lg">
               Login
             </button>
           </form>
+
+          <!-- Google Drive Sync & Event Masters Storage Section -->
+          <div class="mt-6 pt-5 border-t border-slate-700/50">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center space-x-1.5">
+                <i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i>
+                <span class="text-xs font-bold text-slate-200">Google Drive Storage</span>
+              </div>
+              <button type="button" id="btn-login-sync" onclick="window.appSyncAllToDrive(this)" class="px-3 py-1.5 rounded-xl border border-emerald-500/50 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 hover:text-white transition text-xs font-bold shadow-md cursor-pointer flex items-center space-x-1.5">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Sync from Drive</span>
+              </button>
+            </div>
+
+            <div id="login-drive-events-container">
+              ${renderLoginDriveEventsList()}
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -4571,22 +4792,7 @@
             if (devName && deletedNamesSet.has(devName.toLowerCase().replace(/\s+/g, ' ').trim())) return;
             if (devName1 && deletedNamesSet.has(devName1.toLowerCase().replace(/\s+/g, ' ').trim())) return;
             if (fullCombined && deletedNamesSet.has(fullCombined)) return;
-            if (deletedBeforeTs > 0) {
-              const idMatch = devId.match(/^ev_(\d+)/);
-              const evTs = idMatch ? parseInt(idMatch[1], 10) : (dev.createdAt ? new Date(dev.createdAt).getTime() : 0);
-              if (!evTs || evTs <= deletedBeforeTs) return;
-            }
 
-            // If Google Drive Desktop is mounted on this PC, only allow importing events whose folder actually exists in Google Drive Backup
-            if (hasGoogleDrive) {
-              const candNames = [
-                fullCombined,
-                devName.toLowerCase().replace(/\s+/g, ' ').trim(),
-                devName1.toLowerCase().replace(/\s+/g, ' ').trim()
-              ].filter(Boolean);
-              const folderExistsInDrive = candNames.some(c => driveFoldersLower.has(c));
-              if (!folderExistsInDrive) return;
-            }
 
             const existing = state.events.find(ev => 
               (devId && ev.id === devId) || 

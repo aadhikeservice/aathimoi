@@ -425,36 +425,62 @@ function deleteEventEntry(contents) {
     }
   }
 
-  // 3. Delete rows in Events sheet matching eventId or eventName
+  // 3. Move deleted event row from Events sheet to Archived Events sheet
   var eventSheet = ss.getSheetByName('Events');
   if (eventSheet) {
+    var archiveSheet = ss.getSheetByName('Archived Events');
+    if (!archiveSheet) {
+      archiveSheet = ss.insertSheet('Archived Events');
+      archiveSheet.appendRow([
+        'Event ID', 'Member Name', 'Member Name 1', 'Event Title', 'Place', 'Phone', 'Event Date', 'UPI ID', 'Status', 'Assigned User', 'Drive Folder ID', 'Archived At'
+      ]);
+      archiveSheet.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#475569').setFontColor('#FFFFFF');
+    }
     var eData = eventSheet.getDataRange().getValues();
     for (var k = eData.length - 1; k >= 1; k--) {
       var rowEvId = eData[k][0]; // Column 1: Event ID
       var rowMember = eData[k][1]; // Column 2: Member Name
       if ((eventId && rowEvId == eventId) || (rowMember && (rowMember == eventName || rowMember == majorName))) {
+        var rowCopy = eData[k].slice();
+        rowCopy.push(new Date().toISOString());
+        archiveSheet.appendRow(rowCopy);
         eventSheet.deleteRow(k + 1);
       }
     }
   }
 
-  // 4. Delete Google Drive Folder for the event inside Backup folder
+  // 4. Move Google Drive Folder for the event into Backup/Archive folder (preserve in archive, don't show)
   try {
     var backupFolder = getOrCreateBackupFolder();
+    var archiveFolder = getOrCreateArchiveFolder();
+
+    var moveFolderToArchive = function(f) {
+      try {
+        if (typeof f.moveTo === 'function') {
+          f.moveTo(archiveFolder);
+        } else {
+          archiveFolder.addFolder(f);
+          backupFolder.removeFolder(f);
+        }
+      } catch (eMove) {
+        Logger.log('Archive move notice: ' + eMove.toString());
+      }
+    };
+
     if (folderTitle) {
       var folders = backupFolder.getFoldersByName(folderTitle);
       while (folders.hasNext()) {
-        folders.next().setTrashed(true);
+        moveFolderToArchive(folders.next());
       }
     }
     if (majorName && majorName !== folderTitle) {
       var altFolders = backupFolder.getFoldersByName(majorName);
       while (altFolders.hasNext()) {
-        altFolders.next().setTrashed(true);
+        moveFolderToArchive(altFolders.next());
       }
     }
   } catch (err) {
-    Logger.log('Drive folder deletion notice: ' + err.toString());
+    Logger.log('Drive folder archive notice: ' + err.toString());
   }
 }
 
@@ -484,6 +510,21 @@ function getOrCreateBackupFolder() {
     }
   } catch (e) {
     return DriveApp.getRootFolder();
+  }
+}
+
+// Helper to locate or create Archive folder inside "Backup" folder
+function getOrCreateArchiveFolder() {
+  try {
+    var backupFolder = getOrCreateBackupFolder();
+    var folders = backupFolder.getFoldersByName('Archive');
+    if (folders.hasNext()) {
+      return folders.next();
+    } else {
+      return backupFolder.createFolder('Archive');
+    }
+  } catch (e) {
+    return getOrCreateBackupFolder();
   }
 }
 

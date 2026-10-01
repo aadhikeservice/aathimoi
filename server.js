@@ -85,6 +85,9 @@ function scanBackupFolder() {
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
+          if (entry.name.toLowerCase() === 'archive') {
+            continue; // Skip Archive folder entirely
+          }
           walkDir(fullPath);
         } else if (entry.isFile() && entry.name.endsWith('.json')) {
           try {
@@ -157,7 +160,7 @@ function syncEventsWithDriveFolders(db) {
   if (!Array.isArray(db.deletedEventNames)) db.deletedEventNames = [];
   const deletedIdsSet = new Set(db.deletedEventIds.map(x => String(x).trim()));
   const deletedNamesSet = new Set(db.deletedEventNames.map(x => String(x).trim().toLowerCase()));
-  const deletedBeforeTs = db.deletedAllBefore ? new Date(db.deletedAllBefore).getTime() : 0;
+
 
   const backupDirs = getBackupDirectories();
   const existingBackupDirs = backupDirs.filter(d => fs.existsSync(d));
@@ -182,42 +185,45 @@ function syncEventsWithDriveFolders(db) {
       return;
     }
 
-    if (deletedBeforeTs > 0) {
-      const idMatch = evId.match(/^ev_(\d+)/);
-      const evTs = idMatch ? parseInt(idMatch[1], 10) : (ev.createdAt ? new Date(ev.createdAt).getTime() : 0);
-      if (!evTs || evTs <= deletedBeforeTs) {
-        deletedCount++;
-        return;
-      }
-    }
-
-    if (existingBackupDirs.length === 0) {
-      validEvents.push(ev);
-      return;
-    }
 
     const possibleNames = getEventFolderNames(ev);
-    let folderFound = false;
+
+    // Check if event folder exists in Archive directory
+    let inArchive = false;
     for (const bDir of existingBackupDirs) {
-      for (const name of possibleNames) {
-        if (name && fs.existsSync(path.join(bDir, name))) {
-          folderFound = true;
-          break;
+      const archiveDir = path.join(bDir, 'Archive');
+      if (fs.existsSync(archiveDir)) {
+        for (const name of possibleNames) {
+          if (name && fs.existsSync(path.join(archiveDir, name))) {
+            inArchive = true;
+            break;
+          }
         }
       }
-      if (folderFound) break;
+      if (inArchive) break;
     }
 
-    if (folderFound) {
-      validEvents.push(ev);
-    } else {
-      console.log(`[Drive Sync] Event folder deleted in drive: "${ev.displayName1 || ev.memberName || ev.id}". Deleting from Saved Events.`);
+    if (inArchive) {
+      console.log(`[Drive Sync] Event found in Archive folder: "${ev.displayName1 || ev.memberName || ev.id}". Filtering from Saved Events.`);
       if (evId && !db.deletedEventIds.includes(evId)) db.deletedEventIds.push(evId);
       [d1, m1, eName, combo].filter(Boolean).forEach(nm => {
         if (!db.deletedEventNames.includes(nm)) db.deletedEventNames.push(nm);
       });
       deletedCount++;
+      return;
     }
+
+    // Ensure the event folder exists in Backup directory
+    const primaryBackupDir = path.join(BASE_DIR, 'Backup');
+    if (possibleNames.length > 0) {
+      const primaryFolderName = possibleNames[0];
+      const targetFolderPath = path.join(primaryBackupDir, primaryFolderName);
+      if (!fs.existsSync(targetFolderPath)) {
+        try { fs.mkdirSync(targetFolderPath, { recursive: true }); } catch (e) {}
+      }
+    }
+
+    validEvents.push(ev);
   });
 
   if (deletedCount > 0) {
@@ -650,6 +656,8 @@ function cleanOrphanedBackupFolders(db, cleanGoogleDrive = true) {
   try {
     const validEventTitles = new Set();
     validEventTitles.add('note entry');
+    validEventTitles.add('archive');
+    validEventTitles.add('.archive');
 
     if (Array.isArray(db.events)) {
       for (const ev of db.events) {
@@ -685,6 +693,7 @@ function cleanOrphanedBackupFolders(db, cleanGoogleDrive = true) {
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const folderName = entry.name.toLowerCase();
+          if (folderName === 'archive' || folderName === '.archive') continue;
           if (!validEventTitles.has(folderName)) {
             const fullPath = path.join(dirPath, entry.name);
             try {
@@ -887,19 +896,36 @@ const server = http.createServer((req, res) => {
 
         for (const dirPath of baseDirs) {
           if (!fs.existsSync(dirPath)) continue;
+          const archiveDir = path.join(dirPath, 'Archive');
+          try {
+            if (!fs.existsSync(archiveDir)) fs.mkdirSync(archiveDir, { recursive: true });
+          } catch (e) {}
+
           for (const cand of candidateNames) {
             const targetPath = path.join(dirPath, cand);
             if (fs.existsSync(targetPath)) {
               try {
-                fs.rmSync(targetPath, { recursive: true, force: true });
-              } catch (e) {}
+                const destPath = path.join(archiveDir, cand);
+                if (fs.existsSync(destPath)) {
+                  try { fs.rmSync(destPath, { recursive: true, force: true }); } catch (e) {}
+                }
+                try {
+                  fs.renameSync(targetPath, destPath);
+                } catch (eRen) {
+                  fs.cpSync(targetPath, destPath, { recursive: true });
+                  fs.rmSync(targetPath, { recursive: true, force: true });
+                }
+                console.log(`[Event Archive] Moved event folder ${cand} to ${archiveDir}`);
+              } catch (e) {
+                console.warn(`[Event Archive] Could not archive ${targetPath}:`, e.message);
+              }
             }
           }
-          // Also remove any Google Drive conflict folders like "<EventName> (1)"
+          // Also archive any Google Drive conflict folders like "<EventName> (1)"
           try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
             for (const entry of entries) {
-              if (!entry.isDirectory() || entry.name.toLowerCase() === 'note entry') continue;
+              if (!entry.isDirectory() || entry.name.toLowerCase() === 'note entry' || entry.name.toLowerCase() === 'archive') continue;
               const lowerEntry = entry.name.toLowerCase();
               const matchesCandidate = candidateNames.some(c => {
                 const lc = c.toLowerCase();
@@ -907,7 +933,16 @@ const server = http.createServer((req, res) => {
               });
               if (matchesCandidate) {
                 try {
-                  fs.rmSync(path.join(dirPath, entry.name), { recursive: true, force: true });
+                  const destPath = path.join(archiveDir, entry.name);
+                  if (fs.existsSync(destPath)) {
+                    try { fs.rmSync(destPath, { recursive: true, force: true }); } catch (e) {}
+                  }
+                  try {
+                    fs.renameSync(path.join(dirPath, entry.name), destPath);
+                  } catch (eRen) {
+                    fs.cpSync(path.join(dirPath, entry.name), destPath, { recursive: true });
+                    fs.rmSync(path.join(dirPath, entry.name), { recursive: true, force: true });
+                  }
                 } catch (e) {}
               }
             }

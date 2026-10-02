@@ -2889,7 +2889,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)</div>
+          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')} &nbsp;📞 (98656 07179)</div>
           <div class="header-divider"></div>
           ${displayMemberName ? `<div class="ev-title">${toSearchableUnicode(displayMemberName)}</div>` : ''}
           ${displayMemberName1 ? `<div class="ev-member-name1">${toSearchableUnicode(displayMemberName1)}</div>` : ''}
@@ -2902,7 +2902,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)</div>
+          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')} &nbsp;📞 (98656 07179)</div>
         </div>
       `;
 
@@ -3253,7 +3253,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 36px; height: 36px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
               <span>${toSearchableUnicode('ஆதி மொய்')}</span>
             </div>
-            <div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')}</div>
+            <div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}</div>
             <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">(98656 07179)</div>
           </div>
         </div>
@@ -3339,7 +3339,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <h1 style="font-size: 22pt; font-weight: 900; color: #8B0000; margin: 0; line-height: 1.15;">${toSearchableUnicode('ஆதி மொய்')}</h1>
           </div>
           <div style="font-size: 11pt; font-weight: 800; color: #8B0000; margin-top: 3px;">
-            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')} &nbsp;📞 (98656 07179)
+            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')} &nbsp;📞 (98656 07179)
           </div>
           <h2 style="font-size: 15pt; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
             ${toSearchableUnicode(primaryMemberName)}
@@ -3541,7 +3541,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               </h1>
             </div>
             <div style="font-size: 13pt; font-weight: 700; margin-top: 3px; color: #111;">
-              ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி')}
+              ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}
             </div>
           </div>
 
@@ -5207,7 +5207,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -5677,6 +5677,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       case 'moi-entry':
         mainContent.innerHTML = renderMoiEntryPanel();
         bindMoiEntryEvents();
+        break;
+      case 'edit-saved-data':
+        mainContent.innerHTML = renderEditSavedDataPanel();
+        bindEditSavedDataEvents();
         break;
       case 'receipt':
         mainContent.innerHTML = renderReceiptPanel();
@@ -7970,6 +7974,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             </h2>
 
             <div class="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap sm:flex-nowrap">
+              <button type="button" onclick="window.appSwitchPanel('edit-saved-data')" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs shadow-md transition cursor-pointer shrink-0">
+                <i data-lucide="file-pen-line" class="w-4 h-4 text-amber-400"></i>
+                <span>Edit Saved Data</span>
+              </button>
               <button type="button" onclick="window.appSwitchToReceiptsPanel()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 font-bold text-xs shadow-md transition cursor-pointer shrink-0">
                 <i data-lucide="receipt" class="w-4 h-4 text-amber-400"></i>
                 <span>View Receipts</span>
@@ -8253,6 +8261,35 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               </div>
             </div>
           </form>
+
+          <!-- Last Saved Receipt Quick Edit Banner -->
+          <div id="moi-last-saved-quick-banner" class="mt-4">
+            ${(() => {
+              const lastR = state.lastSavedReceipt || (state.receipts && state.receipts.length > 0 ? state.receipts[state.receipts.length - 1] : null);
+              if (!lastR) return '';
+              return `
+                <div class="p-3.5 bg-slate-900/90 border border-amber-500/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                  <div class="flex items-center space-x-2.5 text-xs flex-wrap">
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-black font-mono border border-emerald-500/30">Last Saved: #${lastR.billNo}</span>
+                    <span class="text-amber-300 font-bold">${lastR.initial ? lastR.initial + '. ' : ''}${lastR.name}${lastR.name1 ? ' ' + lastR.name1 : ''}</span>
+                    <span class="text-slate-300 font-semibold bg-slate-800/80 px-2 py-0.5 rounded">📍 ${lastR.place}</span>
+                    <span class="text-emerald-400 font-black font-mono text-sm">₹${parseFloat(lastR.amount || 0).toLocaleString('en-IN')}</span>
+                    <span class="text-slate-400 text-[11px] font-mono">(${lastR.mode})</span>
+                  </div>
+                  <div class="flex items-center space-x-2 shrink-0">
+                    <button type="button" onclick="window.appOpenEditReceiptModal('${lastR.id}')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 font-bold text-xs flex items-center space-x-1.5 transition cursor-pointer shadow">
+                      <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-400"></i>
+                      <span>Edit Saved Data (Name, Place)</span>
+                    </button>
+                    <button type="button" onclick="window.appReprintThermal('${lastR.id}')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center space-x-1.5 transition cursor-pointer">
+                      <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-400"></i>
+                      <span>Reprint</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            })()}
+          </div>
         </div>
 
         <!-- UPI QR Code Modal Popup Window -->
@@ -9315,7 +9352,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             ${getThermalLogoSvgHtml()}
             <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
           </div>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</p>
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
@@ -9777,7 +9814,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <h2 style="font-size: 15pt; font-weight: bold; margin: 0; color: #000;">ஆதி மொய்</h2>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி (98656 07179)</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</p>
           ${majorName ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${majorName}</h3>` : ''}
           ${name1 ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${name1}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10pt; font-weight: 900; margin: 1px 0; color: #000;">${evTitle}</p>` : ''}
@@ -10107,7 +10144,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி, கம்பம் 📞 (98656 07179)';
     const eventHeader = (eventObj && eventObj.displayName1) || rcpt.displayName1 
       ? `${(eventObj && eventObj.displayName1) || rcpt.displayName1}${eventObj && eventObj.memberName ? ' - ' + eventObj.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (eventObj ? eventObj.memberName : (rcpt.memberName || ''));
@@ -10291,7 +10328,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     // Header Subtitle
     ctx.fillStyle = '#fecaca';
     ctx.font = 'bold 13px "Mukta Malar", "Nirmala UI", sans-serif';
-    ctx.fillText('கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)', width / 2, 62);
+    ctx.fillText('கருணாக்கமுத்தன்பட்டி, கம்பம் 📞 (98656 07179)', width / 2, 62);
 
     // Event Title & Place
     const evTitle = (ev && ev.displayName1) ? (ev.displayName1 + (ev.memberName ? ' - ' + ev.memberName : '')) : ((ev && ev.memberName) || (rcpt && rcpt.displayName1) || 'Aathi Moi Event');
@@ -10685,7 +10722,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி 📞 (98656 07179)';
+    const orgContact = 'கருணாக்கமுத்தன்பட்டி, கம்பம் 📞 (98656 07179)';
     const eventHeader = (ev && ev.displayName1) || rcpt.displayName1 
       ? `${(ev && ev.displayName1) || rcpt.displayName1}${ev && ev.memberName ? ' - ' + ev.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (ev ? ev.memberName : (rcpt.memberName || ''));
@@ -11136,7 +11173,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>
+    <div class="subtitle">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -11371,78 +11408,130 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
   };
 
   function openEditReceiptFormModal(rcpt) {
-    const modalRoot = document.getElementById('receipt-edit-modal-root');
-    if (!modalRoot) return;
+    let modalRoot = document.getElementById('receipt-edit-modal-root');
+    if (!modalRoot) {
+      modalRoot = document.createElement('div');
+      modalRoot.id = 'receipt-edit-modal-root';
+      document.body.appendChild(modalRoot);
+    }
 
     modalRoot.innerHTML = `
       <div class="modal-overlay">
-        <div class="glass-card w-full max-w-xl max-h-[90vh] overflow-y-auto p-4 sm:p-5 space-y-3 rounded-2xl shadow-2xl">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <div class="glass-card w-full max-w-xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 space-y-4 rounded-2xl shadow-2xl border border-amber-500/40">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <h3 class="text-base font-bold gold-gradient-text flex items-center space-x-2">
-              <i data-lucide="edit-3" class="w-4 h-4 text-amber-400"></i>
-              <span>Edit Receipt #${rcpt.billNo}</span>
+              <i data-lucide="file-pen-line" class="w-5 h-5 text-amber-400"></i>
+              <span>Edit Saved Data - Receipt #${rcpt.billNo}</span>
             </h3>
-            <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition cursor-pointer">
+            <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
           </div>
 
-          <form id="edit-receipt-form" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <form id="edit-receipt-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Mobile Number (Optional)</label>
-              <input type="tel" id="edit-rcpt-mobile" class="input-styled font-mono" value="${rcpt.mobile || rcpt.phone || ''}" autocomplete="off" maxlength="15">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Mobile Number (Optional)</label>
+              <div class="relative flex items-center">
+                <input type="tel" id="edit-rcpt-mobile" class="input-styled font-mono pr-9" value="${rcpt.mobile || rcpt.phone || ''}" autocomplete="off" maxlength="15">
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-mobile', 'en-IN')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
 
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Place *</label>
-              <input type="text" id="edit-rcpt-place" class="input-styled" value="${rcpt.place}" required autocomplete="off">
+              <label class="block text-[11px] font-bold text-amber-300 mb-1">Place (ஊர்) *</label>
+              <div class="relative flex items-center">
+                <input type="text" id="edit-rcpt-place" class="input-styled pr-9 font-semibold" value="${rcpt.place}" required autocomplete="off">
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-place')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
               <div id="edit-rcpt-place-suggestions" class="translit-dropdown hidden"></div>
             </div>
 
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Initial (Optional)</label>
-              <input type="text" id="edit-rcpt-initial" class="input-styled uppercase font-bold" value="${rcpt.initial || ''}" autocomplete="off">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Initial (Optional)</label>
+              <div class="relative flex items-center">
+                <input type="text" id="edit-rcpt-initial" class="input-styled uppercase font-bold pr-9" value="${rcpt.initial || ''}" autocomplete="off">
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-initial')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
 
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Name *</label>
-              <input type="text" id="edit-rcpt-name" class="input-styled" value="${rcpt.name}" required autocomplete="off">
+              <label class="block text-[11px] font-bold text-amber-300 mb-1">Name (பெயர்) *</label>
+              <div class="relative flex items-center">
+                <input type="text" id="edit-rcpt-name" class="input-styled pr-9 font-semibold" value="${rcpt.name}" required autocomplete="off">
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-name')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
               <div id="edit-rcpt-name-suggestions" class="translit-dropdown hidden"></div>
             </div>
 
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Job (Optional)</label>
-              <input type="text" id="edit-rcpt-job" class="input-styled" value="${rcpt.job || ''}" autocomplete="off">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Job (Optional)</label>
+              <div class="relative flex items-center">
+                <input type="text" id="edit-rcpt-job" class="input-styled pr-9" value="${rcpt.job || ''}" autocomplete="off">
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-job')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
 
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Name 1 (Optional)</label>
-              <input type="text" id="edit-rcpt-name1" class="input-styled" value="${rcpt.name1 || ''}" autocomplete="off">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name 1 (Optional)</label>
+              <div class="relative flex items-center">
+                <input type="text" id="edit-rcpt-name1" class="input-styled pr-9" value="${rcpt.name1 || ''}" autocomplete="off">
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-name1')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
               <div id="edit-rcpt-name1-suggestions" class="translit-dropdown hidden"></div>
             </div>
 
-            <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Relationship (Optional)</label>
+            <div class="relative sm:col-span-2">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Relationship (Optional)</label>
               <input type="text" id="edit-rcpt-rel" class="input-styled" value="${rcpt.relationship || ''}" autocomplete="off">
               <div id="edit-rcpt-rel-suggestions" class="translit-dropdown hidden"></div>
             </div>
 
             <div class="relative">
-              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Amount (₹) *</label>
-              <input type="number" id="edit-rcpt-amt" class="input-styled font-mono text-emerald-400 font-bold" value="${rcpt.amount}" min="1" required>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Amount (₹) *</label>
+              <div class="relative flex items-center">
+                <input type="number" id="edit-rcpt-amt" class="input-styled font-mono text-emerald-400 font-bold pr-9" value="${rcpt.amount}" min="1" required>
+                <button type="button" onclick="window.appStartSpeechToText('edit-rcpt-amt')" title="Voice Input" class="speech-mic-btn absolute right-2 text-emerald-400 hover:text-emerald-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="relative">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Payment Mode</label>
+              <select id="edit-rcpt-mode" class="input-styled text-xs py-2 font-bold text-amber-300">
+                <option value="ரொக்கம்" ${rcpt.mode === 'ரொக்கம்' || rcpt.mode === 'Cash' ? 'selected' : ''}>💵 Cash (ரொக்கம்)</option>
+                <option value="யூ.பி.ஐ" ${rcpt.mode === 'யூ.பி.ஐ' || rcpt.mode === 'UPI' ? 'selected' : ''}>📱 UPI (யூ.பி.ஐ)</option>
+              </select>
             </div>
 
             <div class="sm:col-span-2">
-              <label class="block text-[11px] font-semibold text-amber-400 mb-0.5">Amount in Words *</label>
+              <label class="block text-[11px] font-semibold text-amber-400 mb-1">Amount in Words *</label>
               <input type="text" id="edit-rcpt-words" class="input-styled text-amber-300 font-bold" value="${rcpt.amountWords}" required>
             </div>
 
-            <div class="sm:col-span-2 flex space-x-3 pt-2">
-              <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition cursor-pointer">
+            <div class="sm:col-span-2 flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-slate-800">
+              <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="sm:w-1/4 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition cursor-pointer">
                 Cancel
               </button>
-              <button type="submit" class="w-1/2 gold-button py-2 text-xs font-bold rounded-xl shadow-lg cursor-pointer">
-                Save Edits
+              <button type="submit" id="btn-save-edit-only" class="sm:w-3/8 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 text-xs font-bold rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center space-x-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>💾 Save Changes (சேமி)</span>
+              </button>
+              <button type="button" id="btn-save-edit-and-print" class="sm:w-3/8 gold-button py-2.5 text-xs font-bold rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center space-x-1.5">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Save & Print (சேமித்து அச்சிடு)</span>
               </button>
             </div>
           </form>
@@ -11470,8 +11559,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       }
     });
 
-    document.getElementById('edit-receipt-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const performSaveEdits = async (shouldPrint) => {
       rcpt.place = document.getElementById('edit-rcpt-place').value.trim();
       rcpt.initial = document.getElementById('edit-rcpt-initial')?.value.trim().toUpperCase() || '';
       rcpt.name = document.getElementById('edit-rcpt-name').value.trim();
@@ -11481,82 +11569,46 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       rcpt.mobile = document.getElementById('edit-rcpt-mobile')?.value.trim() || '';
       rcpt.amount = document.getElementById('edit-rcpt-amt').value.trim();
       rcpt.amountWords = document.getElementById('edit-rcpt-words').value.trim();
+      rcpt.mode = document.getElementById('edit-rcpt-mode')?.value || rcpt.mode;
+
+      // Update in permanent members directory so future suggestions reflect updated name/place
+      upsertMemberRecord(rcpt);
 
       await saveDb();
       await saveReceiptFileToDrive(rcpt.eventName || '', rcpt);
+      if (state.localSaveDirHandle || state.localSaveFolderPath || state.localSaveFolderName) {
+        saveReceiptToChosenLocalFolder(rcpt).catch(() => {});
+      }
 
       document.getElementById('receipt-edit-modal-root').innerHTML = '';
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Receipt #${rcpt.billNo} updated: ${rcpt.name} (${rcpt.place})`, 'success');
+      }
       renderApp();
 
-      const ev = state.events.find(e => e.id === rcpt.eventId) || { memberName: rcpt.memberName || 'Aathi Moi', place: rcpt.place || '-' };
-      printThermalReceipt(rcpt, ev);
+      if (shouldPrint) {
+        const ev = state.events.find(e => e.id === rcpt.eventId) || { memberName: rcpt.memberName || 'Aathi Moi', place: rcpt.place || '-' };
+        printThermalReceipt(rcpt, ev);
+      }
+    };
+
+    document.getElementById('edit-receipt-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await performSaveEdits(false);
+    });
+
+    document.getElementById('btn-save-edit-and-print')?.addEventListener('click', async () => {
+      await performSaveEdits(true);
     });
   }
 
   window.appEditReceipt = function (receiptId) {
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
-
-    // Permission Check: Receipts can be edited by creator user OR Admin / adminuser
-    const currentUsername = state.currentUser ? state.currentUser.username.toLowerCase() : '';
-    const creatorUsername = (rcpt.createdBy || 'admin').toLowerCase();
-    const isAdmin = hasFullAccess();
-
-    if (!isAdmin && currentUsername !== creatorUsername) {
-      alert('Access Restricted: Receipts can only be edited by the creator or Admin.');
-      return;
-    }
-
-    const modalRoot = document.getElementById('receipt-edit-modal-root');
-    if (!modalRoot) return;
-
-    // Password modal with masked input (<input type="password">)
-    modalRoot.innerHTML = `
-      <div class="modal-overlay">
-        <div class="glass-card w-full max-w-sm p-6 space-y-4">
-          <h3 class="text-lg font-bold gold-gradient-text flex items-center space-x-2">
-            <i data-lucide="lock" class="w-5 h-5 text-amber-400"></i>
-            <span>Password Verification</span>
-          </h3>
-          <p class="text-xs text-slate-300">Enter password to edit receipt #${rcpt.billNo}:</p>
-          <form id="verify-receipt-pass-form" class="space-y-4">
-            <div>
-              <input type="password" id="verify-receipt-pass-input" class="input-styled font-mono text-center tracking-widest text-lg" placeholder="••••••••" required autocomplete="off">
-            </div>
-            <div class="flex space-x-3 pt-2">
-              <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition">
-                Cancel
-              </button>
-              <button type="submit" class="w-1/2 gold-button py-2.5 text-xs font-bold rounded-xl shadow-lg">
-                Verify
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-    if (window.lucide) window.lucide.createIcons();
-
-    const passInput = document.getElementById('verify-receipt-pass-input');
-    if (passInput) passInput.focus();
-
-    document.getElementById('verify-receipt-pass-form')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const enteredPass = document.getElementById('verify-receipt-pass-input').value;
-
-      let userObj = state.users.find(u => (u.username || '').toLowerCase() === currentUsername);
-      let adminUsr = state.users.find(u => (u.username || '').toLowerCase() === 'admin');
-      const userPass = userObj ? userObj.password : (state.currentUser ? state.currentUser.password : '1234');
-      const adminPass = adminUsr ? adminUsr.password : '1234';
-
-      if (enteredPass !== userPass && enteredPass !== adminPass) {
-        alert('Incorrect Password! Access Denied.');
-        return;
-      }
-
-      openEditReceiptFormModal(rcpt);
-    });
+    openEditReceiptFormModal(rcpt);
   };
+  window.appOpenEditReceiptModal = window.appEditReceipt;
+  window.appOpenEditSavedDataModal = window.appEditReceipt;
 
   window.appDeleteReceipt = async function (receiptId) {
     if (!isSuperAdmin()) {
@@ -13046,7 +13098,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                 <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
                 <h1 style="font-size: 20pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
               </div>
-              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (98656 07179)</div>
+              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி, கம்பம் &nbsp;📞 (98656 07179)</div>
               <h2 style="font-size: 14pt; font-weight: bold; color: #0F172A; margin: 4px 0 2px 0;">
                 ${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}
               </h2>
@@ -14875,7 +14927,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <h1 style="font-size: 22pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
           </div>
-          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி &nbsp;📞 (98656 07179)</div>
+          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி, கம்பம் &nbsp;📞 (98656 07179)</div>
           <h2 style="font-size: 15pt; font-weight: bold; color: #0F172A; margin: 6px 0 2px 0;">${activeNoteEv.name} (${activeNoteEv.place})</h2>
           <div style="font-size: 10.5pt; font-weight: bold; color: #334155; margin-top: 4px;">
             <span>தேதி: ${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' ? ` &nbsp;|&nbsp; <span>ஊர்: ${selectedPlace}</span>` : ''}
@@ -15023,6 +15075,303 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
   };
 
 })();
+
+  // ==========================================
+  // EDIT SAVED DATA PANEL (NAME, PLACE, ETC.)
+  // ==========================================
+  function renderEditSavedDataPanel() {
+    const isAdmin = hasFullAccess();
+    const activeEv = getActiveEvent();
+    state.editSavedTab = state.editSavedTab || 'receipts';
+
+    const eventReceipts = state.receipts.filter(r => {
+      if (!state.activeEventId) return true;
+      if (r.eventId && r.eventId === state.activeEventId) return true;
+      if (activeEv && r.eventName && (r.eventName === activeEv.memberName || r.eventName === activeEv.displayName1)) return true;
+      return false;
+    });
+
+    const distinctPlaces = Array.from(new Set(eventReceipts.map(r => r.place).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ta'));
+
+    return `
+      <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Title & Sub-Tabs Card -->
+        <div class="glass-card p-6 border border-amber-500/30">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-xl crimson-gradient-bg border border-amber-500/40 flex items-center justify-center font-bold text-2xl text-amber-300 shadow-lg">
+                <i data-lucide="file-pen-line" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-amber-300 gold-gradient-text">Edit Saved Data / மொய் விவரங்கள் திருத்தம்</h2>
+                <p class="text-xs text-slate-400">Search and edit saved data like Name, Place, Initial, Job, Amount, or manage saved places & donors</p>
+              </div>
+            </div>
+
+            <!-- Sub Tabs -->
+            <div class="flex flex-wrap gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60">
+              <button onclick="window.appSetEditSavedTab('receipts')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${state.editSavedTab === 'receipts' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-300 hover:text-amber-300'}">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+                <span>Saved Receipts (${eventReceipts.length})</span>
+              </button>
+              <button onclick="window.appSetEditSavedTab('master')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${state.editSavedTab === 'master' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-300 hover:text-amber-300'}">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                <span>Saved Places & Donors</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        ${state.editSavedTab === 'receipts' 
+          ? renderEditSavedReceiptsSubTab(eventReceipts, distinctPlaces, isAdmin) 
+          : renderEditSavedMasterSubTab(distinctPlaces, eventReceipts)}
+      </div>
+    `;
+  }
+
+  function renderEditSavedReceiptsSubTab(receipts, distinctPlaces, isAdmin) {
+    return `
+      <div class="glass-card p-6 border border-slate-800 space-y-4">
+        <!-- Controls Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center space-x-2">
+              <label class="text-xs font-semibold text-amber-400 whitespace-nowrap">Select Event:</label>
+              <select id="edit-saved-event-select" class="input-styled text-xs py-1.5 min-w-[180px]" ${!isAdmin ? 'disabled' : ''}>
+                ${isAdmin ? '<option value="">All Events</option>' : ''}
+                ${getVisibleEvents().map(ev => `
+                  <option value="${ev.id}" ${ev.id === state.activeEventId ? 'selected' : ''}>
+                    ${ev.displayName1 || ev.memberName} (${ev.place})
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <label class="text-xs font-semibold text-slate-400 whitespace-nowrap">Filter Place:</label>
+              <select id="edit-saved-place-filter" onchange="window.appFilterEditSavedTable()" class="input-styled text-xs py-1.5 font-bold text-amber-300">
+                <option value="ALL">All Places (${receipts.length})</option>
+                ${distinctPlaces.map(p => `
+                  <option value="${p}">${p}</option>
+                `).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="w-full md:w-72">
+            <input type="text" id="edit-saved-search-input" onkeyup="window.appFilterEditSavedTable()" class="input-styled text-xs w-full" placeholder="🔍 Search Bill No, Name, Place...">
+          </div>
+        </div>
+
+        <!-- Table of Receipts -->
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800">
+              <tr>
+                <th class="px-4 py-3">Bill No</th>
+                <th class="px-4 py-3">Place (ஊர்)</th>
+                <th class="px-4 py-3">Name (பெயர்)</th>
+                <th class="px-4 py-3">Job / Name 1</th>
+                <th class="px-4 py-3 text-right">Amount (₹)</th>
+                <th class="px-4 py-3">Mode</th>
+                <th class="px-4 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="edit-saved-table-body" class="divide-y divide-slate-800/60">
+              ${receipts.length === 0 ? `
+                <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No saved receipts found for this event.</td></tr>
+              ` : receipts.slice().reverse().map(r => `
+                <tr class="hover:bg-slate-900/50 edit-saved-row" 
+                    data-bill="${r.billNo || ''}"
+                    data-place="${(r.place || '').toLowerCase()}"
+                    data-search="${(r.billNo + ' ' + (r.place || '') + ' ' + (r.initial || '') + ' ' + (r.name || '') + ' ' + (r.name1 || '') + ' ' + (r.job || '') + ' ' + (r.mobile || '')).toLowerCase()}">
+                  <td class="px-4 py-3 font-mono font-bold text-amber-400">#${r.billNo}</td>
+                  <td class="px-4 py-3 font-semibold text-slate-200">${r.place}</td>
+                  <td class="px-4 py-3 font-bold text-amber-300 text-sm">${r.initial ? r.initial + '. ' : ''}${r.name}</td>
+                  <td class="px-4 py-3 text-slate-300">${r.name1 ? r.name1 : ''}${r.job ? (r.name1 ? ' - ' : '') + r.job : ''}</td>
+                  <td class="px-4 py-3 text-right font-mono font-bold text-emerald-400">₹${parseFloat(r.amount || 0).toLocaleString('en-IN')}</td>
+                  <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[11px] ${r.mode === 'UPI' || r.mode === 'யூ.பி.ஐ' ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/30' : 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'}">${r.mode}</span></td>
+                  <td class="px-4 py-3 text-right space-x-2">
+                    <button type="button" onclick="window.appOpenEditReceiptModal('${r.id}')" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center space-x-1 cursor-pointer transition shadow">
+                      <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                      <span>Edit (திருத்து)</span>
+                    </button>
+                    <button type="button" onclick="window.appReprintThermal('${r.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer">
+                      Print
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderEditSavedMasterSubTab(distinctPlaces, receipts) {
+    const members = state.members || [];
+    return `
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Card 1: Saved Places (ஊர்கள்) with 1-click Rename -->
+        <div class="glass-card p-6 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="map-pin" class="w-5 h-5 text-amber-400"></i>
+              <h3 class="text-base font-bold text-amber-300">Saved Places (${distinctPlaces.length})</h3>
+            </div>
+            <span class="text-xs text-slate-400">Rename place across all receipts</span>
+          </div>
+
+          <div class="overflow-y-auto max-h-[420px] rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800">
+                <tr>
+                  <th class="px-4 py-2.5">Place Name (ஊர்)</th>
+                  <th class="px-4 py-2.5 text-center">Receipts</th>
+                  <th class="px-4 py-2.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${distinctPlaces.length === 0 ? `
+                  <tr><td colspan="3" class="px-4 py-6 text-center text-slate-500">No saved places found.</td></tr>
+                ` : distinctPlaces.map(p => {
+                  const cnt = receipts.filter(r => r.place === p).length;
+                  return `
+                    <tr class="hover:bg-slate-900/50">
+                      <td class="px-4 py-2.5 font-bold text-slate-200">${p}</td>
+                      <td class="px-4 py-2.5 text-center font-mono text-emerald-400">${cnt}</td>
+                      <td class="px-4 py-2.5 text-right">
+                        <button type="button" onclick="window.appRenameSavedPlace('${p.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40 text-[11px] cursor-pointer">
+                          Rename (பெயர் மாற்று)
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Card 2: Saved Donors / Members Registry -->
+        <div class="glass-card p-6 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="users" class="w-5 h-5 text-amber-400"></i>
+              <h3 class="text-base font-bold text-amber-300">Saved Donors Registry (${members.length})</h3>
+            </div>
+            <span class="text-xs text-slate-400">Saved donors for suggestions</span>
+          </div>
+
+          <div class="overflow-y-auto max-h-[420px] rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800">
+                <tr>
+                  <th class="px-4 py-2.5">Name</th>
+                  <th class="px-4 py-2.5">Place</th>
+                  <th class="px-4 py-2.5">Phone / Job</th>
+                  <th class="px-4 py-2.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${members.length === 0 ? `
+                  <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No donor registry entries.</td></tr>
+                ` : members.slice().reverse().slice(0, 50).map(m => `
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="px-4 py-2 font-bold text-amber-300">${m.initial ? m.initial + '. ' : ''}${m.name}</td>
+                    <td class="px-4 py-2 text-slate-300">${m.place || '-'}</td>
+                    <td class="px-4 py-2 text-slate-400">${m.mobile || m.job || '-'}</td>
+                    <td class="px-4 py-2 text-right">
+                      <button type="button" onclick="window.appDeleteMember('${m.id}')" class="px-2 py-0.5 rounded bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/30 text-[10px] cursor-pointer">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindEditSavedDataEvents() {
+    const evSelect = document.getElementById('edit-saved-event-select');
+    evSelect?.addEventListener('change', (e) => {
+      state.activeEventId = e.target.value;
+      renderApp();
+    });
+  }
+
+  window.appSetEditSavedTab = function (tab) {
+    state.editSavedTab = tab;
+    renderApp();
+  };
+
+  window.appFilterEditSavedTable = function () {
+    const searchVal = (document.getElementById('edit-saved-search-input')?.value || '').trim().toLowerCase();
+    const placeVal = (document.getElementById('edit-saved-place-filter')?.value || 'ALL');
+
+    document.querySelectorAll('.edit-saved-row').forEach(row => {
+      const rowSearch = row.getAttribute('data-search') || '';
+      const rowPlace = row.getAttribute('data-place') || '';
+
+      const matchesSearch = !searchVal || rowSearch.includes(searchVal);
+      const matchesPlace = (placeVal === 'ALL') || (rowPlace === placeVal.toLowerCase());
+
+      if (matchesSearch && matchesPlace) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  };
+
+  window.appRenameSavedPlace = async function (oldPlace) {
+    if (!oldPlace) return;
+    const newPlace = prompt(`Enter new name for place:\n(பழைய பெயர்: "${oldPlace}"):`, oldPlace);
+    if (!newPlace || newPlace.trim() === '' || newPlace.trim() === oldPlace) return;
+    const trimmed = newPlace.trim();
+
+    let updatedCount = 0;
+    (state.receipts || []).forEach(r => {
+      if (r.place === oldPlace) {
+        r.place = trimmed;
+        updatedCount++;
+      }
+    });
+
+    (state.members || []).forEach(m => {
+      if (m.place === oldPlace) {
+        m.place = trimmed;
+      }
+    });
+
+    (state.events || []).forEach(e => {
+      if (e.place === oldPlace) {
+        e.place = trimmed;
+      }
+    });
+
+    await saveDb();
+    if (typeof window.showToast === 'function') {
+      window.showToast(`Updated place "${oldPlace}" ➔ "${trimmed}" in ${updatedCount} receipts!`, 'success');
+    }
+    renderApp();
+  };
+
+  window.appDeleteMember = async function (memberId) {
+    if (!confirm('Are you sure you want to remove this donor from the suggestions directory?')) return;
+    state.members = (state.members || []).filter(m => m.id !== memberId);
+    await saveDb();
+    if (typeof window.showToast === 'function') {
+      window.showToast('Donor removed from directory.', 'info');
+    }
+    renderApp();
+  };
+
   </script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {

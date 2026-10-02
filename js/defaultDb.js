@@ -1,4 +1,4 @@
-﻿window.AATHI_DEFAULT_DB = {
+window.AATHI_DEFAULT_DB = {
   "events": [
     {
       "id": "ev_1790599639495",
@@ -197,7 +197,7 @@
       "id": "mem_1790331007645_3k3e",
       "name": "ஆதி",
       "initial": "",
-      "place": "கருணாக்கமுத்தன் பட்டி",
+      "place": "கருணாக்கமுத்தன் பட்டி, கம்பம்",
       "name1": "கேசவன்",
       "job": "",
       "relationship": "",

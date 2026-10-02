@@ -682,7 +682,7 @@ function createReceiptHtmlInDrive(rcpt, customHtml) {
       '  <div class="card">\n' +
       '    <div class="header">\n' +
       '      <h2>ஆதி மொய்</h2>\n' +
-      '      <div class="sub">கருணாக்கமுத்தன்பட்டி (98656 07179)</div>\n' +
+      '      <div class="sub">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>\n' +
       '      <div class="event-title">' + escapeXml(majorName) + '</div>\n' +
       (name1 ? '      <div class="event-sub">' + escapeXml(name1) + '</div>\n' : '') +
       '      <div class="sub">' + escapeXml(rcpt.place || '') + '</div>\n' +

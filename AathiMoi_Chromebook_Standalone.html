@@ -15631,6 +15631,12 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
   function renderEditSavedDataPanel() {
     ensureMembersFromReceipts();
     const members = state.members || [];
+    (members || []).forEach(m => {
+      if (!m.id) {
+        m.id = 'mem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      }
+    });
+
     const distinctPlaces = Array.from(new Set(members.map(m => (m.place || '').trim()).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ta'));
 
     return `
@@ -15643,8 +15649,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                 <i data-lucide="users" class="w-6 h-6"></i>
               </div>
               <div>
-                <h2 class="text-xl font-bold text-amber-300 gold-gradient-text">Saved Donors Registry / கொடையாளர்கள் பட்டியல்</h2>
-                <p class="text-xs text-slate-400">Search, edit, or manage saved donors registry (Name, Place, Initial, Job, Mobile) for auto-fill and suggestion database</p>
+                <h2 class="text-xl font-bold text-amber-300 gold-gradient-text">Saved Donors Registry</h2>
+                <p class="text-xs text-slate-400">Search, edit, and manage saved donors registry (Name, Place, Initial, Job, Mobile)</p>
               </div>
             </div>
 
@@ -15654,7 +15660,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               </span>
               <button type="button" onclick="window.appOpenEditDonorModal(null)" class="gold-button px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-md">
                 <i data-lucide="user-plus" class="w-4 h-4"></i>
-                <span>+ Add Donor (புதிய நபர்)</span>
+                <span>+ Add Donor</span>
               </button>
             </div>
           </div>
@@ -15666,9 +15672,9 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
             <div class="flex flex-wrap items-center gap-3">
               <div class="flex items-center space-x-2">
-                <label class="text-xs font-semibold text-slate-400 whitespace-nowrap">Filter Place (ஊர்):</label>
+                <label class="text-xs font-semibold text-slate-400 whitespace-nowrap">Filter Place:</label>
                 <select id="edit-donor-place-filter" onchange="window.appFilterEditDonorsTable()" class="input-styled text-xs py-1.5 font-bold text-amber-300">
-                  <option value="ALL">All Places / அனைத்து ஊர்கள் (${members.length})</option>
+                  <option value="ALL">All Places (${members.length})</option>
                   ${distinctPlaces.map(p => `
                     <option value="${p}">${p}</option>
                   `).join('')}
@@ -15687,18 +15693,19 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
               <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th class="px-4 py-3 w-12 text-center">#</th>
-                  <th class="px-4 py-3">Place (ஊர்)</th>
-                  <th class="px-4 py-3">Name (பெயர்)</th>
-                  <th class="px-4 py-3">Job / Profession (தொழில்)</th>
-                  <th class="px-4 py-3">Name 1 / உறவுமுறை</th>
-                  <th class="px-4 py-3">Mobile (அலைபேசி)</th>
-                  <th class="px-4 py-3 text-right">Action (செயல்)</th>
+                  <th class="px-4 py-3">Place</th>
+                  <th class="px-4 py-3">Name</th>
+                  <th class="px-4 py-3">Job / Profession</th>
+                  <th class="px-4 py-3">Name 1 / Relationship</th>
+                  <th class="px-4 py-3">Mobile</th>
+                  <th class="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody id="edit-donors-table-body" class="divide-y divide-slate-800/60">
                 ${members.length === 0 ? `
                   <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No saved donors found in registry.</td></tr>
                 ` : members.slice().reverse().map((m, idx) => {
+                  const safeId = String(m.id || '').replace(/'/g, "\\'");
                   const searchStr = `${m.place || ''} ${m.initial || ''} ${m.name || ''} ${m.job || ''} ${m.name1 || ''} ${m.relationship || ''} ${m.mobile || ''}`.toLowerCase();
                   return `
                     <tr class="hover:bg-slate-900/50 edit-donor-row transition"
@@ -15713,11 +15720,11 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                       <td class="px-4 py-2.5 text-slate-300">${m.name1 || m.relationship || '-'}</td>
                       <td class="px-4 py-2.5 font-mono text-slate-400">${m.mobile || '-'}</td>
                       <td class="px-4 py-2.5 text-right space-x-2 whitespace-nowrap">
-                        <button type="button" onclick="window.appOpenEditDonorModal('${m.id}')" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center space-x-1 cursor-pointer transition shadow">
+                        <button type="button" onclick="window.appOpenEditDonorModal('${safeId}')" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center space-x-1 cursor-pointer transition shadow">
                           <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                          <span>Edit (திருத்து)</span>
+                          <span>Edit</span>
                         </button>
-                        <button type="button" onclick="window.appDeleteMember('${m.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/40 font-semibold text-xs inline-flex items-center space-x-1 transition cursor-pointer">
+                        <button type="button" onclick="window.appDeleteMember('${safeId}')" class="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/40 font-semibold text-xs inline-flex items-center space-x-1 transition cursor-pointer">
                           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                           <span>Delete</span>
                         </button>
@@ -15730,6 +15737,8 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
           </div>
         </div>
       </div>
+      <!-- Dedicated Modal Root for Donors Registry -->
+      <div id="donor-edit-modal-root"></div>
     `;
   }
 
@@ -15763,14 +15772,23 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
   window.appFilterEditSavedTable = window.appFilterEditDonorsTable;
 
+  window.appCloseEditDonorModal = function () {
+    const modalRoot = document.getElementById('donor-edit-modal-root') || document.getElementById('receipt-edit-modal-root');
+    if (modalRoot) modalRoot.innerHTML = '';
+  };
+
   window.appOpenEditDonorModal = function (memberId) {
     const isEdit = Boolean(memberId);
     const m = isEdit 
-      ? ((state.members || []).find(x => x.id === memberId) || { id: '', place: '', initial: '', name: '', job: '', name1: '', relationship: '', mobile: '' })
+      ? ((state.members || []).find(x => String(x.id) === String(memberId)) || { id: '', place: '', initial: '', name: '', job: '', name1: '', relationship: '', mobile: '' })
       : { id: '', place: '', initial: '', name: '', job: '', name1: '', relationship: '', mobile: '' };
 
-    const modalRoot = document.getElementById('receipt-edit-modal-root');
-    if (!modalRoot) return;
+    let modalRoot = document.getElementById('donor-edit-modal-root') || document.getElementById('receipt-edit-modal-root');
+    if (!modalRoot) {
+      modalRoot = document.createElement('div');
+      modalRoot.id = 'donor-edit-modal-root';
+      document.body.appendChild(modalRoot);
+    }
 
     modalRoot.innerHTML = `
       <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -15781,11 +15799,11 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
                 <i data-lucide="${isEdit ? 'user-pen' : 'user-plus'}" class="w-5 h-5"></i>
               </div>
               <div>
-                <h3 class="text-lg font-bold text-amber-300 gold-gradient-text">${isEdit ? 'Edit Donor Details / கொடையாளர் திருத்தம்' : 'Add New Donor / புதிய கொடையாளர்'}</h3>
-                <p class="text-xs text-slate-400">Saved Donors Registry / கொடையாளர்கள் பட்டியல் விவரங்கள்</p>
+                <h3 class="text-lg font-bold text-amber-300 gold-gradient-text">${isEdit ? 'Edit Donor Details' : 'Add New Donor'}</h3>
+                <p class="text-xs text-slate-400">Saved Donors Registry Details</p>
               </div>
             </div>
-            <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+            <button type="button" onclick="window.appCloseEditDonorModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer">
               <i data-lucide="x" class="w-5 h-5"></i>
             </button>
           </div>
@@ -15796,10 +15814,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Place -->
               <div class="relative">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Place / ஊர் *</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Place *</label>
                 <div class="relative flex items-center">
                   <input type="text" id="edit-donor-place" class="input-styled pr-9 font-semibold text-slate-100" value="${m.place || ''}" required autocomplete="off">
-                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-place')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-place')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="mic" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
@@ -15808,7 +15826,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
               <!-- Initial -->
               <div class="relative">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Initial / இனிஷியல்</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Initial</label>
                 <div class="relative flex items-center">
                   <input type="text" id="edit-donor-initial" class="input-styled pr-9 uppercase font-bold text-amber-300" value="${m.initial || ''}" autocomplete="off">
                   <button type="button" onclick="window.appStartSpeechToText('edit-donor-initial')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
@@ -15819,10 +15837,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
               <!-- Name -->
               <div class="relative sm:col-span-2">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name / பெயர் *</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name *</label>
                 <div class="relative flex items-center">
                   <input type="text" id="edit-donor-name" class="input-styled pr-9 font-bold text-amber-300 text-sm" value="${m.name || ''}" required autocomplete="off">
-                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-name')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-name')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="mic" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
@@ -15831,7 +15849,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
               <!-- Job -->
               <div class="relative">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Job / தொழில் / பதவி</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Job / Profession</label>
                 <div class="relative flex items-center">
                   <input type="text" id="edit-donor-job" class="input-styled pr-9" value="${m.job || ''}" autocomplete="off">
                   <button type="button" onclick="window.appStartSpeechToText('edit-donor-job')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
@@ -15842,10 +15860,10 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
               <!-- Name 1 / Extra Name -->
               <div class="relative">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name 1 / கூடுதல் பெயர்</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name 1</label>
                 <div class="relative flex items-center">
                   <input type="text" id="edit-donor-name1" class="input-styled pr-9" value="${m.name1 || ''}" autocomplete="off">
-                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-name1')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-name1')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="mic" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
@@ -15854,24 +15872,24 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
               <!-- Relationship -->
               <div class="relative">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Relationship / உறவுமுறை</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Relationship</label>
                 <input type="text" id="edit-donor-relationship" class="input-styled" value="${m.relationship || ''}" autocomplete="off">
               </div>
 
               <!-- Mobile -->
               <div class="relative">
-                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Mobile / அலைபேசி எண்</label>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Mobile Number</label>
                 <input type="tel" id="edit-donor-mobile" class="input-styled font-mono" value="${m.mobile || ''}" placeholder="10 digits" maxlength="15" autocomplete="off">
               </div>
             </div>
 
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
-              <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition cursor-pointer">
-                Cancel (ரத்து)
+              <button type="button" onclick="window.appCloseEditDonorModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition cursor-pointer">
+                Cancel
               </button>
               <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center space-x-1.5">
                 <i data-lucide="check" class="w-4 h-4"></i>
-                <span>💾 Save Changes (சேமிக்கவும்)</span>
+                <span>Save Changes</span>
               </button>
             </div>
           </form>
@@ -15905,7 +15923,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
 
       let oldName = '', oldPlace = '';
       if (id) {
-        const existing = (state.members || []).find(x => x.id === id);
+        const existing = (state.members || []).find(x => String(x.id) === String(id));
         if (existing) {
           oldName = existing.name;
           oldPlace = existing.place;
@@ -15944,7 +15962,7 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       }
 
       await saveDb();
-      document.getElementById('receipt-edit-modal-root').innerHTML = '';
+      window.appCloseEditDonorModal();
       if (typeof window.showToast === 'function') {
         window.showToast(`Saved donor: ${initial ? initial + '. ' : ''}${name} (${place})`, 'success');
       }

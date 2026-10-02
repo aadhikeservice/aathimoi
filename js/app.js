@@ -994,7 +994,8 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')} &nbsp;📞 (98656 07179)</div>
+<div class="org-subtitle">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}</div>
+          <div class="org-subtitle" style="margin-top: 2px; font-family: monospace, sans-serif;">📞 98656 07179, 99946 96900, 79041 43508</div>
           <div class="header-divider"></div>
           ${displayMemberName ? `<div class="ev-title">${toSearchableUnicode(displayMemberName)}</div>` : ''}
           ${displayMemberName1 ? `<div class="ev-member-name1">${toSearchableUnicode(displayMemberName1)}</div>` : ''}
@@ -1007,7 +1008,8 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <span>${toSearchableUnicode('ஆதி மொய்')}</span>
           </div>
-          <div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')} &nbsp;📞 (98656 07179)</div>
+<div class="org-subtitle-sm">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}</div>
+          <div class="org-subtitle-sm" style="font-family: monospace, sans-serif;">📞 98656 07179, 99946 96900, 79041 43508</div>
         </div>
       `;
 
@@ -1358,8 +1360,8 @@
               <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 36px; height: 36px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
               <span>${toSearchableUnicode('ஆதி மொய்')}</span>
             </div>
-            <div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}</div>
-            <div style="font-size: 13pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">(98656 07179)</div>
+<div style="font-size: 14.5pt; font-weight: 800; color: #92400e; margin-top: 3px; line-height: 1.2;">${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}</div>
+            <div style="font-size: 11.5pt; font-weight: 800; color: #78350f; font-family: monospace, sans-serif; margin-top: 3px; line-height: 1.2;">📞 98656 07179, 99946 96900, 79041 43508</div>
           </div>
         </div>
 
@@ -1444,7 +1446,10 @@
             <h1 style="font-size: 22pt; font-weight: 900; color: #8B0000; margin: 0; line-height: 1.15;">${toSearchableUnicode('ஆதி மொய்')}</h1>
           </div>
           <div style="font-size: 11pt; font-weight: 800; color: #8B0000; margin-top: 3px;">
-            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')} &nbsp;📞 (98656 07179)
+            ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}
+          </div>
+          <div style="font-size: 9.5pt; font-weight: 800; color: #8B0000; margin-top: 2px; font-family: monospace, sans-serif;">
+            📞 98656 07179, 99946 96900, 79041 43508
           </div>
           <h2 style="font-size: 15pt; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
             ${toSearchableUnicode(primaryMemberName)}
@@ -1648,6 +1653,9 @@
             <div style="font-size: 13pt; font-weight: 700; margin-top: 3px; color: #111;">
               ${toSearchableUnicode('கருணாக்கமுத்தன் பட்டி, கம்பம்')}
             </div>
+            <div style="font-size: 10.5pt; font-weight: 800; margin-top: 2px; color: #111; font-family: monospace, sans-serif;">
+              📞 98656 07179, 99946 96900, 79041 43508
+            </div>
           </div>
 
           <!-- Divider line -->
@@ -1823,8 +1831,8 @@
             <div style="font-size: 12pt; font-weight: 800; color: #000; margin-bottom: 2px;">
               ${toSearchableUnicode('எங்களை தொடர்புகொள்ள')}
             </div>
-            <div style="font-size: 12pt; font-weight: 900; letter-spacing: 0.5px; color: #000;">
-              (98656 07179)
+            <div style="font-size: 11pt; font-weight: 900; letter-spacing: 0.5px; color: #000; font-family: monospace, sans-serif;">
+              📞 98656 07179, 99946 96900, 79041 43508
             </div>
           </div>
         </div>
@@ -3312,7 +3320,8 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
+<div class="subtitle">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+    <div class="subtitle" style="margin-top: 2px; font-family: monospace, sans-serif;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -7457,7 +7466,8 @@
             ${getThermalLogoSvgHtml()}
             <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
           </div>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</p>
+<p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 0 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; line-height: 1.2; font-family: monospace, sans-serif;">(98656 07179)</p>
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
@@ -7919,7 +7929,8 @@
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <h2 style="font-size: 15pt; font-weight: bold; margin: 0; color: #000;">ஆதி மொய்</h2>
-          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px;">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</p>
+<p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 0 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; line-height: 1.2; font-family: monospace, sans-serif;">(98656 07179)</p>
           ${majorName ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${majorName}</h3>` : ''}
           ${name1 ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${name1}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10pt; font-weight: 900; margin: 1px 0; color: #000;">${evTitle}</p>` : ''}
@@ -8249,7 +8260,7 @@
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி, கம்பம் 📞 (98656 07179)';
+    const orgContact = 'கருணாக்கமுத்தன் பட்டி, கம்பம்\n(98656 07179)';
     const eventHeader = (eventObj && eventObj.displayName1) || rcpt.displayName1 
       ? `${(eventObj && eventObj.displayName1) || rcpt.displayName1}${eventObj && eventObj.memberName ? ' - ' + eventObj.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (eventObj ? eventObj.memberName : (rcpt.memberName || ''));
@@ -8432,8 +8443,9 @@
 
     // Header Subtitle
     ctx.fillStyle = '#fecaca';
-    ctx.font = 'bold 13px "Mukta Malar", "Nirmala UI", sans-serif';
-    ctx.fillText('கருணாக்கமுத்தன்பட்டி, கம்பம் 📞 (98656 07179)', width / 2, 62);
+    ctx.font = 'bold 12px "Mukta Malar", "Nirmala UI", sans-serif';
+    ctx.fillText('கருணாக்கமுத்தன் பட்டி, கம்பம்', width / 2, 57);
+    ctx.fillText('(98656 07179)', width / 2, 73);
 
     // Event Title & Place
     const evTitle = (ev && ev.displayName1) ? (ev.displayName1 + (ev.memberName ? ' - ' + ev.memberName : '')) : ((ev && ev.memberName) || (rcpt && rcpt.displayName1) || 'Aathi Moi Event');
@@ -8827,7 +8839,7 @@
     };
 
     const orgName = 'ஆதி மொய்';
-    const orgContact = 'கருணாக்கமுத்தன்பட்டி, கம்பம் 📞 (98656 07179)';
+    const orgContact = 'கருணாக்கமுத்தன் பட்டி, கம்பம்\n(98656 07179)';
     const eventHeader = (ev && ev.displayName1) || rcpt.displayName1 
       ? `${(ev && ev.displayName1) || rcpt.displayName1}${ev && ev.memberName ? ' - ' + ev.memberName : (rcpt.memberName ? ' - ' + rcpt.memberName : '')}`
       : (ev ? ev.memberName : (rcpt.memberName || ''));
@@ -9278,7 +9290,8 @@
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
+<div class="subtitle">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+    <div class="subtitle" style="margin-top: 2px; font-family: monospace, sans-serif;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -11203,7 +11216,8 @@
                 <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 34px; height: 34px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
                 <h1 style="font-size: 20pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
               </div>
-              <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி, கம்பம் &nbsp;📞 (98656 07179)</div>
+<div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 2px;">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+              <div style="font-size: 9.5pt; font-weight: bold; color: #8B0000; margin-top: 2px; font-family: monospace, sans-serif;">📞 98656 07179, 99946 96900, 79041 43508</div>
               <h2 style="font-size: 14pt; font-weight: bold; color: #0F172A; margin: 4px 0 2px 0;">
                 ${activeEv.displayName1 || activeEv.memberName || ''}${activeEv.displayName1 && activeEv.memberName ? ' - ' + activeEv.memberName : ''}
               </h2>
@@ -13032,7 +13046,8 @@
             <img src="${getWebsiteLogoDataUri()}" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; object-fit: contain; vertical-align: middle; flex-shrink: 0;" />
             <h1 style="font-size: 22pt; font-weight: bold; color: #8B0000; margin: 0; line-height: 1.15;">ஆதி மொய்</h1>
           </div>
-          <div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி, கம்பம் &nbsp;📞 (98656 07179)</div>
+<div style="font-size: 11pt; font-weight: bold; color: #8B0000; margin-top: 3px;">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+          <div style="font-size: 9.5pt; font-weight: bold; color: #8B0000; margin-top: 2px; font-family: monospace, sans-serif;">📞 98656 07179, 99946 96900, 79041 43508</div>
           <h2 style="font-size: 15pt; font-weight: bold; color: #0F172A; margin: 6px 0 2px 0;">${activeNoteEv.name} (${activeNoteEv.place})</h2>
           <div style="font-size: 10.5pt; font-weight: bold; color: #334155; margin-top: 4px;">
             <span>தேதி: ${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' ? ` &nbsp;|&nbsp; <span>ஊர்: ${selectedPlace}</span>` : ''}

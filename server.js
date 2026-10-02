@@ -329,7 +329,8 @@ function saveReceiptToUserLocalFolder(receiptData, localSaveFolderPath, localSav
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="subtitle">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
+<div class="subtitle">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+    <div class="subtitle" style="margin-top: 2px;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -417,7 +418,8 @@ function saveSingleReceiptToBackup(receiptData) {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
+<div style="text-align: center; font-size: 11px; font-weight: bold; color: #555;">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date || ''} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
@@ -522,7 +524,8 @@ function saveSinglePayoutToBackup(payoutData) {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div class="sub">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
+<div class="sub">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+    <div class="sub" style="margin-top: 2px;">(98656 07179)</div>
     <div class="title-banner">பட்டுவாடா ரசீது (Payout Receipt)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${String(payoutData.id || '').replace(/^payout_/, '')}</span></div>
     <div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>${payoutData.createdBy || 'admin'}</span></div>
@@ -1041,7 +1044,8 @@ const server = http.createServer((req, res) => {
 <body>
   <div class="card">
     <h2>ஆதி மொய் (Aathi Moi)</h2>
-    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">கருணாக்கமுத்தன்பட்டி, கம்பம் (98656 07179)</div>
+<div style="text-align: center; font-size: 11px; font-weight: bold; color: #555;">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
+    <div style="text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${receiptData.billNo}</span></div>
     <div class="row"><span class="bold">தேதி:</span> <span>${receiptData.date} ${receiptData.time || ''}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>

@@ -823,14 +823,14 @@ body.light-theme .tamil-key-btn:hover {
             <span>Download</span>
           </button>
 
-          <button data-panel="note-entry" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
-            <i data-lucide="notebook" class="w-5 h-5 text-amber-400"></i>
-            <span>Note Entry</span>
-          </button>
-
           <button data-panel="edit-saved-data" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
             <i data-lucide="file-pen-line" class="w-5 h-5 text-amber-400"></i>
             <span>Edit Saved Data</span>
+          </button>
+
+          <button data-panel="note-entry" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-300 hover:bg-amber-500/10 hover:text-amber-300 transition text-sm">
+            <i data-lucide="notebook" class="w-5 h-5 text-amber-400"></i>
+            <span>Note Entry</span>
           </button>
         </nav>
       </aside>
@@ -15597,178 +15597,129 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
   };
 
   // ==========================================
-  // EDIT SAVED DATA PANEL (NAME, PLACE, ETC.)
+  // EDIT SAVED DATA PANEL - SAVED DONORS REGISTRY
   // ==========================================
-  function renderEditSavedDataPanel() {
-    const isAdmin = hasFullAccess();
-    const visibleEvents = getVisibleEvents();
-    if ((!state.activeEventId || !visibleEvents.some(e => e.id === state.activeEventId)) && visibleEvents.length > 0) {
-      state.activeEventId = visibleEvents[0].id;
-    }
-    const activeEv = getActiveEvent();
-    state.editSavedTab = state.editSavedTab || 'receipts';
-
-    const eventReceipts = state.receipts.filter(r => {
-      if (!state.activeEventId) return true;
-      if (r.eventId && r.eventId === state.activeEventId) return true;
-      if (activeEv && r.eventName && (r.eventName === activeEv.memberName || r.eventName === activeEv.displayName1)) return true;
-      return false;
+  function ensureMembersFromReceipts() {
+    if (!state.members) state.members = [];
+    const existingKeys = new Set(state.members.map(m => ((m.name || '').trim().toLowerCase() + ':::' + (m.place || '').trim().toLowerCase())));
+    let added = false;
+    (state.receipts || []).forEach(r => {
+      if (!r.name && !r.place) return;
+      const key = ((r.name || '').trim().toLowerCase() + ':::' + (r.place || '').trim().toLowerCase());
+      if (!existingKeys.has(key)) {
+        existingKeys.add(key);
+        state.members.push({
+          id: 'mem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          initial: r.initial || '',
+          name: r.name || '',
+          place: r.place || '',
+          job: r.job || '',
+          name1: r.name1 || '',
+          relationship: r.relationship || '',
+          mobile: r.mobile || '',
+          eventName: r.eventName || '',
+          lastUpdated: new Date().toISOString()
+        });
+        added = true;
+      }
     });
+    if (added) {
+      saveDb().catch(() => {});
+    }
+  }
 
-    const distinctPlaces = Array.from(new Set(eventReceipts.map(r => r.place).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ta'));
+  function renderEditSavedDataPanel() {
+    ensureMembersFromReceipts();
+    const members = state.members || [];
+    const distinctPlaces = Array.from(new Set(members.map(m => (m.place || '').trim()).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ta'));
 
     return `
       <div class="max-w-6xl mx-auto space-y-6">
-        <!-- Title & Sub-Tabs Card -->
+        <!-- Title Card -->
         <div class="glass-card p-6 border border-amber-500/30">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-center space-x-3">
               <div class="w-12 h-12 rounded-xl crimson-gradient-bg border border-amber-500/40 flex items-center justify-center font-bold text-2xl text-amber-300 shadow-lg">
-                <i data-lucide="file-pen-line" class="w-6 h-6"></i>
+                <i data-lucide="users" class="w-6 h-6"></i>
               </div>
               <div>
-                <h2 class="text-xl font-bold text-amber-300 gold-gradient-text">Edit Saved Data / மொய் விவரங்கள் திருத்தம்</h2>
-                <p class="text-xs text-slate-400">Search and edit saved data like Name, Place, Initial, Job, Amount, or manage saved places & donors</p>
+                <h2 class="text-xl font-bold text-amber-300 gold-gradient-text">Saved Donors Registry / கொடையாளர்கள் பட்டியல்</h2>
+                <p class="text-xs text-slate-400">Search, edit, or manage saved donors registry (Name, Place, Initial, Job, Mobile) for auto-fill and suggestion database</p>
               </div>
             </div>
 
-            <!-- Sub Tabs -->
-            <div class="flex flex-wrap gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60">
-              <button onclick="window.appSetEditSavedTab('receipts')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${state.editSavedTab === 'receipts' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-300 hover:text-amber-300'}">
-                <i data-lucide="receipt" class="w-4 h-4"></i>
-                <span>Saved Receipts (${eventReceipts.length})</span>
-              </button>
-              <button onclick="window.appSetEditSavedTab('master')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${state.editSavedTab === 'master' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-300 hover:text-amber-300'}">
-                <i data-lucide="map-pin" class="w-4 h-4"></i>
-                <span>Saved Places & Donors</span>
+            <div class="flex items-center space-x-3">
+              <span class="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                Total Donors: ${members.length}
+              </span>
+              <button type="button" onclick="window.appOpenEditDonorModal(null)" class="gold-button px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-md">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>+ Add Donor (புதிய நபர்)</span>
               </button>
             </div>
           </div>
         </div>
 
-        ${state.editSavedTab === 'receipts' 
-          ? renderEditSavedReceiptsSubTab(eventReceipts, distinctPlaces, isAdmin) 
-          : renderEditSavedMasterSubTab(distinctPlaces, eventReceipts)}
-      </div>
-    `;
-  }
-
-  function renderEditSavedReceiptsSubTab(receipts, distinctPlaces, isAdmin) {
-    const visibleEvents = getVisibleEvents();
-    return `
-      <div class="glass-card p-6 border border-slate-800 space-y-4">
-        <!-- Controls Bar -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-semibold text-amber-400 whitespace-nowrap">Select Event:</label>
-              <select id="edit-saved-event-select" class="input-styled text-xs py-1.5 min-w-[180px]" ${!isAdmin ? 'disabled' : ''}>
-                ${visibleEvents.length === 0 ? '<option value="">No Events</option>' : ''}
-                ${visibleEvents.map(ev => `
-                  <option value="${ev.id}" ${ev.id === state.activeEventId ? 'selected' : ''}>
-                    ${ev.displayName1 || ev.memberName}${ev.displayName1 && ev.memberName && ev.displayName1 !== ev.memberName ? ' - ' + ev.memberName : ''} (${ev.place})
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-semibold text-slate-400 whitespace-nowrap">Filter Place:</label>
-              <select id="edit-saved-place-filter" onchange="window.appFilterEditSavedTable()" class="input-styled text-xs py-1.5 font-bold text-amber-300">
-                <option value="ALL">All Places (${receipts.length})</option>
-                ${distinctPlaces.map(p => `
-                  <option value="${p}">${p}</option>
-                `).join('')}
-              </select>
-            </div>
-          </div>
-
-          <div class="w-full md:w-72">
-            <input type="text" id="edit-saved-search-input" onkeyup="window.appFilterEditSavedTable()" class="input-styled text-xs w-full" placeholder="🔍 Search Bill No, Name, Place...">
-          </div>
-        </div>
-
-        <!-- Table of Receipts -->
-        <div class="overflow-x-auto rounded-xl border border-slate-800">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800">
-              <tr>
-                <th class="px-4 py-3">Bill No</th>
-                <th class="px-4 py-3">Place (ஊர்)</th>
-                <th class="px-4 py-3">Name (பெயர்)</th>
-                <th class="px-4 py-3">Job / Name 1</th>
-                <th class="px-4 py-3 text-right">Amount (₹)</th>
-                <th class="px-4 py-3">Mode</th>
-                <th class="px-4 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody id="edit-saved-table-body" class="divide-y divide-slate-800/60">
-              ${receipts.length === 0 ? `
-                <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No saved receipts found for this event.</td></tr>
-              ` : receipts.slice().reverse().map(r => `
-                <tr class="hover:bg-slate-900/50 edit-saved-row" 
-                    data-bill="${r.billNo || ''}"
-                    data-place="${(r.place || '').toLowerCase()}"
-                    data-search="${(r.billNo + ' ' + (r.place || '') + ' ' + (r.initial || '') + ' ' + (r.name || '') + ' ' + (r.name1 || '') + ' ' + (r.job || '') + ' ' + (r.mobile || '')).toLowerCase()}">
-                  <td class="px-4 py-3 font-mono font-bold text-amber-400">#${r.billNo}</td>
-                  <td class="px-4 py-3 font-semibold text-slate-200">${r.place}</td>
-                  <td class="px-4 py-3 font-bold text-amber-300 text-sm">${r.initial ? r.initial + '. ' : ''}${r.name}</td>
-                  <td class="px-4 py-3 text-slate-300">${r.name1 ? r.name1 : ''}${r.job ? (r.name1 ? ' - ' : '') + r.job : ''}</td>
-                  <td class="px-4 py-3 text-right font-mono font-bold text-emerald-400">₹${parseFloat(r.amount || 0).toLocaleString('en-IN')}</td>
-                  <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[11px] ${r.mode === 'UPI' || r.mode === 'யூ.பி.ஐ' ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/30' : 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'}">${r.mode}</span></td>
-                  <td class="px-4 py-3 text-right space-x-2">
-                    <button type="button" onclick="window.appOpenEditReceiptModal('${r.id}')" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center space-x-1 cursor-pointer transition shadow">
-                      <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                      <span>Edit (திருத்து)</span>
-                    </button>
-                    <button type="button" onclick="window.appReprintThermal('${r.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer">
-                      Print
-                    </button>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderEditSavedMasterSubTab(distinctPlaces, receipts) {
-    const members = state.members || [];
-    return `
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Card 1: Saved Places (ஊர்கள்) with 1-click Rename -->
+        <!-- Donors Registry Card with Search & Filter -->
         <div class="glass-card p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="map-pin" class="w-5 h-5 text-amber-400"></i>
-              <h3 class="text-base font-bold text-amber-300">Saved Places (${distinctPlaces.length})</h3>
+          <!-- Filter Controls -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center space-x-2">
+                <label class="text-xs font-semibold text-slate-400 whitespace-nowrap">Filter Place (ஊர்):</label>
+                <select id="edit-donor-place-filter" onchange="window.appFilterEditDonorsTable()" class="input-styled text-xs py-1.5 font-bold text-amber-300">
+                  <option value="ALL">All Places / அனைத்து ஊர்கள் (${members.length})</option>
+                  ${distinctPlaces.map(p => `
+                    <option value="${p}">${p}</option>
+                  `).join('')}
+                </select>
+              </div>
             </div>
-            <span class="text-xs text-slate-400">Rename place across all receipts</span>
+
+            <div class="w-full md:w-80">
+              <input type="text" id="edit-donor-search-input" onkeyup="window.appFilterEditDonorsTable()" class="input-styled text-xs w-full" placeholder="🔍 Search Name, Place, Initial, Job, Mobile...">
+            </div>
           </div>
 
-          <div class="overflow-y-auto max-h-[420px] rounded-xl border border-slate-800">
+          <!-- Donors Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-800 max-h-[600px] overflow-y-auto">
             <table class="w-full text-left text-xs">
-              <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800">
+              <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800 sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th class="px-4 py-2.5">Place Name (ஊர்)</th>
-                  <th class="px-4 py-2.5 text-center">Receipts</th>
-                  <th class="px-4 py-2.5 text-right">Action</th>
+                  <th class="px-4 py-3 w-12 text-center">#</th>
+                  <th class="px-4 py-3">Place (ஊர்)</th>
+                  <th class="px-4 py-3">Name (பெயர்)</th>
+                  <th class="px-4 py-3">Job / Profession (தொழில்)</th>
+                  <th class="px-4 py-3">Name 1 / உறவுமுறை</th>
+                  <th class="px-4 py-3">Mobile (அலைபேசி)</th>
+                  <th class="px-4 py-3 text-right">Action (செயல்)</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/60">
-                ${distinctPlaces.length === 0 ? `
-                  <tr><td colspan="3" class="px-4 py-6 text-center text-slate-500">No saved places found.</td></tr>
-                ` : distinctPlaces.map(p => {
-                  const cnt = receipts.filter(r => r.place === p).length;
+              <tbody id="edit-donors-table-body" class="divide-y divide-slate-800/60">
+                ${members.length === 0 ? `
+                  <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No saved donors found in registry.</td></tr>
+                ` : members.slice().reverse().map((m, idx) => {
+                  const searchStr = `${m.place || ''} ${m.initial || ''} ${m.name || ''} ${m.job || ''} ${m.name1 || ''} ${m.relationship || ''} ${m.mobile || ''}`.toLowerCase();
                   return `
-                    <tr class="hover:bg-slate-900/50">
-                      <td class="px-4 py-2.5 font-bold text-slate-200">${p}</td>
-                      <td class="px-4 py-2.5 text-center font-mono text-emerald-400">${cnt}</td>
-                      <td class="px-4 py-2.5 text-right">
-                        <button type="button" onclick="window.appRenameSavedPlace('${p.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40 text-[11px] cursor-pointer">
-                          Rename (பெயர் மாற்று)
+                    <tr class="hover:bg-slate-900/50 edit-donor-row transition"
+                        data-place="${(m.place || '').toLowerCase()}"
+                        data-search="${searchStr}">
+                      <td class="px-4 py-2.5 text-center text-slate-500 font-mono">${idx + 1}</td>
+                      <td class="px-4 py-2.5 font-semibold text-slate-200">${m.place || '-'}</td>
+                      <td class="px-4 py-2.5 font-bold text-amber-300 text-sm">
+                        ${m.initial ? '<span class="text-amber-400 font-mono">' + m.initial + '. </span>' : ''}${m.name || '-'}
+                      </td>
+                      <td class="px-4 py-2.5 text-slate-300">${m.job || '-'}</td>
+                      <td class="px-4 py-2.5 text-slate-300">${m.name1 || m.relationship || '-'}</td>
+                      <td class="px-4 py-2.5 font-mono text-slate-400">${m.mobile || '-'}</td>
+                      <td class="px-4 py-2.5 text-right space-x-2 whitespace-nowrap">
+                        <button type="button" onclick="window.appOpenEditDonorModal('${m.id}')" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center space-x-1 cursor-pointer transition shadow">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                          <span>Edit (திருத்து)</span>
+                        </button>
+                        <button type="button" onclick="window.appDeleteMember('${m.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/40 font-semibold text-xs inline-flex items-center space-x-1 transition cursor-pointer">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                          <span>Delete</span>
                         </button>
                       </td>
                     </tr>
@@ -15778,56 +15729,12 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
             </table>
           </div>
         </div>
-
-        <!-- Card 2: Saved Donors / Members Registry -->
-        <div class="glass-card p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="users" class="w-5 h-5 text-amber-400"></i>
-              <h3 class="text-base font-bold text-amber-300">Saved Donors Registry (${members.length})</h3>
-            </div>
-            <span class="text-xs text-slate-400">Saved donors for suggestions</span>
-          </div>
-
-          <div class="overflow-y-auto max-h-[420px] rounded-xl border border-slate-800">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-900 text-amber-400 font-bold border-b border-slate-800">
-                <tr>
-                  <th class="px-4 py-2.5">Name</th>
-                  <th class="px-4 py-2.5">Place</th>
-                  <th class="px-4 py-2.5">Phone / Job</th>
-                  <th class="px-4 py-2.5 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60">
-                ${members.length === 0 ? `
-                  <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No donor registry entries.</td></tr>
-                ` : members.slice().reverse().slice(0, 50).map(m => `
-                  <tr class="hover:bg-slate-900/50">
-                    <td class="px-4 py-2 font-bold text-amber-300">${m.initial ? m.initial + '. ' : ''}${m.name}</td>
-                    <td class="px-4 py-2 text-slate-300">${m.place || '-'}</td>
-                    <td class="px-4 py-2 text-slate-400">${m.mobile || m.job || '-'}</td>
-                    <td class="px-4 py-2 text-right">
-                      <button type="button" onclick="window.appDeleteMember('${m.id}')" class="px-2 py-0.5 rounded bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/30 text-[10px] cursor-pointer">
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     `;
   }
 
   function bindEditSavedDataEvents() {
-    const evSelect = document.getElementById('edit-saved-event-select');
-    evSelect?.addEventListener('change', (e) => {
-      state.activeEventId = e.target.value;
-      renderApp();
-    });
+    // Static render, events handled via onclick and inputs
   }
 
   window.appSetEditSavedTab = function (tab) {
@@ -15835,11 +15742,11 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
     renderApp();
   };
 
-  window.appFilterEditSavedTable = function () {
-    const searchVal = (document.getElementById('edit-saved-search-input')?.value || '').trim().toLowerCase();
-    const placeVal = (document.getElementById('edit-saved-place-filter')?.value || 'ALL');
+  window.appFilterEditDonorsTable = function () {
+    const searchVal = (document.getElementById('edit-donor-search-input')?.value || '').trim().toLowerCase();
+    const placeVal = (document.getElementById('edit-donor-place-filter')?.value || 'ALL');
 
-    document.querySelectorAll('.edit-saved-row').forEach(row => {
+    document.querySelectorAll('.edit-donor-row').forEach(row => {
       const rowSearch = row.getAttribute('data-search') || '';
       const rowPlace = row.getAttribute('data-place') || '';
 
@@ -15853,6 +15760,199 @@ window.AATHI_COVER_BG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQA
       }
     });
   };
+
+  window.appFilterEditSavedTable = window.appFilterEditDonorsTable;
+
+  window.appOpenEditDonorModal = function (memberId) {
+    const isEdit = Boolean(memberId);
+    const m = isEdit 
+      ? ((state.members || []).find(x => x.id === memberId) || { id: '', place: '', initial: '', name: '', job: '', name1: '', relationship: '', mobile: '' })
+      : { id: '', place: '', initial: '', name: '', job: '', name1: '', relationship: '', mobile: '' };
+
+    const modalRoot = document.getElementById('receipt-edit-modal-root');
+    if (!modalRoot) return;
+
+    modalRoot.innerHTML = `
+      <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-card max-w-lg w-full p-6 border border-amber-500/40 relative shadow-2xl rounded-2xl bg-slate-900/95 my-8">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl crimson-gradient-bg border border-amber-500/40 flex items-center justify-center text-amber-300 shadow">
+                <i data-lucide="${isEdit ? 'user-pen' : 'user-plus'}" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-amber-300 gold-gradient-text">${isEdit ? 'Edit Donor Details / கொடையாளர் திருத்தம்' : 'Add New Donor / புதிய கொடையாளர்'}</h3>
+                <p class="text-xs text-slate-400">Saved Donors Registry / கொடையாளர்கள் பட்டியல் விவரங்கள்</p>
+              </div>
+            </div>
+            <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <form id="form-edit-donor-registry" class="space-y-4">
+            <input type="hidden" id="edit-donor-id" value="${m.id || ''}">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Place -->
+              <div class="relative">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Place / ஊர் *</label>
+                <div class="relative flex items-center">
+                  <input type="text" id="edit-donor-place" class="input-styled pr-9 font-semibold text-slate-100" value="${m.place || ''}" required autocomplete="off">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-place')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div id="edit-donor-place-suggestions" class="translit-dropdown hidden"></div>
+              </div>
+
+              <!-- Initial -->
+              <div class="relative">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Initial / இனிஷியல்</label>
+                <div class="relative flex items-center">
+                  <input type="text" id="edit-donor-initial" class="input-styled pr-9 uppercase font-bold text-amber-300" value="${m.initial || ''}" autocomplete="off">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-initial')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Name -->
+              <div class="relative sm:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name / பெயர் *</label>
+                <div class="relative flex items-center">
+                  <input type="text" id="edit-donor-name" class="input-styled pr-9 font-bold text-amber-300 text-sm" value="${m.name || ''}" required autocomplete="off">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-name')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div id="edit-donor-name-suggestions" class="translit-dropdown hidden"></div>
+              </div>
+
+              <!-- Job -->
+              <div class="relative">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Job / தொழில் / பதவி</label>
+                <div class="relative flex items-center">
+                  <input type="text" id="edit-donor-job" class="input-styled pr-9" value="${m.job || ''}" autocomplete="off">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-job')" title="Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Name 1 / Extra Name -->
+              <div class="relative">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Name 1 / கூடுதல் பெயர்</label>
+                <div class="relative flex items-center">
+                  <input type="text" id="edit-donor-name1" class="input-styled pr-9" value="${m.name1 || ''}" autocomplete="off">
+                  <button type="button" onclick="window.appStartSpeechToText('edit-donor-name1')" title="Tamil Voice Input" class="speech-mic-btn absolute right-2 text-amber-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div id="edit-donor-name1-suggestions" class="translit-dropdown hidden"></div>
+              </div>
+
+              <!-- Relationship -->
+              <div class="relative">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Relationship / உறவுமுறை</label>
+                <input type="text" id="edit-donor-relationship" class="input-styled" value="${m.relationship || ''}" autocomplete="off">
+              </div>
+
+              <!-- Mobile -->
+              <div class="relative">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Mobile / அலைபேசி எண்</label>
+                <input type="tel" id="edit-donor-mobile" class="input-styled font-mono" value="${m.mobile || ''}" placeholder="10 digits" maxlength="15" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+              <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition cursor-pointer">
+                Cancel (ரத்து)
+              </button>
+              <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center space-x-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>💾 Save Changes (சேமிக்கவும்)</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+
+    // Bind Google Tamil transliteration
+    bindGoogleTamilTransliteration('edit-donor-place', 'edit-donor-place-suggestions');
+    bindGoogleTamilTransliteration('edit-donor-name', 'edit-donor-name-suggestions');
+    bindGoogleTamilTransliteration('edit-donor-name1', 'edit-donor-name1-suggestions');
+
+    // Form submit listener
+    document.getElementById('form-edit-donor-registry')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-donor-id')?.value;
+      const place = (document.getElementById('edit-donor-place')?.value || '').trim();
+      const initial = (document.getElementById('edit-donor-initial')?.value || '').trim().toUpperCase();
+      const name = (document.getElementById('edit-donor-name')?.value || '').trim();
+      const job = (document.getElementById('edit-donor-job')?.value || '').trim();
+      const name1 = (document.getElementById('edit-donor-name1')?.value || '').trim();
+      const relationship = (document.getElementById('edit-donor-relationship')?.value || '').trim();
+      const mobile = (document.getElementById('edit-donor-mobile')?.value || '').trim();
+
+      if (!name || !place) {
+        alert('Please enter Name and Place!');
+        return;
+      }
+
+      let oldName = '', oldPlace = '';
+      if (id) {
+        const existing = (state.members || []).find(x => x.id === id);
+        if (existing) {
+          oldName = existing.name;
+          oldPlace = existing.place;
+          existing.place = place;
+          existing.initial = initial;
+          existing.name = name;
+          existing.job = job;
+          existing.name1 = name1;
+          existing.relationship = relationship;
+          existing.mobile = mobile;
+          existing.lastUpdated = new Date().toISOString();
+        }
+      } else {
+        if (!state.members) state.members = [];
+        state.members.push({
+          id: 'mem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          place, initial, name, job, name1, relationship, mobile,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+
+      // Also update existing receipts that matched oldName & oldPlace (if old details existed)
+      if (oldName && oldPlace) {
+        (state.receipts || []).forEach(r => {
+          if ((r.name || '').trim().toLowerCase() === oldName.trim().toLowerCase() &&
+              (r.place || '').trim().toLowerCase() === oldPlace.trim().toLowerCase()) {
+            r.name = name;
+            r.place = place;
+            if (initial) r.initial = initial;
+            if (job) r.job = job;
+            if (name1) r.name1 = name1;
+            if (relationship) r.relationship = relationship;
+            if (mobile) r.mobile = mobile;
+          }
+        });
+      }
+
+      await saveDb();
+      document.getElementById('receipt-edit-modal-root').innerHTML = '';
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Saved donor: ${initial ? initial + '. ' : ''}${name} (${place})`, 'success');
+      }
+      renderApp();
+    });
+  };
+
+  window.appEditMember = window.appOpenEditDonorModal;
 
   window.appRenameSavedPlace = async function (oldPlace) {
     if (!oldPlace) return;

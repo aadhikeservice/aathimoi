@@ -1281,6 +1281,59 @@
     return css + htmlPages;
   }
 
+  function generateEventOverallReportHtml(ev, eventReceipts, eventPayouts) {
+    if (!ev) return '';
+    const receipts = eventReceipts || (state.receipts || []).filter(r => r.eventId === ev.id || r.eventName === ev.eventName || r.eventName === ev.memberName || (ev.displayName1 && r.eventName === ev.displayName1));
+    const payouts = eventPayouts || (state.payouts || []).filter(p => p.eventId === ev.id || p.eventName === ev.eventName || p.eventName === ev.memberName);
+
+    const totalCash = receipts.filter(r => r.mode !== 'UPI' && r.mode !== 'யூ.பி.ஐ').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+    const totalUpi  = receipts.filter(r => r.mode === 'UPI' || r.mode === 'யூ.பி.ஐ').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+    const totalMoi  = totalCash + totalUpi;
+    const totalPayout = payouts.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+
+    const primaryMemberName = ev.displayName1 || ev.memberName || ev.eventName || '';
+    const secondaryMemberName = (ev.displayName1 && ev.memberName && ev.displayName1 !== ev.memberName) ? ev.memberName : (ev.memberName1 || '');
+    const celebrationTitle = ev.eventTitle || ev.title || 'நிகழ்ச்சி';
+    const evMeta = [ev.place, (typeof formatPhoneWithCountryCode === 'function' ? formatPhoneWithCountryCode(ev.phone) : ev.phone) || ev.phone, (typeof formatDateDMY === 'function' ? formatDateDMY(ev.eventDate) : ev.eventDate)].filter(Boolean).join(' | ');
+
+    const bodyHtml = buildOverallReportHtml({
+      entries: receipts,
+      getPlace: r => r.place || '-',
+      getName: r => (typeof formatMoiPersonNameWithJob === 'function' ? formatMoiPersonNameWithJob(r) : (r.name || '')),
+      getInitial: r => (r.initial || '').trim(),
+      getNameOnly: r => (r.name || '').trim(),
+      getJob: r => (r.job || '').trim(),
+      getSubName: r => (r.name1 || '').trim(),
+      getBillNo: r => r.billNo || '',
+      getAmount: r => parseFloat(r.amount) || 0,
+      getMode: r => r.mode || '',
+      primaryMemberName,
+      secondaryMemberName,
+      eventCelebrationTitle: celebrationTitle,
+      eventTitle: [primaryMemberName, secondaryMemberName].filter(Boolean).join(' - ') || primaryMemberName,
+      eventSubtitle: evMeta,
+      totalCash, totalUpi, totalMoi, totalPayout,
+      ROWS_PER_PAGE: 12
+    });
+
+    return `<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ஆதி மொய் - ஒட்டுமொத்த அறிக்கை (Overall Report) - ${escapeHtml(primaryMemberName)}</title>
+  <style>
+    @media print {
+      body { margin: 0; padding: 0; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  ${bodyHtml}
+</body>
+</html>`;
+  }
+
   // ==========================================
   // First Page / Cover Page Generator
   // ==========================================
@@ -2712,15 +2765,21 @@
       return;
     }
 
+    const headerDirectBtn = document.getElementById('btn-sync-header');
     const headerBtn = document.getElementById('btn-sync-drive');
     const loginBtn = document.getElementById('btn-login-sync');
-    const activeBtn = triggerBtn || headerBtn || loginBtn;
+    const activeBtn = triggerBtn || headerDirectBtn || headerBtn || loginBtn;
 
+    const originalDirectHtml = headerDirectBtn ? headerDirectBtn.innerHTML : '';
     const originalHeaderHtml = headerBtn ? headerBtn.innerHTML : '';
     const originalLoginHtml = loginBtn ? loginBtn.innerHTML : '';
     const originalActiveHtml = activeBtn ? activeBtn.innerHTML : '';
 
     const setSyncStatus = (msg) => {
+      if (headerDirectBtn) {
+        headerDirectBtn.disabled = true;
+        headerDirectBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">${msg}</span>`;
+      }
       if (headerBtn) {
         headerBtn.disabled = true;
         headerBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span class="hidden sm:inline">${msg}</span>`;
@@ -2729,7 +2788,7 @@
         loginBtn.disabled = true;
         loginBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span>${msg}</span>`;
       }
-      if (activeBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
+      if (activeBtn && activeBtn !== headerDirectBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
         activeBtn.disabled = true;
         activeBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i><span>${msg}</span>`;
       }
@@ -2807,6 +2866,78 @@
         try {
           await saveNoteEntryFileToDrive(nevName, ne);
         } catch (e) {}
+        await delay(80);
+      }
+
+      // 1e. Generate and Upload Overall Report for each active event into the same folder:
+      // "Backup/offline/<event master name>/<username>/receipt"
+      const currentUser = (state.currentUser && state.currentUser.username) || 'admin';
+      for (let evIndex = 0; evIndex < localEvents.length; evIndex++) {
+        const ev = localEvents[evIndex];
+        const majorName = ev.displayName1 || ev.memberName || ev.eventName || 'Event';
+        const name1 = (ev.displayName1 && ev.memberName && ev.displayName1 !== ev.memberName) ? ev.memberName : (ev.memberName1 || '');
+        const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
+
+        const evReceipts = localReceipts.filter(r => r.eventId === ev.id || r.eventName === ev.eventName || r.eventName === ev.memberName || (ev.displayName1 && r.eventName === ev.displayName1));
+        const evPayouts = localPayouts.filter(p => p.eventId === ev.id || p.eventName === ev.eventName || p.eventName === ev.memberName);
+
+        setSyncStatus(`Uploading Overall Report: ${folderTitle}...`);
+        const reportHtml = generateEventOverallReportHtml(ev, evReceipts, evPayouts);
+
+        // Upload to Google Apps Script / Google Drive
+        try {
+          await syncToGas('saveOverallReport', {
+            eventName: folderTitle,
+            username: currentUser,
+            reportHtml: reportHtml
+          });
+        } catch (errRepGas) {
+          console.warn('Sync overall report to GAS notice:', errRepGas);
+        }
+
+        // Local / Chromebook file backup in the SAME folder path:
+        // Backup / offline / <event master name> / <user name> / receipt / Overall_Report_<event master name>.html
+        if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
+          try {
+            const safeEvFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
+            const safeUserFolder = String(currentUser).replace(/[\\/:*?"<>|]/g, '_').trim() || 'admin';
+            const reportFileName = `Overall_Report_${safeEvFolder}.html`;
+
+            const backupDirHandle = await state.localSaveDirHandle.getDirectoryHandle('Backup', { create: true });
+            const offDirHandle = await backupDirHandle.getDirectoryHandle('offline', { create: true });
+            const evDirHandle = await offDirHandle.getDirectoryHandle(safeEvFolder, { create: true });
+            const userDirHandle = await evDirHandle.getDirectoryHandle(safeUserFolder, { create: true });
+            const rcptDirHandle = await userDirHandle.getDirectoryHandle('receipt', { create: true });
+
+            const repFileHandle = await rcptDirHandle.getFileHandle(reportFileName, { create: true });
+            const repWriter = await repFileHandle.createWritable();
+            await repWriter.write(reportHtml);
+            await repWriter.close();
+
+            // Also save in main event directory
+            try {
+              const rootEvDir = await state.localSaveDirHandle.getDirectoryHandle(safeEvFolder, { create: true });
+              const rootRepFile = await rootEvDir.getFileHandle(reportFileName, { create: true });
+              const rootWriter = await rootRepFile.createWritable();
+              await rootWriter.write(reportHtml);
+              await rootWriter.close();
+            } catch (eRoot) {}
+          } catch (localFsErr) {
+            console.warn('Local offline overall report save notice:', localFsErr);
+          }
+        }
+
+        // Also save to local server if present
+        if (state.hasLocalServer !== false) {
+          try {
+            await fetch('/api/reports/save-overall', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ eventName: folderTitle, username: currentUser, reportHtml })
+            });
+          } catch (eServ) {}
+        }
+
         await delay(80);
       }
 
@@ -3022,11 +3153,11 @@
       }
 
       const activeTotalEvents = state.events.filter(e => !isEventDeletedInState(e)).length;
-      const successMsg = `Google Drive Sync Completed! Active Event Masters: ${activeTotalEvents} (${addedEventsCount} new). Total Receipts: ${state.receipts.length}.`;
+      const successMsg = `✓ Sync completed successfully! Data & Overall Report saved to Google Drive: Backup ➔ offline ➔ (Event) ➔ ${currentUser} ➔ receipt. Active Events: ${activeTotalEvents}, Total Receipts: ${state.receipts.length}.`;
       if (typeof window.showToast === 'function') {
         window.showToast(successMsg, 'success');
       } else {
-        alert(`✅ Google Drive Sync Completed Successfully!\n\n• Active Event Masters: ${activeTotalEvents} (${addedEventsCount} new downloaded)\n• Receipts: ${state.receipts.length} (${addedReceiptsCount} new downloaded)\n• Payouts: ${state.payouts.length}\n\nGoogle Drive, Sheets, and local storage are fully synced!`);
+        alert(`✅ Google Drive Sync Completed Successfully!\n\n• Saved to path: Backup ➔ offline ➔ <event master name> ➔ ${currentUser} ➔ receipt\n• Overall Report saved in the same receipt folder\n• Active Events: ${activeTotalEvents} (${addedEventsCount} new)\n• Receipts: ${state.receipts.length} (${addedReceiptsCount} new)\n• Payouts: ${state.payouts.length}\n\nGoogle Drive, Sheets, and local storage are fully synced!`);
       }
     } catch (err) {
       console.error('Error during Google Drive sync:', err);
@@ -3037,6 +3168,10 @@
         alert(errMsg);
       }
     } finally {
+      if (headerDirectBtn) {
+        headerDirectBtn.disabled = false;
+        headerDirectBtn.innerHTML = originalDirectHtml;
+      }
       if (headerBtn) {
         headerBtn.disabled = false;
         headerBtn.innerHTML = originalHeaderHtml;
@@ -3045,7 +3180,7 @@
         loginBtn.disabled = false;
         loginBtn.innerHTML = originalLoginHtml;
       }
-      if (activeBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
+      if (activeBtn && activeBtn !== headerDirectBtn && activeBtn !== headerBtn && activeBtn !== loginBtn) {
         activeBtn.disabled = false;
         activeBtn.innerHTML = originalActiveHtml;
       }
@@ -3394,16 +3529,28 @@
         await wUser.write(receiptHtml);
         await wUser.close();
 
-        // Also write directly inside offline user receipt path: "offline/<username>/receipt"
+        // Also write inside offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
         try {
-          const offDir = await state.localSaveDirHandle.getDirectoryHandle('offline', { create: true });
-          const userDir = await offDir.getDirectoryHandle(safeUserFolder, { create: true });
+          const backupDirHandle = await state.localSaveDirHandle.getDirectoryHandle('Backup', { create: true });
+          const offDir = await backupDirHandle.getDirectoryHandle('offline', { create: true });
+          const evOffDir = await offDir.getDirectoryHandle(safeEventFolder, { create: true });
+          const userDir = await evOffDir.getDirectoryHandle(safeUserFolder, { create: true });
           const rcptDir = await userDir.getDirectoryHandle('receipt', { create: true });
+
           const fHandleRcpt = await rcptDir.getFileHandle(safeBillFile, { create: true });
           const wOff = await fHandleRcpt.createWritable();
           await wOff.write(receiptHtml);
           await wOff.close();
-        } catch (eOffLocal) {}
+
+          // Save structured JSON receipt data as well
+          const safeBillJson = `Receipt_${String(receiptData.billNo || 'Receipt').replace(/[\\/:*?"<>|]/g, '_').trim()}_${String(receiptData.name || 'Moi').replace(/[\\/:*?"<>|]/g, '_').trim()}.json`;
+          const fHandleJson = await rcptDir.getFileHandle(safeBillJson, { create: true });
+          const wJson = await fHandleJson.createWritable();
+          await wJson.write(JSON.stringify(receiptData, null, 2));
+          await wJson.close();
+        } catch (eOffLocal) {
+          console.warn('Backup/offline folder save notice:', eOffLocal);
+        }
       } catch (fsErr) {
         console.warn('Local disk folder hierarchy save notice:', fsErr);
       }
@@ -9214,16 +9361,26 @@
         await writable.write(htmlContent);
         await writable.close();
 
-        // Also save to offline user receipt path: "offline/<username>/receipt"
+        // Also save to offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
         try {
           const safeUser = String(rcpt.createdBy || (state.currentUser && state.currentUser.username) || 'admin').replace(/[\\/:*?"<>|]/g, '_').trim() || 'admin';
-          const offDir = await state.localSaveDirHandle.getDirectoryHandle('offline', { create: true });
-          const uDir = await offDir.getDirectoryHandle(safeUser, { create: true });
+          const backupDirHandle = await state.localSaveDirHandle.getDirectoryHandle('Backup', { create: true });
+          const offDir = await backupDirHandle.getDirectoryHandle('offline', { create: true });
+          const evOffDir = await offDir.getDirectoryHandle(safeEventFolder, { create: true });
+          const uDir = await evOffDir.getDirectoryHandle(safeUser, { create: true });
           const rDir = await uDir.getDirectoryHandle('receipt', { create: true });
+
           const fHandleOff = await rDir.getFileHandle(fileName, { create: true });
           const wOff = await fHandleOff.createWritable();
           await wOff.write(htmlContent);
           await wOff.close();
+
+          // Save structured JSON receipt data as well
+          const jsonFileName = `Receipt_${rcpt.billNo || '0'}_${rcpt.name || 'Moi'}.json`.replace(/[\\/:*?"<>|]/g, '_');
+          const fHandleJson = await rDir.getFileHandle(jsonFileName, { create: true });
+          const wJson = await fHandleJson.createWritable();
+          await wJson.write(JSON.stringify(rcpt, null, 2));
+          await wJson.close();
         } catch (eOffLocal) {
           console.warn('Local offline directory save notice:', eOffLocal);
         }
@@ -13194,8 +13351,6 @@
     }
   };
 
-})();
-
   // ==========================================
   // EDIT SAVED DATA PANEL (NAME, PLACE, ETC.)
   // ==========================================
@@ -13491,3 +13646,6 @@
     }
     renderApp();
   };
+
+  window.generateEventOverallReportHtml = generateEventOverallReportHtml;
+})();

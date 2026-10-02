@@ -437,9 +437,10 @@ function saveSingleReceiptToBackup(receiptData) {
         fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
       }
 
-      // Also save in offline user receipt path: "Backup/offline/<username>/receipt"
+      // Also save in offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
       try {
-        const offlineDir = path.join(backupDir, 'offline', username, 'receipt');
+        const safeEventName = sanitizeFolderName(folderTitle);
+        const offlineDir = path.join(backupDir, 'offline', safeEventName, username, 'receipt');
         if (!fs.existsSync(offlineDir)) {
           fs.mkdirSync(offlineDir, { recursive: true });
         }
@@ -1062,17 +1063,17 @@ const server = http.createServer((req, res) => {
 </html>`;
         fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
 
-        // Also save to offline user receipt path: "Backup/offline/<username>/receipt"
+        // Also save to offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
         try {
-          const offlineReceiptDir = path.join(backupDir, 'offline', username, 'receipt');
+          const offlineReceiptDir = path.join(backupDir, 'offline', safeName, username, 'receipt');
           if (!fs.existsSync(offlineReceiptDir)) {
             fs.mkdirSync(offlineReceiptDir, { recursive: true });
           }
           fs.writeFileSync(path.join(offlineReceiptDir, `${baseFileName}.json`), JSON.stringify(receiptData, null, 2), 'utf-8');
           fs.writeFileSync(path.join(offlineReceiptDir, `${baseFileName}.html`), htmlContent, 'utf-8');
 
-          // If Google Drive Desktop exists, mirror to G:\My Drive\moi\Backup\offline\<username>\receipt
-          const driveOfflineDir = path.join('G:\\My Drive\\moi\\Backup', 'offline', username, 'receipt');
+          // If Google Drive Desktop exists, mirror to G:\My Drive\moi\Backup\offline\<event master name>\<username>\receipt
+          const driveOfflineDir = path.join('G:\\My Drive\\moi\\Backup', 'offline', safeName, username, 'receipt');
           if (fs.existsSync('G:\\My Drive\\moi\\Backup')) {
             if (!fs.existsSync(driveOfflineDir)) {
               fs.mkdirSync(driveOfflineDir, { recursive: true });
@@ -1144,6 +1145,56 @@ const server = http.createServer((req, res) => {
         saveSinglePayoutToBackup(payoutData);
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/reports/save-overall' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { eventName, username, reportHtml } = JSON.parse(body || '{}');
+        const safeEventName = sanitizeFolderName(eventName || 'Event');
+        const safeUser = sanitizeFolderName(username || 'admin');
+        const baseDirs = getBackupDirectories();
+        const fileName = `Overall_Report_${safeEventName}.html`;
+
+        baseDirs.forEach(backupDir => {
+          // 1. Save in Backup/offline/<event master name>/<username>/receipt/
+          try {
+            const offReceiptDir = path.join(backupDir, 'offline', safeEventName, safeUser, 'receipt');
+            if (!fs.existsSync(offReceiptDir)) {
+              fs.mkdirSync(offReceiptDir, { recursive: true });
+            }
+            fs.writeFileSync(path.join(offReceiptDir, fileName), reportHtml || '', 'utf-8');
+
+            // Mirror to G:\My Drive if exists
+            const driveOfflineDir = path.join('G:\\My Drive\\moi\\Backup', 'offline', safeEventName, safeUser, 'receipt');
+            if (fs.existsSync('G:\\My Drive\\moi\\Backup')) {
+              if (!fs.existsSync(driveOfflineDir)) {
+                fs.mkdirSync(driveOfflineDir, { recursive: true });
+              }
+              fs.writeFileSync(path.join(driveOfflineDir, fileName), reportHtml || '', 'utf-8');
+            }
+          } catch (e1) {}
+
+          // 2. Also save in Backup/<event master name>/
+          try {
+            const evDir = path.join(backupDir, safeEventName);
+            if (!fs.existsSync(evDir)) {
+              fs.mkdirSync(evDir, { recursive: true });
+            }
+            fs.writeFileSync(path.join(evDir, fileName), reportHtml || '', 'utf-8');
+          } catch (e2) {}
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, fileName }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));

@@ -190,6 +190,11 @@ function doPost(e) {
       return createJsonResponse({ status: 'success', message: 'Event and associated data deleted' });
     }
 
+    if (action === 'saveOverallReport') {
+      var resultReport = saveOverallReportToDrive(contents.eventName, contents.username, contents.reportHtml);
+      return createJsonResponse({ status: 'success', report: resultReport });
+    }
+
     if (action === 'syncBatch') {
       var eventCount = 0;
       var receiptCount = 0;
@@ -600,11 +605,17 @@ function getOrCreateUserDriveFolder(rcpt) {
   }
 }
 
-// Helper to locate or create Google Drive folder path: "Backup/offline/<username>/receipt"
-// Matches 'offline', 'Offline', 'ofline', 'Ofline' case-insensitively
-function getOrCreateOfflineUserReceiptFolder(username) {
+// Helper to locate or create Google Drive folder path: "Backup/offline/<event master name>/<username>/receipt"
+// Matches 'offline', 'Offline', 'ofline', 'Ofline' and 'receipt', 'Receipt', 'receipts', 'Receipts' case-insensitively
+function getOrCreateOfflineUserReceiptFolder(eventMasterName, username) {
   var backupFolder = getOrCreateBackupFolder(); // moi/Backup
+
+  var safeEvent = (eventMasterName || 'Event').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'Event';
   var safeUser = (username || 'admin').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'admin';
+  if (!username && eventMasterName && typeof eventMasterName === 'string') {
+    safeUser = safeEvent;
+    safeEvent = 'Event';
+  }
 
   // 1. Find or create 'offline' (also accepts 'ofline')
   var offlineFolder;
@@ -618,17 +629,27 @@ function getOrCreateOfflineUserReceiptFolder(username) {
     offlineFolder = backupFolder.createFolder('offline');
   }
 
-  // 2. Find or create '<user name>'
+  // 2. Find or create '<event master name>' inside 'offline'
+  var eventFolder;
+  var evFolders = offlineFolder.getFoldersByName(safeEvent);
+  if (!evFolders.hasNext()) evFolders = offlineFolder.getFoldersByName(safeEvent.toLowerCase());
+  if (evFolders.hasNext()) {
+    eventFolder = evFolders.next();
+  } else {
+    eventFolder = offlineFolder.createFolder(safeEvent);
+  }
+
+  // 3. Find or create '<user name>' inside eventFolder
   var userFolder;
-  var uFolders = offlineFolder.getFoldersByName(safeUser);
-  if (!uFolders.hasNext()) uFolders = offlineFolder.getFoldersByName(safeUser.toLowerCase());
+  var uFolders = eventFolder.getFoldersByName(safeUser);
+  if (!uFolders.hasNext()) uFolders = eventFolder.getFoldersByName(safeUser.toLowerCase());
   if (uFolders.hasNext()) {
     userFolder = uFolders.next();
   } else {
-    userFolder = offlineFolder.createFolder(safeUser);
+    userFolder = eventFolder.createFolder(safeUser);
   }
 
-  // 3. Find or create 'receipt'
+  // 4. Find or create 'receipt' inside userFolder
   var receiptFolder;
   var rFolders = userFolder.getFoldersByName('receipt');
   if (!rFolders.hasNext()) rFolders = userFolder.getFoldersByName('Receipt');
@@ -641,6 +662,52 @@ function getOrCreateOfflineUserReceiptFolder(username) {
   }
 
   return receiptFolder;
+}
+
+// Helper to save Overall Report HTML into the offline user receipt folder & event master folder
+function saveOverallReportToDrive(eventName, username, reportHtml) {
+  var safeEvent = (eventName || 'Event').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'Event';
+  var safeUser = (username || 'admin').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'admin';
+  var fileName = 'Overall_Report_' + safeEvent + '.html';
+
+  if (!reportHtml) {
+    reportHtml = '<!DOCTYPE html><html lang="ta"><head><meta charset="UTF-8"><title>Overall Report - ' + escapeXml(safeEvent) + '</title></head><body><h2>Overall Report - ' + escapeXml(safeEvent) + '</h2></body></html>';
+  }
+
+  var htmlBlob = Utilities.newBlob(reportHtml, 'text/html', fileName);
+  var savedFiles = [];
+
+  // 1. Save in the offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
+  try {
+    var offlineReceiptFolder = getOrCreateOfflineUserReceiptFolder(safeEvent, safeUser);
+    if (offlineReceiptFolder) {
+      var existingFiles = offlineReceiptFolder.getFilesByName(fileName);
+      while (existingFiles.hasNext()) {
+        existingFiles.next().setTrashed(true);
+      }
+      var f1 = offlineReceiptFolder.createFile(htmlBlob);
+      savedFiles.push(f1.getUrl());
+    }
+  } catch (e1) {
+    Logger.log('Error saving overall report to offline receipt folder: ' + e1.toString());
+  }
+
+  // 2. Also save in the main Event Master folder under Backup
+  try {
+    var eventFolder = getOrCreateEventDriveFolder({ eventName: safeEvent, displayName1: safeEvent });
+    if (eventFolder) {
+      var existingEvFiles = eventFolder.getFilesByName(fileName);
+      while (existingEvFiles.hasNext()) {
+        existingEvFiles.next().setTrashed(true);
+      }
+      var f2 = eventFolder.createFile(htmlBlob);
+      savedFiles.push(f2.getUrl());
+    }
+  } catch (e2) {
+    Logger.log('Error saving overall report to event folder: ' + e2.toString());
+  }
+
+  return { success: true, fileName: fileName, urls: savedFiles };
 }
 
 // ==========================================
@@ -718,9 +785,14 @@ function createReceiptHtmlInDrive(rcpt, customHtml) {
     }
   } catch (e) {}
 
-  // 3. Also save in offline user receipt path: "backup - ofline - <user name> - receipt"
+  // 3. Also save in offline user receipt path: "backup - offline - <event master name> - <user name> - receipt"
   try {
-    var offlineReceiptFolder = getOrCreateOfflineUserReceiptFolder(rcpt.createdBy || 'admin');
+    var rMajor = rcpt.displayName1 || rcpt.memberName || rcpt.eventName || 'Event';
+    var rSub = rcpt.displayName1 ? (rcpt.memberName || '') : '';
+    var eventMasterName = (rMajor && rSub && rMajor !== rSub) ? (rMajor + ' - ' + rSub) : rMajor;
+    var username = (rcpt.createdBy || 'admin').toString().trim();
+
+    var offlineReceiptFolder = getOrCreateOfflineUserReceiptFolder(eventMasterName, username);
     if (offlineReceiptFolder) {
       offlineReceiptFolder.createFile(htmlBlob);
       // Save structured JSON receipt data as well

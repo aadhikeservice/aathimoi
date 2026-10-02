@@ -128,12 +128,40 @@ function doGet(e) {
       var activeBackupFolderNames = [];
       try {
         var bFolder = getOrCreateBackupFolder();
+        // 1. Direct folders in Backup (e.g. Backup/<event>)
         var bIter = bFolder.getFolders();
         while (bIter.hasNext()) {
           var bSub = bIter.next();
           var bName = bSub.getName();
-          if (bName !== 'offline' && bName !== 'Offline' && bName !== 'Archive' && bName !== 'archive' && bName !== 'Note Entry') {
-            activeBackupFolderNames.push(bName);
+          if (bName !== 'offline' && bName !== 'Offline' && bName !== 'ofline' && bName !== 'Ofline' &&
+              bName !== 'online' && bName !== 'Online' && bName !== 'Archive' && bName !== 'archive' && bName !== 'Note Entry') {
+            if (activeBackupFolderNames.indexOf(bName) === -1) activeBackupFolderNames.push(bName);
+          }
+        }
+        // 2. Event folders in Backup/offline (and ofline)
+        var offIter = bFolder.getFoldersByName('offline');
+        if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('Offline');
+        if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('ofline');
+        if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('Ofline');
+        if (offIter.hasNext()) {
+          var offF = offIter.next();
+          var oSubIter = offF.getFolders();
+          while (oSubIter.hasNext()) {
+            var oSub = oSubIter.next();
+            var oName = oSub.getName();
+            if (activeBackupFolderNames.indexOf(oName) === -1) activeBackupFolderNames.push(oName);
+          }
+        }
+        // 3. Event folders in Backup/online
+        var onlIter = bFolder.getFoldersByName('online');
+        if (!onlIter.hasNext()) onlIter = bFolder.getFoldersByName('Online');
+        if (onlIter.hasNext()) {
+          var onlF = onlIter.next();
+          var onSubIter = onlF.getFolders();
+          while (onSubIter.hasNext()) {
+            var onSub = onSubIter.next();
+            var onName = onSub.getName();
+            if (activeBackupFolderNames.indexOf(onName) === -1) activeBackupFolderNames.push(onName);
           }
         }
       } catch (eBf) {}
@@ -145,8 +173,26 @@ function doGet(e) {
         while (aIter.hasNext()) {
           var aSub = aIter.next();
           var aName = aSub.getName();
-          if (aName !== 'offline' && aName !== 'Offline') {
-            archivedFolderNames.push(aName);
+          if (aName !== 'offline' && aName !== 'Offline' && aName !== 'online' && aName !== 'Online') {
+            if (archivedFolderNames.indexOf(aName) === -1) archivedFolderNames.push(aName);
+          }
+        }
+        var aOffIter = aFolder.getFoldersByName('offline');
+        if (!aOffIter.hasNext()) aOffIter = aFolder.getFoldersByName('Offline');
+        if (aOffIter.hasNext()) {
+          var aOffSub = aOffIter.next().getFolders();
+          while (aOffSub.hasNext()) {
+            var aOffName = aOffSub.next().getName();
+            if (archivedFolderNames.indexOf(aOffName) === -1) archivedFolderNames.push(aOffName);
+          }
+        }
+        var aOnlIter = aFolder.getFoldersByName('online');
+        if (!aOnlIter.hasNext()) aOnlIter = aFolder.getFoldersByName('Online');
+        if (aOnlIter.hasNext()) {
+          var aOnlSub = aOnlIter.next().getFolders();
+          while (aOnlSub.hasNext()) {
+            var aOnlName = aOnlSub.next().getName();
+            if (archivedFolderNames.indexOf(aOnlName) === -1) archivedFolderNames.push(aOnlName);
           }
         }
       } catch (eAf) {}
@@ -184,6 +230,11 @@ function doPost(e) {
     var action = contents.action || 'saveReceipt';
 
     if (action === 'saveReceipt') {
+      if (contents.receipt) {
+        if (contents.isOffline !== undefined && contents.receipt.isOffline === undefined) contents.receipt.isOffline = contents.isOffline;
+        if (contents.username && !contents.receipt.createdBy) contents.receipt.createdBy = contents.username;
+        if (contents.eventName && !contents.receipt.eventName) contents.receipt.eventName = contents.eventName;
+      }
       var result = saveMoiReceipt(contents.receipt, contents.receiptHtml);
       return createJsonResponse({ status: 'success', receipt: result });
     }
@@ -552,12 +603,15 @@ function deleteEventEntry(contents) {
     // 4b. Move offline receipt folder from Backup/offline/<cand> into Archive/offline/<cand>
     var offFolders = backupFolder.getFoldersByName('offline');
     if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Offline');
+    if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('ofline');
+    if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Ofline');
     if (offFolders.hasNext()) {
       var offlineFolder = offFolders.next();
       
       var archOfflineFolder;
       var aOffFolders = archiveFolder.getFoldersByName('offline');
       if (!aOffFolders.hasNext()) aOffFolders = archiveFolder.getFoldersByName('Offline');
+      if (!aOffFolders.hasNext()) aOffFolders = archiveFolder.getFoldersByName('ofline');
       if (aOffFolders.hasNext()) {
         archOfflineFolder = aOffFolders.next();
       } else {
@@ -573,7 +627,30 @@ function deleteEventEntry(contents) {
       }
     }
 
-    // 4c. Move any legacy Backup/Archive folders into moi/Archive
+    // 4c. Move online receipt folder from Backup/online/<cand> into Archive/online/<cand>
+    var onlFolders = backupFolder.getFoldersByName('online');
+    if (!onlFolders.hasNext()) onlFolders = backupFolder.getFoldersByName('Online');
+    if (onlFolders.hasNext()) {
+      var onlineFolder = onlFolders.next();
+      var archOnlineFolder;
+      var aOnlFolders = archiveFolder.getFoldersByName('online');
+      if (!aOnlFolders.hasNext()) aOnlFolders = archiveFolder.getFoldersByName('Online');
+      if (aOnlFolders.hasNext()) {
+        archOnlineFolder = aOnlFolders.next();
+      } else {
+        archOnlineFolder = archiveFolder.createFolder('online');
+      }
+
+      for (var onc = 0; onc < candidateNames.length; onc++) {
+        var onCand = candidateNames[onc];
+        var oncFolders = onlineFolder.getFoldersByName(onCand);
+        while (oncFolders.hasNext()) {
+          moveFolderToArchive(oncFolders.next(), archOnlineFolder, onlineFolder);
+        }
+      }
+    }
+
+    // 4d. Move any legacy Backup/Archive folders into moi/Archive
     try {
       var legacyArchFolders = backupFolder.getFoldersByName('Archive');
       if (legacyArchFolders.hasNext()) {
@@ -707,6 +784,64 @@ function getOrCreateUserDriveFolder(rcpt) {
   }
 }
 
+// Helper to locate or create Google Drive folder path:
+// "moi folder - backup folder - (ofline or online) folder - event folder (folder name contain event master Member Name & Member Name 1) - receipt"
+function getOrCreateEventReceiptPathFolders(eventMasterName, isOffline) {
+  var backupFolder = getOrCreateBackupFolder(); // moi/Backup
+  var targetSub = isOffline ? 'offline' : 'online';
+
+  // 1. Locate or create (offline or online)
+  var envFolder;
+  if (isOffline) {
+    var offFolders = backupFolder.getFoldersByName('offline');
+    if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Offline');
+    if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('ofline');
+    if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Ofline');
+    if (offFolders.hasNext()) {
+      envFolder = offFolders.next();
+    } else {
+      envFolder = backupFolder.createFolder('offline');
+    }
+  } else {
+    var onFolders = backupFolder.getFoldersByName('online');
+    if (!onFolders.hasNext()) onFolders = backupFolder.getFoldersByName('Online');
+    if (onFolders.hasNext()) {
+      envFolder = onFolders.next();
+    } else {
+      envFolder = backupFolder.createFolder('online');
+    }
+  }
+
+  // 2. Locate or create <event folder> (Member Name & Member Name 1) inside offline/online
+  var safeEvent = (eventMasterName || 'Event').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'Event';
+  var eventFolder;
+  var evFolders = envFolder.getFoldersByName(safeEvent);
+  if (!evFolders.hasNext()) evFolders = envFolder.getFoldersByName(safeEvent.toLowerCase());
+  if (evFolders.hasNext()) {
+    eventFolder = evFolders.next();
+  } else {
+    eventFolder = envFolder.createFolder(safeEvent);
+  }
+
+  // 3. Locate or create 'receipt' inside <event folder>
+  var receiptFolder;
+  var rFolders = eventFolder.getFoldersByName('receipt');
+  if (!rFolders.hasNext()) rFolders = eventFolder.getFoldersByName('Receipt');
+  if (!rFolders.hasNext()) rFolders = eventFolder.getFoldersByName('receipts');
+  if (!rFolders.hasNext()) rFolders = eventFolder.getFoldersByName('Receipts');
+  if (rFolders.hasNext()) {
+    receiptFolder = rFolders.next();
+  } else {
+    receiptFolder = eventFolder.createFolder('receipt');
+  }
+
+  return {
+    envFolder: envFolder,
+    eventFolder: eventFolder,
+    receiptFolder: receiptFolder
+  };
+}
+
 // Helper to locate or create Google Drive folder path: "Backup/offline/<event master name>/<username>/receipt"
 // Matches 'offline', 'Offline', 'ofline', 'Ofline' and 'receipt', 'Receipt', 'receipts', 'Receipts' case-insensitively
 function getOrCreateOfflineUserReceiptFolder(eventMasterName, username) {
@@ -766,7 +901,8 @@ function getOrCreateOfflineUserReceiptFolder(eventMasterName, username) {
   return receiptFolder;
 }
 
-// Helper to save Overall Report HTML into the offline user receipt folder & event master folder
+// Helper to save Overall Report HTML into the same saved folder:
+// "moi / Backup / (offline and online) / <event master folder> / receipt / Overall_Report_<eventName>.html"
 function saveOverallReportToDrive(eventName, username, reportHtml) {
   var safeEvent = (eventName || 'Event').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'Event';
   var safeUser = (username || 'admin').toString().trim().replace(/[\\/:*?"<>|]/g, '_') || 'admin';
@@ -779,35 +915,45 @@ function saveOverallReportToDrive(eventName, username, reportHtml) {
   var htmlBlob = Utilities.newBlob(reportHtml, 'text/html', fileName);
   var savedFiles = [];
 
-  // 1. Save in the offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
-  try {
-    var offlineReceiptFolder = getOrCreateOfflineUserReceiptFolder(safeEvent, safeUser);
-    if (offlineReceiptFolder) {
-      var existingFiles = offlineReceiptFolder.getFilesByName(fileName);
-      while (existingFiles.hasNext()) {
-        existingFiles.next().setTrashed(true);
+  var saveIntoFolder = function(folder) {
+    if (!folder) return;
+    try {
+      var ex = folder.getFilesByName(fileName);
+      while (ex.hasNext()) {
+        ex.next().setTrashed(true);
       }
-      var f1 = offlineReceiptFolder.createFile(htmlBlob);
-      savedFiles.push(f1.getUrl());
+      var f = folder.createFile(htmlBlob);
+      savedFiles.push(f.getUrl());
+    } catch (eF) {
+      Logger.log('Overall report folder save notice: ' + eF.toString());
     }
-  } catch (e1) {
-    Logger.log('Error saving overall report to offline receipt folder: ' + e1.toString());
-  }
+  };
 
-  // 2. Also save in the main Event Master folder under Backup
+  // 1. Save in offline path: Backup/offline/<event folder>/receipt/ and Backup/offline/<event folder>/
+  try {
+    var offPath = getOrCreateEventReceiptPathFolders(safeEvent, true);
+    saveIntoFolder(offPath.receiptFolder);
+    saveIntoFolder(offPath.eventFolder);
+  } catch (eOff) {}
+
+  // 2. Save in online path: Backup/online/<event folder>/receipt/ and Backup/online/<event folder>/
+  try {
+    var onlPath = getOrCreateEventReceiptPathFolders(safeEvent, false);
+    saveIntoFolder(onlPath.receiptFolder);
+    saveIntoFolder(onlPath.eventFolder);
+  } catch (eOnl) {}
+
+  // 3. Save in user subfolder path: Backup/offline/<event master name>/<username>/receipt/
+  try {
+    var offlineUserReceiptFolder = getOrCreateOfflineUserReceiptFolder(safeEvent, safeUser);
+    saveIntoFolder(offlineUserReceiptFolder);
+  } catch (eU) {}
+
+  // 4. Save in main Event Master folder directly under Backup
   try {
     var eventFolder = getOrCreateEventDriveFolder({ eventName: safeEvent, displayName1: safeEvent });
-    if (eventFolder) {
-      var existingEvFiles = eventFolder.getFilesByName(fileName);
-      while (existingEvFiles.hasNext()) {
-        existingEvFiles.next().setTrashed(true);
-      }
-      var f2 = eventFolder.createFile(htmlBlob);
-      savedFiles.push(f2.getUrl());
-    }
-  } catch (e2) {
-    Logger.log('Error saving overall report to event folder: ' + e2.toString());
-  }
+    saveIntoFolder(eventFolder);
+  } catch (eM) {}
 
   return { success: true, fileName: fileName, urls: savedFiles };
 }
@@ -874,35 +1020,47 @@ function createReceiptHtmlInDrive(rcpt, customHtml) {
       '</html>';
   }
 
-  // 1. Save directly in the Event Master folder in Google Drive
-  var eventFolder = getOrCreateEventDriveFolder(rcpt);
+  var isOffline = (rcpt.isOffline === true || rcpt.isOffline === 'true' || rcpt.source === 'offline' || rcpt.source === 'offline_sync');
   var htmlBlob = Utilities.newBlob(htmlText, 'text/html', fileName + '.html');
-  eventFolder.createFile(htmlBlob);
+  var jsonBlob = Utilities.newBlob(JSON.stringify(rcpt, null, 2), 'application/json', fileName + '.json');
 
-  // 2. Also save in user subfolder if available
+  var rMajor = (rcpt.displayName1 || rcpt.memberName || rcpt.eventName || 'Event').toString().trim();
+  var rSub = rcpt.displayName1 ? (rcpt.memberName || '').toString().trim() : '';
+  var eventMasterName = (rMajor && rSub && rMajor !== rSub) ? (rMajor + ' - ' + rSub) : rMajor;
+
+  // 1. Save in the user-specified exact path:
+  // "moi folder - backup folder - (offline or online) folder - event folder (Member Name & Member Name 1) - receipt"
   try {
-    var userFolder = getOrCreateUserDriveFolder(rcpt);
-    if (userFolder && userFolder.getId() !== eventFolder.getId()) {
-      userFolder.createFile(htmlBlob);
+    var pathInfo = getOrCreateEventReceiptPathFolders(eventMasterName, isOffline);
+    if (pathInfo && pathInfo.receiptFolder) {
+      pathInfo.receiptFolder.createFile(htmlBlob);
+      pathInfo.receiptFolder.createFile(jsonBlob);
     }
-  } catch (e) {}
+    if (pathInfo && pathInfo.eventFolder) {
+      pathInfo.eventFolder.createFile(htmlBlob);
+    }
+  } catch (ePath) {
+    Logger.log('Standard path receipt save notice: ' + ePath.toString());
+  }
 
-  // 3. Also save in offline user receipt path: "backup - offline - <event master name> - <user name> - receipt"
+  // 2. Also save directly in main Backup Event Master folder
   try {
-    var rMajor = rcpt.displayName1 || rcpt.memberName || rcpt.eventName || 'Event';
-    var rSub = rcpt.displayName1 ? (rcpt.memberName || '') : '';
-    var eventMasterName = (rMajor && rSub && rMajor !== rSub) ? (rMajor + ' - ' + rSub) : rMajor;
-    var username = (rcpt.createdBy || 'admin').toString().trim();
+    var eventFolder = getOrCreateEventDriveFolder(rcpt);
+    if (eventFolder) {
+      eventFolder.createFile(htmlBlob);
+    }
+  } catch (eMain) {}
 
-    var offlineReceiptFolder = getOrCreateOfflineUserReceiptFolder(eventMasterName, username);
-    if (offlineReceiptFolder) {
-      offlineReceiptFolder.createFile(htmlBlob);
-      // Save structured JSON receipt data as well
-      var jsonBlob = Utilities.newBlob(JSON.stringify(rcpt, null, 2), 'application/json', fileName + '.json');
-      offlineReceiptFolder.createFile(jsonBlob);
+  // 3. Also save in user subfolder if available
+  try {
+    var username = (rcpt.createdBy || 'admin').toString().trim();
+    var userReceiptFolder = getOrCreateOfflineUserReceiptFolder(eventMasterName, username);
+    if (userReceiptFolder) {
+      userReceiptFolder.createFile(htmlBlob);
+      userReceiptFolder.createFile(jsonBlob);
     }
   } catch (eOff) {
-    Logger.log('Offline receipt path save notice: ' + eOff.toString());
+    Logger.log('Offline user receipt path save notice: ' + eOff.toString());
   }
 }
 

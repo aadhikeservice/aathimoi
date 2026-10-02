@@ -95,8 +95,46 @@ function scanBackupFolder() {
             const receiptObj = JSON.parse(content);
             if (receiptObj && receiptObj.billNo) {
               const key = String(receiptObj.billNo);
-              // Only associate receipt if its event exists in db
-              if (receiptObj.eventId && existingEventIds.has(receiptObj.eventId)) {
+              const rEventName = String(receiptObj.eventName || receiptObj.displayName1 || receiptObj.memberName || '').trim().toLowerCase();
+              let matchedEvent = db.events.find(e => 
+                (receiptObj.eventId && e.id === receiptObj.eventId) ||
+                (rEventName && (
+                  (e.displayName1 && e.displayName1.toLowerCase() === rEventName) ||
+                  (e.memberName && e.memberName.toLowerCase() === rEventName) ||
+                  (e.eventName && e.eventName.toLowerCase() === rEventName) ||
+                  (e.displayName1 && e.memberName && `${e.displayName1} - ${e.memberName}`.toLowerCase() === rEventName)
+                ))
+              );
+
+              if (!matchedEvent && rEventName) {
+                const isArchived = (db.deletedEventNames || []).map(x => String(x).toLowerCase().trim()).includes(rEventName);
+                if (!isArchived) {
+                  let d1 = receiptObj.displayName1 || receiptObj.memberName || receiptObj.eventName || 'Event';
+                  let m1 = receiptObj.memberName || d1;
+                  matchedEvent = {
+                    id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    displayName1: d1,
+                    memberName: m1,
+                    eventTitle: receiptObj.eventName || d1,
+                    eventName: receiptObj.eventName || d1,
+                    place: receiptObj.place || 'கருணாக்கமுத்தன் பட்டி, கம்பம்',
+                    phone: receiptObj.mobile || receiptObj.phone || '98656 07179',
+                    eventDate: receiptObj.date || new Date().toISOString().split('T')[0],
+                    billNo: '0001',
+                    upiId: '',
+                    status: 'active',
+                    assignedUsername: receiptObj.createdBy || 'admin'
+                  };
+                  db.events.push(matchedEvent);
+                  existingEventIds.add(matchedEvent.id);
+                  existingEventNames.add(rEventName);
+                  newlyAddedEvents++;
+                }
+              }
+
+              if (matchedEvent) {
+                receiptObj.eventId = matchedEvent.id;
+                receiptObj.eventName = matchedEvent.eventName || matchedEvent.displayName1;
                 if (!existingBillNos.has(key)) {
                   db.receipts.push(receiptObj);
                   existingBillNos.add(key);
@@ -984,6 +1022,33 @@ const server = http.createServer((req, res) => {
             }
           }
 
+          // Also archive online receipts folder: dirPath/online/<cand> -> archiveDir/online/<cand>
+          const onlineDir = path.join(dirPath, 'online');
+          if (fs.existsSync(onlineDir)) {
+            const archOnlineDir = path.join(archiveDir, 'online');
+            try {
+              if (!fs.existsSync(archOnlineDir)) fs.mkdirSync(archOnlineDir, { recursive: true });
+            } catch (e) {}
+            for (const cand of candidateNames) {
+              const onTarget = path.join(onlineDir, cand);
+              if (fs.existsSync(onTarget)) {
+                try {
+                  const onDest = path.join(archOnlineDir, cand);
+                  if (fs.existsSync(onDest)) {
+                    try { fs.rmSync(onDest, { recursive: true, force: true }); } catch (e) {}
+                  }
+                  try {
+                    fs.renameSync(onTarget, onDest);
+                  } catch (eRen) {
+                    fs.cpSync(onTarget, onDest, { recursive: true });
+                    fs.rmSync(onTarget, { recursive: true, force: true });
+                  }
+                  console.log(`[Event Archive] Moved online event folder ${cand} to ${archOnlineDir}`);
+                } catch (e) {}
+              }
+            }
+          }
+
           // Also archive any Google Drive conflict folders like "<EventName> (1)"
           try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -1106,23 +1171,29 @@ const server = http.createServer((req, res) => {
 </html>`;
         fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
 
-        // Also save to offline user receipt path: "Backup/offline/<event master name>/<username>/receipt"
+        // Also save to standard path: "moi / Backup / (offline and online) / <event master name> / receipt"
         try {
-          const offlineReceiptDir = path.join(backupDir, 'offline', safeName, username, 'receipt');
-          if (!fs.existsSync(offlineReceiptDir)) {
-            fs.mkdirSync(offlineReceiptDir, { recursive: true });
-          }
-          fs.writeFileSync(path.join(offlineReceiptDir, `${baseFileName}.json`), JSON.stringify(receiptData, null, 2), 'utf-8');
-          fs.writeFileSync(path.join(offlineReceiptDir, `${baseFileName}.html`), htmlContent, 'utf-8');
-
-          // If Google Drive Desktop exists, mirror to G:\My Drive\moi\Backup\offline\<event master name>\<username>\receipt
-          const driveOfflineDir = path.join('G:\\My Drive\\moi\\Backup', 'offline', safeName, username, 'receipt');
-          if (fs.existsSync('G:\\My Drive\\moi\\Backup')) {
-            if (!fs.existsSync(driveOfflineDir)) {
-              fs.mkdirSync(driveOfflineDir, { recursive: true });
+          const saveToReceiptDir = (targetDir) => {
+            if (!fs.existsSync(targetDir)) {
+              fs.mkdirSync(targetDir, { recursive: true });
             }
-            fs.writeFileSync(path.join(driveOfflineDir, `${baseFileName}.json`), JSON.stringify(receiptData, null, 2), 'utf-8');
-            fs.writeFileSync(path.join(driveOfflineDir, `${baseFileName}.html`), htmlContent, 'utf-8');
+            fs.writeFileSync(path.join(targetDir, `${baseFileName}.json`), JSON.stringify(receiptData, null, 2), 'utf-8');
+            fs.writeFileSync(path.join(targetDir, `${baseFileName}.html`), htmlContent, 'utf-8');
+          };
+
+          // 1. Local Backup/offline/<event folder>/receipt and user subfolder
+          saveToReceiptDir(path.join(backupDir, 'offline', safeName, 'receipt'));
+          saveToReceiptDir(path.join(backupDir, 'offline', safeName, username, 'receipt'));
+
+          // 2. Local Backup/online/<event folder>/receipt
+          saveToReceiptDir(path.join(backupDir, 'online', safeName, 'receipt'));
+
+          // 3. If Google Drive Desktop exists, mirror to G:\My Drive\moi\Backup
+          const gDriveBackup = 'G:\\My Drive\\moi\\Backup';
+          if (fs.existsSync(gDriveBackup)) {
+            saveToReceiptDir(path.join(gDriveBackup, 'offline', safeName, 'receipt'));
+            saveToReceiptDir(path.join(gDriveBackup, 'offline', safeName, username, 'receipt'));
+            saveToReceiptDir(path.join(gDriveBackup, 'online', safeName, 'receipt'));
           }
         } catch (eOff) {}
 
@@ -1208,32 +1279,37 @@ const server = http.createServer((req, res) => {
         const fileName = `Overall_Report_${safeEventName}.html`;
 
         baseDirs.forEach(backupDir => {
-          // 1. Save in Backup/offline/<event master name>/<username>/receipt/
-          try {
-            const offReceiptDir = path.join(backupDir, 'offline', safeEventName, safeUser, 'receipt');
-            if (!fs.existsSync(offReceiptDir)) {
-              fs.mkdirSync(offReceiptDir, { recursive: true });
-            }
-            fs.writeFileSync(path.join(offReceiptDir, fileName), reportHtml || '', 'utf-8');
-
-            // Mirror to G:\My Drive if exists
-            const driveOfflineDir = path.join('G:\\My Drive\\moi\\Backup', 'offline', safeEventName, safeUser, 'receipt');
-            if (fs.existsSync('G:\\My Drive\\moi\\Backup')) {
-              if (!fs.existsSync(driveOfflineDir)) {
-                fs.mkdirSync(driveOfflineDir, { recursive: true });
+          const saveReportTo = (targetDir) => {
+            try {
+              if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
               }
-              fs.writeFileSync(path.join(driveOfflineDir, fileName), reportHtml || '', 'utf-8');
-            }
-          } catch (e1) {}
+              fs.writeFileSync(path.join(targetDir, fileName), reportHtml || '', 'utf-8');
+            } catch (eRep) {}
+          };
 
-          // 2. Also save in Backup/<event master name>/
-          try {
-            const evDir = path.join(backupDir, safeEventName);
-            if (!fs.existsSync(evDir)) {
-              fs.mkdirSync(evDir, { recursive: true });
-            }
-            fs.writeFileSync(path.join(evDir, fileName), reportHtml || '', 'utf-8');
-          } catch (e2) {}
+          // 1. Offline path: Backup/offline/<event master name>/receipt/ and Backup/offline/<event master name>/
+          saveReportTo(path.join(backupDir, 'offline', safeEventName, 'receipt'));
+          saveReportTo(path.join(backupDir, 'offline', safeEventName));
+          saveReportTo(path.join(backupDir, 'offline', safeEventName, safeUser, 'receipt'));
+
+          // 2. Online path: Backup/online/<event master name>/receipt/ and Backup/online/<event master name>/
+          saveReportTo(path.join(backupDir, 'online', safeEventName, 'receipt'));
+          saveReportTo(path.join(backupDir, 'online', safeEventName));
+
+          // 3. Main event directory under Backup
+          saveReportTo(path.join(backupDir, safeEventName));
+
+          // 4. Mirror to G:\My Drive if exists
+          const gDriveBackup = 'G:\\My Drive\\moi\\Backup';
+          if (fs.existsSync(gDriveBackup)) {
+            saveReportTo(path.join(gDriveBackup, 'offline', safeEventName, 'receipt'));
+            saveReportTo(path.join(gDriveBackup, 'offline', safeEventName));
+            saveReportTo(path.join(gDriveBackup, 'offline', safeEventName, safeUser, 'receipt'));
+            saveReportTo(path.join(gDriveBackup, 'online', safeEventName, 'receipt'));
+            saveReportTo(path.join(gDriveBackup, 'online', safeEventName));
+            saveReportTo(path.join(gDriveBackup, safeEventName));
+          }
         });
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });

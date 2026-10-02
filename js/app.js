@@ -2975,6 +2975,7 @@
       const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
 
       // If Google Drive reports archived folders, automatically register them as deleted/archived
+      const archivedFoldersSet = new Set((onlineData.archivedFolderNames || []).map(x => String(x || '').trim().toLowerCase().replace(/\s+/g, ' ')).filter(Boolean));
       if (Array.isArray(onlineData.archivedFolderNames)) {
         onlineData.archivedFolderNames.forEach(an => {
           const cleanAn = String(an || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -2987,12 +2988,24 @@
         });
       }
 
+      // If Google Drive reports active backup folders, ensure they are NOT marked as deleted
+      if (Array.isArray(onlineData.activeBackupFolderNames)) {
+        onlineData.activeBackupFolderNames.forEach(bn => {
+          const cleanBn = String(bn || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          if (cleanBn && !archivedFoldersSet.has(cleanBn)) {
+            deletedNamesSet.delete(cleanBn);
+            state.deletedEventNames = (state.deletedEventNames || []).filter(d => String(d).trim().toLowerCase().replace(/\s+/g, ' ') !== cleanBn);
+          }
+        });
+      }
+      localStorage.setItem('aathi_deleted_event_names', JSON.stringify(state.deletedEventNames));
+
       let addedEventsCount = 0;
       let updatedEventsCount = 0;
       let addedReceiptsCount = 0;
       let addedPayoutsCount = 0;
 
-      // 2a. Merge Events
+      // 2a. Merge Events from Events sheet
       if (Array.isArray(onlineData.events)) {
         onlineData.events.forEach(dev => {
           const devId = String(dev.id || dev.eventid || dev['Event ID'] || '').trim();
@@ -3054,6 +3067,74 @@
         });
       }
 
+      // 2a-2. AUTO-CREATE Active Events from Google Drive Backup Folders & Receipts
+      // This ensures all active data in Backup folders (e.g. Backup/offline/<event folder>)
+      // and their receipts are fully represented in Event Master and visible!
+      const activeCandidates = new Map();
+      if (Array.isArray(onlineData.activeBackupFolderNames)) {
+        onlineData.activeBackupFolderNames.forEach(fn => {
+          const clean = String(fn || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          if (clean && !archivedFoldersSet.has(clean) && !deletedNamesSet.has(clean)) {
+            if (!activeCandidates.has(clean)) {
+              activeCandidates.set(clean, { originalName: String(fn).trim(), sampleReceipt: null });
+            }
+          }
+        });
+      }
+      if (Array.isArray(onlineData.receipts)) {
+        onlineData.receipts.forEach(r => {
+          const rName = String(r.eventName || r.eventname || r['Event Name'] || '').trim();
+          const clean = rName.toLowerCase().replace(/\s+/g, ' ');
+          if (clean && !archivedFoldersSet.has(clean) && !deletedNamesSet.has(clean)) {
+            if (!activeCandidates.has(clean)) {
+              activeCandidates.set(clean, { originalName: rName, sampleReceipt: r });
+            } else if (!activeCandidates.get(clean).sampleReceipt) {
+              activeCandidates.get(clean).sampleReceipt = r;
+            }
+          }
+        });
+      }
+
+      activeCandidates.forEach(({ originalName, sampleReceipt }, cleanKey) => {
+        const alreadyExists = (state.events || []).some(ev => {
+          const names = [
+            ev.eventName,
+            ev.memberName,
+            ev.displayName1,
+            (ev.displayName1 && ev.memberName ? `${ev.displayName1} - ${ev.memberName}` : ''),
+            (ev.memberName && ev.displayName1 ? `${ev.memberName} - ${ev.displayName1}` : '')
+          ].map(n => String(n || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean);
+          return names.includes(cleanKey);
+        });
+
+        if (!alreadyExists) {
+          let d1 = originalName;
+          let m1 = originalName;
+          if (originalName.includes(' - ')) {
+            const parts = originalName.split(' - ');
+            d1 = parts[0].trim();
+            m1 = parts.slice(1).join(' - ').trim();
+          }
+          const newEv = {
+            id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+            displayName1: d1,
+            memberName: m1,
+            eventTitle: originalName,
+            eventName: originalName,
+            place: (sampleReceipt && (sampleReceipt.place || sampleReceipt['Place'])) || 'கருணாக்கமுத்தன் பட்டி, கம்பம்',
+            phone: (sampleReceipt && (sampleReceipt.mobile || sampleReceipt.phone || sampleReceipt['Mobile Number'])) || '98656 07179',
+            eventDate: (sampleReceipt && (sampleReceipt.date || sampleReceipt['Date'])) || new Date().toISOString().split('T')[0],
+            billNo: '0001',
+            upiId: '',
+            status: 'active',
+            assignedUsername: (sampleReceipt && (sampleReceipt.createdBy || sampleReceipt.createdby)) || 'admin',
+            folderId: originalName
+          };
+          state.events.push(newEv);
+          addedEventsCount++;
+        }
+      });
+
       // 2b. Merge Receipts
       if (Array.isArray(onlineData.receipts)) {
         const activeEvList = state.events.filter(e => !isEventDeletedInState(e));
@@ -3072,15 +3153,20 @@
               (e.memberName && e.memberName.toLowerCase() === rEvName.toLowerCase()) ||
               (e.displayName1 && e.displayName1.toLowerCase() === rEvName.toLowerCase()) ||
               (e.eventTitle && e.eventTitle.toLowerCase() === rEvName.toLowerCase()) ||
-              (e.eventName && e.eventName.toLowerCase() === rEvName.toLowerCase())
+              (e.eventName && e.eventName.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.displayName1 && e.memberName && `${e.displayName1} - ${e.memberName}`.toLowerCase() === rEvName.toLowerCase()) ||
+              (e.memberName && e.displayName1 && `${e.memberName} - ${e.displayName1}`.toLowerCase() === rEvName.toLowerCase())
             ))
           );
 
           const targetEventId = matchedEv ? matchedEv.id : rEvId;
           const targetEventName = matchedEv ? (matchedEv.memberName || matchedEv.displayName1 || matchedEv.eventName) : rEvName;
 
-          const exists = state.receipts.some(r => String(r.billNo).trim() === bNo && (!targetEventId || r.eventId === targetEventId));
-          if (!exists) {
+          const existingRcpt = state.receipts.find(r => String(r.billNo).trim() === bNo && (!targetEventId || !r.eventId || r.eventId === targetEventId));
+          if (existingRcpt) {
+            if (targetEventId && !existingRcpt.eventId) existingRcpt.eventId = targetEventId;
+            if (targetEventName && !existingRcpt.eventName) existingRcpt.eventName = targetEventName;
+          } else {
             state.receipts.push({
               id: 'rcpt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
               billNo: bNo,
@@ -3611,6 +3697,20 @@
           const wJson = await fHandleJson.createWritable();
           await wJson.write(JSON.stringify(receiptData, null, 2));
           await wJson.close();
+
+          // Standard path: Backup/offline/<event folder>/receipt
+          try {
+            const stdRcptDir = await evOffDir.getDirectoryHandle('receipt', { create: true });
+            const stdFHandle = await stdRcptDir.getFileHandle(safeBillFile, { create: true });
+            const stdW = await stdFHandle.createWritable();
+            await stdW.write(receiptHtml);
+            await stdW.close();
+
+            const stdJsonFHandle = await stdRcptDir.getFileHandle(safeBillJson, { create: true });
+            const stdJsonW = await stdJsonFHandle.createWritable();
+            await stdJsonW.write(JSON.stringify(receiptData, null, 2));
+            await stdJsonW.close();
+          } catch (eStd) {}
         } catch (eOffLocal) {
           console.warn('Backup/offline folder save notice:', eOffLocal);
         }
@@ -4960,6 +5060,7 @@
           const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
           const deletedBeforeTs = state.deletedAllBefore ? new Date(state.deletedAllBefore).getTime() : 0;
 
+          const archivedFoldersSet = new Set((json.data.archivedFolderNames || []).map(x => String(x || '').trim().toLowerCase().replace(/\s+/g, ' ')).filter(Boolean));
           // Ingest any archived folder names reported by Google Drive into deleted/archived filter
           if (Array.isArray(json.data.archivedFolderNames)) {
             json.data.archivedFolderNames.forEach(an => {
@@ -4971,8 +5072,19 @@
                 }
               }
             });
-            localStorage.setItem('aathi_deleted_event_names', JSON.stringify(state.deletedEventNames));
           }
+
+          // Unmark any active backup folders from deleted list
+          if (Array.isArray(json.data.activeBackupFolderNames)) {
+            json.data.activeBackupFolderNames.forEach(bn => {
+              const cleanBn = String(bn || '').trim().toLowerCase().replace(/\s+/g, ' ');
+              if (cleanBn && !archivedFoldersSet.has(cleanBn)) {
+                deletedNamesSet.delete(cleanBn);
+                state.deletedEventNames = (state.deletedEventNames || []).filter(d => String(d).trim().toLowerCase().replace(/\s+/g, ' ') !== cleanBn);
+              }
+            });
+          }
+          localStorage.setItem('aathi_deleted_event_names', JSON.stringify(state.deletedEventNames));
 
           driveEvents.forEach(dev => {
             const devId = String(dev.id || dev.eventid || dev['Event ID'] || '').trim();
@@ -5036,11 +5148,76 @@
             }
           });
 
-          // Only merge receipts from Drive whose event actually exists in state.events and is not deleted or archived
+          // Auto-create active events from Google Drive Backup Folders & Receipts
+          const activeCandidates = new Map();
+          if (Array.isArray(json.data.activeBackupFolderNames)) {
+            json.data.activeBackupFolderNames.forEach(fn => {
+              const clean = String(fn || '').trim().toLowerCase().replace(/\s+/g, ' ');
+              if (clean && !archivedFoldersSet.has(clean) && !deletedNamesSet.has(clean)) {
+                if (!activeCandidates.has(clean)) {
+                  activeCandidates.set(clean, { originalName: String(fn).trim(), sampleReceipt: null });
+                }
+              }
+            });
+          }
+          if (Array.isArray(json.data.receipts)) {
+            json.data.receipts.forEach(r => {
+              const rName = String(r.eventName || r.eventname || r['Event Name'] || '').trim();
+              const clean = rName.toLowerCase().replace(/\s+/g, ' ');
+              if (clean && !archivedFoldersSet.has(clean) && !deletedNamesSet.has(clean)) {
+                if (!activeCandidates.has(clean)) {
+                  activeCandidates.set(clean, { originalName: rName, sampleReceipt: r });
+                } else if (!activeCandidates.get(clean).sampleReceipt) {
+                  activeCandidates.get(clean).sampleReceipt = r;
+                }
+              }
+            });
+          }
+
+          activeCandidates.forEach(({ originalName, sampleReceipt }, cleanKey) => {
+            const alreadyExists = (state.events || []).some(ev => {
+              const names = [
+                ev.eventName,
+                ev.memberName,
+                ev.displayName1,
+                (ev.displayName1 && ev.memberName ? `${ev.displayName1} - ${ev.memberName}` : ''),
+                (ev.memberName && ev.displayName1 ? `${ev.memberName} - ${ev.displayName1}` : '')
+              ].map(n => String(n || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean);
+              return names.includes(cleanKey);
+            });
+
+            if (!alreadyExists) {
+              let d1 = originalName;
+              let m1 = originalName;
+              if (originalName.includes(' - ')) {
+                const parts = originalName.split(' - ');
+                d1 = parts[0].trim();
+                m1 = parts.slice(1).join(' - ').trim();
+              }
+              const newEv = {
+                id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                displayName1: d1,
+                memberName: m1,
+                eventTitle: originalName,
+                eventName: originalName,
+                place: (sampleReceipt && (sampleReceipt.place || sampleReceipt['Place'])) || 'கருணாக்கமுத்தன் பட்டி, கம்பம்',
+                phone: (sampleReceipt && (sampleReceipt.mobile || sampleReceipt.phone || sampleReceipt['Mobile Number'])) || '98656 07179',
+                eventDate: (sampleReceipt && (sampleReceipt.date || sampleReceipt['Date'])) || new Date().toISOString().split('T')[0],
+                billNo: '0001',
+                upiId: '',
+                status: 'active',
+                assignedUsername: (sampleReceipt && (sampleReceipt.createdBy || sampleReceipt.createdby)) || 'admin',
+                folderId: originalName
+              };
+              state.events.push(newEv);
+              addedCount++;
+            }
+          });
+
+          // Merge receipts from Drive matching active events
           if (Array.isArray(json.data.receipts)) {
             let rcptAdded = 0;
-            const activeEvIds = new Set(state.events.map(e => e.id));
-            const activeEvNames = new Set(state.events.map(e => (e.displayName1 || e.memberName || e.eventName || '').trim().toLowerCase()).filter(Boolean));
+            const activeEvList = state.events.filter(e => !isEventDeletedInState(e));
             json.data.receipts.forEach(drcpt => {
               const bNo = String(drcpt.billNo || drcpt.billno || drcpt['Bill No'] || '').trim();
               if (!bNo) return;
@@ -5049,16 +5226,32 @@
               if (rEvId && deletedIdsSet.has(rEvId)) return;
               if (rEvName && deletedNamesSet.has(rEvName.toLowerCase().replace(/\s+/g, ' ').trim())) return;
               if (isEventDeletedInState(drcpt)) return;
-              const matchesActiveEvent = (rEvId && activeEvIds.has(rEvId)) || (rEvName && activeEvNames.has(rEvName.toLowerCase()));
-              if (!matchesActiveEvent) return;
 
-              const exists = state.receipts.some(r => String(r.billNo).trim() === bNo && (!rEvId || r.eventId === rEvId));
-              if (!exists) {
+              const matchedEv = activeEvList.find(e => 
+                (rEvId && e.id === rEvId) ||
+                (rEvName && (
+                  (e.memberName && e.memberName.toLowerCase() === rEvName.toLowerCase()) ||
+                  (e.displayName1 && e.displayName1.toLowerCase() === rEvName.toLowerCase()) ||
+                  (e.eventTitle && e.eventTitle.toLowerCase() === rEvName.toLowerCase()) ||
+                  (e.eventName && e.eventName.toLowerCase() === rEvName.toLowerCase()) ||
+                  (e.displayName1 && e.memberName && `${e.displayName1} - ${e.memberName}`.toLowerCase() === rEvName.toLowerCase()) ||
+                  (e.memberName && e.displayName1 && `${e.memberName} - ${e.displayName1}`.toLowerCase() === rEvName.toLowerCase())
+                ))
+              );
+
+              const targetEventId = matchedEv ? matchedEv.id : rEvId;
+              const targetEventName = matchedEv ? (matchedEv.memberName || matchedEv.displayName1 || matchedEv.eventName) : rEvName;
+
+              const existing = state.receipts.find(r => String(r.billNo).trim() === bNo && (!targetEventId || !r.eventId || r.eventId === targetEventId));
+              if (existing) {
+                if (targetEventId && !existing.eventId) existing.eventId = targetEventId;
+                if (targetEventName && !existing.eventName) existing.eventName = targetEventName;
+              } else {
                 state.receipts.push({
                   id: 'rcpt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
                   billNo: bNo,
-                  eventId: rEvId,
-                  eventName: rEvName,
+                  eventId: targetEventId,
+                  eventName: targetEventName,
                   place: drcpt.place || drcpt['Place'] || '',
                   initial: drcpt.initial || drcpt['Initial'] || '',
                   name: drcpt.name || drcpt['Name'] || '',
@@ -5066,7 +5259,7 @@
                   name1: drcpt.name1 || drcpt['Name 1'] || '',
                   relationship: drcpt.relationship || drcpt['Relationship'] || '',
                   mobile: drcpt.mobile || drcpt.mobilenumber || drcpt.phone || drcpt['Mobile Number'] || '',
-                  amount: drcpt.amount || drcpt['Amount (₹)'] || 0,
+                  amount: parseFloat(drcpt.amount || drcpt['Amount (₹)'] || 0),
                   amountWords: drcpt.amountWords || drcpt.amountwords || drcpt['Amount in Words'] || '',
                   mode: drcpt.mode || drcpt['Mode'] || 'Cash',
                   upiTxTime: drcpt.upiTxTime || drcpt.upitxtime || '',
@@ -5083,14 +5276,20 @@
             }
           }
 
-          // Strictly filter out any archived/deleted events and retain only active Backup events
+          // Strictly filter out any archived/deleted events and retain all active Backup events
           state.events = (state.events || []).filter(e => !isEventDeletedInState(e));
-          const finalActiveIds = new Set(state.events.map(e => e.id));
-          const finalActiveNames = new Set(state.events.map(e => (e.displayName1 || e.memberName || e.eventName || '').trim().toLowerCase()).filter(Boolean));
+          const finalActiveIds = new Set(state.events.map(e => String(e.id || '').trim()));
+          const finalActiveNames = new Set();
+          state.events.forEach(e => {
+            [e.eventName, e.memberName, e.displayName1, (e.displayName1 && e.memberName ? `${e.displayName1} - ${e.memberName}` : ''), (e.memberName && e.displayName1 ? `${e.memberName} - ${e.displayName1}` : '')]
+              .filter(Boolean)
+              .forEach(n => finalActiveNames.add(String(n).toLowerCase().replace(/\s+/g, ' ').trim()));
+          });
+
           state.receipts = (state.receipts || []).filter(r => {
             if (isEventDeletedInState(r)) return false;
             const rEvId = String(r.eventId || '').trim();
-            const rEvName = String(r.eventName || '').trim().toLowerCase();
+            const rEvName = String(r.eventName || '').trim().toLowerCase().replace(/\s+/g, ' ');
             return (rEvId && finalActiveIds.has(rEvId)) || (rEvName && finalActiveNames.has(rEvName));
           });
 
@@ -9508,8 +9707,19 @@
           const jsonFileName = `Receipt_${rcpt.billNo || '0'}_${rcpt.name || 'Moi'}.json`.replace(/[\\/:*?"<>|]/g, '_');
           const fHandleJson = await rDir.getFileHandle(jsonFileName, { create: true });
           const wJson = await fHandleJson.createWritable();
-          await wJson.write(JSON.stringify(rcpt, null, 2));
-          await wJson.close();
+          // Standard path: Backup/offline/<event folder>/receipt
+          try {
+            const stdRcptDir = await evOffDir.getDirectoryHandle('receipt', { create: true });
+            const fHandleStd = await stdRcptDir.getFileHandle(fileName, { create: true });
+            const wStd = await fHandleStd.createWritable();
+            await wStd.write(htmlContent);
+            await wStd.close();
+
+            const fHandleStdJson = await stdRcptDir.getFileHandle(jsonFileName, { create: true });
+            const wStdJson = await fHandleStdJson.createWritable();
+            await wStdJson.write(JSON.stringify(rcpt, null, 2));
+            await wStdJson.close();
+          } catch (eStdLocal) {}
         } catch (eOffLocal) {
           console.warn('Local offline directory save notice:', eOffLocal);
         }

@@ -8366,6 +8366,10 @@
 
   function renderReceiptPanel() {
     const isAdmin = hasFullAccess();
+    const visibleEvents = getVisibleEvents();
+    if ((!state.activeEventId || !visibleEvents.some(e => e.id === state.activeEventId)) && visibleEvents.length > 0) {
+      state.activeEventId = visibleEvents[0].id;
+    }
     const activeEv = getActiveEvent();
     const receipts = state.receipts.filter(r => {
       if (!state.activeEventId) return true;
@@ -8392,10 +8396,10 @@
               <div class="flex items-center space-x-2">
                 <label class="text-xs font-semibold text-amber-400 whitespace-nowrap">Select Event:</label>
                 <select id="receipt-event-select" class="input-styled text-sm py-1.5 min-w-[200px]" ${!isAdmin ? 'disabled' : ''}>
-                  ${isAdmin ? '<option value="">All Events</option>' : ''}
-                  ${getVisibleEvents().map(ev => `
+                  ${visibleEvents.length === 0 ? '<option value="">No Events</option>' : ''}
+                  ${visibleEvents.map(ev => `
                     <option value="${ev.id}" ${ev.id === state.activeEventId ? 'selected' : ''}>
-                      ${ev.displayName1 || ev.memberName}${ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : ''} (${ev.place})
+                      ${ev.displayName1 || ev.memberName}${ev.displayName1 && ev.memberName && ev.displayName1 !== ev.memberName ? ' - ' + ev.memberName : ''} (${ev.place})
                     </option>
                   `).join('')}
                 </select>
@@ -13481,6 +13485,10 @@
   // ==========================================
   function renderEditSavedDataPanel() {
     const isAdmin = hasFullAccess();
+    const visibleEvents = getVisibleEvents();
+    if ((!state.activeEventId || !visibleEvents.some(e => e.id === state.activeEventId)) && visibleEvents.length > 0) {
+      state.activeEventId = visibleEvents[0].id;
+    }
     const activeEv = getActiveEvent();
     state.editSavedTab = state.editSavedTab || 'receipts';
 
@@ -13530,6 +13538,7 @@
   }
 
   function renderEditSavedReceiptsSubTab(receipts, distinctPlaces, isAdmin) {
+    const visibleEvents = getVisibleEvents();
     return `
       <div class="glass-card p-6 border border-slate-800 space-y-4">
         <!-- Controls Bar -->
@@ -13538,10 +13547,10 @@
             <div class="flex items-center space-x-2">
               <label class="text-xs font-semibold text-amber-400 whitespace-nowrap">Select Event:</label>
               <select id="edit-saved-event-select" class="input-styled text-xs py-1.5 min-w-[180px]" ${!isAdmin ? 'disabled' : ''}>
-                ${isAdmin ? '<option value="">All Events</option>' : ''}
-                ${getVisibleEvents().map(ev => `
+                ${visibleEvents.length === 0 ? '<option value="">No Events</option>' : ''}
+                ${visibleEvents.map(ev => `
                   <option value="${ev.id}" ${ev.id === state.activeEventId ? 'selected' : ''}>
-                    ${ev.displayName1 || ev.memberName} (${ev.place})
+                    ${ev.displayName1 || ev.memberName}${ev.displayName1 && ev.memberName && ev.displayName1 !== ev.memberName ? ' - ' + ev.memberName : ''} (${ev.place})
                   </option>
                 `).join('')}
               </select>

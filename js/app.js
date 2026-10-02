@@ -2431,13 +2431,13 @@
 
   function isEventDeletedInState(ev) {
     if (!ev) return true;
-    const evId = String(ev.id || ev.eventid || ev['Event ID'] || '').trim();
+    const evId = String(ev.eventId || ev.eventid || ev['Event ID'] || ev.id || '').trim();
     const primaryName = String(ev.memberName || ev.membername || ev['Member Name'] || '').trim();
     const name1 = String(ev.displayName1 || ev.membername1 || ev['Member Name 1'] || '').trim();
     const eName = String(ev.eventName || ev.eventTitle || ev.eventtitle || '').trim();
-    if (!primaryName && !name1 && !eName) return true;
+    if (!evId && !primaryName && !name1 && !eName) return true;
 
-    const deletedIds = state.deletedEventIds || [];
+    const deletedIds = (state.deletedEventIds || []).map(x => String(x).trim());
     if (evId && deletedIds.includes(evId)) return true;
 
     const deletedNames = (state.deletedEventNames || []).map(x => String(x).toLowerCase().replace(/\s+/g, ' ').trim());
@@ -2800,8 +2800,24 @@
     try {
       // Step 1: Upload offline/local items to Google Drive & Sheets
       const localEvents = (state.events || []).filter(e => !isEventDeletedInState(e));
-      const localReceipts = state.receipts || [];
-      const localPayouts = state.payouts || [];
+
+      // Filter receipts and payouts: Only upload data belonging to active events (never upload archived/deleted events)
+      const isBelongingToActiveEvent = (item) => {
+        if (!item) return false;
+        if (isEventDeletedInState(item)) return false;
+        return localEvents.some(ev => 
+          (item.eventId && ev.id === item.eventId) ||
+          (item.eventName && (
+            item.eventName === ev.eventName || 
+            item.eventName === ev.memberName || 
+            item.eventName === ev.displayName1 ||
+            (ev.displayName1 && ev.memberName && item.eventName === `${ev.displayName1} - ${ev.memberName}`)
+          ))
+        );
+      };
+
+      const localReceipts = (state.receipts || []).filter(isBelongingToActiveEvent);
+      const localPayouts = (state.payouts || []).filter(isBelongingToActiveEvent);
       const localNoteEvents = state.noteEvents || [];
       const localNoteEntries = state.noteEntries || [];
 
@@ -2957,6 +2973,19 @@
       const onlineData = json.data;
       const deletedIdsSet = new Set((state.deletedEventIds || []).map(x => String(x).trim()));
       const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
+
+      // If Google Drive reports archived folders, automatically register them as deleted/archived
+      if (Array.isArray(onlineData.archivedFolderNames)) {
+        onlineData.archivedFolderNames.forEach(an => {
+          const cleanAn = String(an || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          if (cleanAn && !deletedNamesSet.has(cleanAn)) {
+            deletedNamesSet.add(cleanAn);
+            if (!state.deletedEventNames.includes(cleanAn)) {
+              state.deletedEventNames.push(cleanAn);
+            }
+          }
+        });
+      }
 
       let addedEventsCount = 0;
       let updatedEventsCount = 0;
@@ -3138,6 +3167,40 @@
         }
       }
 
+      // 2e. Enforce that ONLY active data from the Backup folder is retained and shown!
+      // Any event moved to the Archive folder (and its receipts/payouts) are excluded from the active view.
+      state.events = (state.events || []).filter(e => !isEventDeletedInState(e));
+
+      const activeEvIdsSet = new Set(state.events.map(e => String(e.id || '').trim()));
+      const activeEvNamesSet = new Set();
+      state.events.forEach(e => {
+        [e.eventName, e.memberName, e.displayName1, (e.displayName1 && e.memberName ? `${e.displayName1} - ${e.memberName}` : '')]
+          .filter(Boolean)
+          .forEach(n => activeEvNamesSet.add(String(n).toLowerCase().replace(/\s+/g, ' ').trim()));
+      });
+
+      state.receipts = (state.receipts || []).filter(r => {
+        if (isEventDeletedInState(r)) return false;
+        const rId = String(r.eventId || '').trim();
+        const rName = String(r.eventName || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (rId && activeEvIdsSet.has(rId)) return true;
+        if (rName && activeEvNamesSet.has(rName)) return true;
+        return false;
+      });
+
+      state.payouts = (state.payouts || []).filter(p => {
+        if (isEventDeletedInState(p)) return false;
+        const pId = String(p.eventId || '').trim();
+        const pName = String(p.eventName || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (pId && activeEvIdsSet.has(pId)) return true;
+        if (pName && activeEvNamesSet.has(pName)) return true;
+        return false;
+      });
+
+      if (state.activeEventId && !activeEvIdsSet.has(state.activeEventId)) {
+        state.activeEventId = state.events.length > 0 ? state.events[0].id : null;
+      }
+
       // Save merged database state locally
       await saveDb();
 
@@ -3152,12 +3215,12 @@
         }
       }
 
-      const activeTotalEvents = state.events.filter(e => !isEventDeletedInState(e)).length;
-      const successMsg = `✓ Sync completed successfully! Data & Overall Report saved to Google Drive: Backup ➔ offline ➔ (Event) ➔ ${currentUser} ➔ receipt. Active Events: ${activeTotalEvents}, Total Receipts: ${state.receipts.length}.`;
+      const activeTotalEvents = state.events.length;
+      const successMsg = `✓ Sync completed! Showing active data from Backup folder (${activeTotalEvents} events, ${state.receipts.length} receipts). Archived events preserved in Archive folder.`;
       if (typeof window.showToast === 'function') {
         window.showToast(successMsg, 'success');
       } else {
-        alert(`✅ Google Drive Sync Completed Successfully!\n\n• Saved to path: Backup ➔ offline ➔ <event master name> ➔ ${currentUser} ➔ receipt\n• Overall Report saved in the same receipt folder\n• Active Events: ${activeTotalEvents} (${addedEventsCount} new)\n• Receipts: ${state.receipts.length} (${addedReceiptsCount} new)\n• Payouts: ${state.payouts.length}\n\nGoogle Drive, Sheets, and local storage are fully synced!`);
+        alert(`✅ Google Drive Sync Completed!\n\n• Showing active data from Backup folder\n• Active Events: ${activeTotalEvents}\n• Total Receipts: ${state.receipts.length}\n• Total Payouts: ${state.payouts.length}\n\nDeleted events & overall reports are safely preserved in the Archive folder in Google Drive.`);
       }
     } catch (err) {
       console.error('Error during Google Drive sync:', err);
@@ -4897,6 +4960,20 @@
           const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
           const deletedBeforeTs = state.deletedAllBefore ? new Date(state.deletedAllBefore).getTime() : 0;
 
+          // Ingest any archived folder names reported by Google Drive into deleted/archived filter
+          if (Array.isArray(json.data.archivedFolderNames)) {
+            json.data.archivedFolderNames.forEach(an => {
+              const cleanAn = String(an || '').trim().toLowerCase().replace(/\s+/g, ' ');
+              if (cleanAn && !deletedNamesSet.has(cleanAn)) {
+                deletedNamesSet.add(cleanAn);
+                if (!state.deletedEventNames.includes(cleanAn)) {
+                  state.deletedEventNames.push(cleanAn);
+                }
+              }
+            });
+            localStorage.setItem('aathi_deleted_event_names', JSON.stringify(state.deletedEventNames));
+          }
+
           driveEvents.forEach(dev => {
             const devId = String(dev.id || dev.eventid || dev['Event ID'] || '').trim();
             const devName = String(dev.displayName1 || dev.membername || dev['Member Name'] || '').trim();
@@ -4917,13 +4994,12 @@
             // Never import blank-name rows
             if (!devName && !devName1) return;
 
-            // Never re-import events that were explicitly deleted
+            // Never re-import events that were explicitly deleted or moved to Archive
             if (isEventDeletedInState(dev)) return;
             if (devId && deletedIdsSet.has(devId)) return;
             if (devName && deletedNamesSet.has(devName.toLowerCase().replace(/\s+/g, ' ').trim())) return;
             if (devName1 && deletedNamesSet.has(devName1.toLowerCase().replace(/\s+/g, ' ').trim())) return;
             if (fullCombined && deletedNamesSet.has(fullCombined)) return;
-
 
             const existing = state.events.find(ev => 
               (devId && ev.id === devId) || 
@@ -4960,7 +5036,7 @@
             }
           });
 
-          // Only merge receipts from Drive whose event actually exists in state.events and is not deleted
+          // Only merge receipts from Drive whose event actually exists in state.events and is not deleted or archived
           if (Array.isArray(json.data.receipts)) {
             let rcptAdded = 0;
             const activeEvIds = new Set(state.events.map(e => e.id));
@@ -4972,6 +5048,7 @@
               const rEvName = String(drcpt.eventName || drcpt.eventname || drcpt['Event Name'] || '').trim();
               if (rEvId && deletedIdsSet.has(rEvId)) return;
               if (rEvName && deletedNamesSet.has(rEvName.toLowerCase().replace(/\s+/g, ' ').trim())) return;
+              if (isEventDeletedInState(drcpt)) return;
               const matchesActiveEvent = (rEvId && activeEvIds.has(rEvId)) || (rEvName && activeEvNames.has(rEvName.toLowerCase()));
               if (!matchesActiveEvent) return;
 
@@ -5006,16 +5083,28 @@
             }
           }
 
+          // Strictly filter out any archived/deleted events and retain only active Backup events
+          state.events = (state.events || []).filter(e => !isEventDeletedInState(e));
+          const finalActiveIds = new Set(state.events.map(e => e.id));
+          const finalActiveNames = new Set(state.events.map(e => (e.displayName1 || e.memberName || e.eventName || '').trim().toLowerCase()).filter(Boolean));
+          state.receipts = (state.receipts || []).filter(r => {
+            if (isEventDeletedInState(r)) return false;
+            const rEvId = String(r.eventId || '').trim();
+            const rEvName = String(r.eventName || '').trim().toLowerCase();
+            return (rEvId && finalActiveIds.has(rEvId)) || (rEvName && finalActiveNames.has(rEvName));
+          });
+
           if (addedCount > 0 || updatedCount > 0) {
             await saveDb();
           }
           renderApp();
 
           if (!silent) {
+            const successMsg = `✓ Synced from Google Drive! Showing active events from Backup folder (${state.events.length} active events, ${state.receipts.length} receipts).`;
             if (typeof window.showToast === 'function') {
-              window.showToast(`Synced from Google Drive: ${addedCount} new, ${updatedCount} updated`, 'success');
+              window.showToast(successMsg, 'success');
             } else {
-              alert(`Synced from Google Drive:\n• ${addedCount} new event(s) added\n• ${updatedCount} event(s) updated`);
+              alert(successMsg);
             }
           }
           return addedCount;
@@ -5402,13 +5491,13 @@
               <div>• Overall Reports & Local Computer Backup Folders</div>
             </div>
 
-            <!-- Checkbox for Google Drive Deletion -->
+            <!-- Checkbox for Google Drive Archive -->
             <div class="bg-slate-800/90 border border-amber-500/30 rounded-xl p-3.5 hover:border-amber-400 transition">
               <label class="flex items-start space-x-3 cursor-pointer select-none">
                 <input type="checkbox" id="chk-delete-from-drive" checked class="mt-0.5 w-4 h-4 rounded text-rose-500 focus:ring-rose-400 border-slate-600 bg-slate-700 cursor-pointer">
                 <div class="space-y-0.5">
                   <span class="font-bold text-amber-300 text-xs block">
-                    Delete event datas from Google Drive also (Move to Trash)
+                    Move event data (receipts & overall report) to Archive folder in Google Drive
                   </span>
                 </div>
               </label>
@@ -5421,8 +5510,8 @@
               Cancel
             </button>
             <button type="button" id="btn-confirm-event-delete" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-xs font-bold rounded-xl text-white shadow-lg shadow-rose-900/40 transition flex items-center justify-center space-x-1.5 cursor-pointer">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Delete Event</span>
+              <i data-lucide="archive" class="w-4 h-4"></i>
+              <span>Delete & Archive</span>
             </button>
           </div>
         </div>
@@ -5436,7 +5525,7 @@
       const btn = document.getElementById('btn-confirm-event-delete');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = 'Deleting...';
+        btn.innerHTML = 'Archiving...';
       }
 
       try {
@@ -5483,7 +5572,7 @@
         // 5. Save DB first so cleanOrphanedBackupFolders & Google Drive db.json are updated immediately
         await saveDb();
 
-        // 6. Delete backup folder from disk on server, Chromebook local folder handle, and Google Drive (moves folder to Google Drive Trash)
+        // 6. Delete backup folder from disk on server, Chromebook local folder handle, and Google Drive (moves folder to Archive folder in Google Drive)
         if (state.localSaveDirHandle && typeof state.localSaveDirHandle.removeEntry === 'function') {
           const candidates = [
             (ev.displayName1 && ev.memberName && ev.displayName1 !== ev.memberName) ? `${ev.displayName1} - ${ev.memberName}` : '',
@@ -5496,6 +5585,24 @@
               await state.localSaveDirHandle.removeEntry(cand, { recursive: true });
             } catch (e) {}
           }
+          try {
+            const bHandle = await state.localSaveDirHandle.getDirectoryHandle('Backup', { create: false });
+            if (bHandle && typeof bHandle.removeEntry === 'function') {
+              for (const cand of candidates) {
+                try {
+                  await bHandle.removeEntry(cand, { recursive: true });
+                } catch (e) {}
+              }
+              const offHandle = await bHandle.getDirectoryHandle('offline', { create: false });
+              if (offHandle && typeof offHandle.removeEntry === 'function') {
+                for (const cand of candidates) {
+                  try {
+                    await offHandle.removeEntry(cand, { recursive: true });
+                  } catch (e) {}
+                }
+              }
+            }
+          } catch (eOff) {}
         }
 
         if (state.hasLocalServer !== false) {
@@ -5516,7 +5623,7 @@
           }
         }
 
-        // 7. Sync deletion to Google Apps Script / Drive
+        // 7. Sync deletion & archiving to Google Apps Script / Drive (moves to Archive folder)
         try {
           await syncToGas('deleteEvent', {
             eventId,
@@ -5533,7 +5640,7 @@
         document.getElementById('event-delete-modal-root').innerHTML = '';
         renderApp();
 
-        const successMsg = `Event "${eventTitle}" deleted locally and from Google Drive (${countReceipts} receipts, ${countPayouts} payouts cleared).`;
+        const successMsg = `Event "${eventTitle}" deleted from Event Master and data (receipts & overall report) moved to Archive folder in Google Drive.`;
         if (typeof window.showToast === 'function') {
           window.showToast(successMsg, 'success');
         } else {
@@ -5600,13 +5707,13 @@
               <div class="text-emerald-400 font-semibold pt-1">✓ Member profiles and donor contact details will be safely preserved.</div>
             </div>
 
-            <!-- Checkbox for Google Drive Deletion -->
+            <!-- Checkbox for Google Drive Archive -->
             <div class="bg-slate-800/90 border border-amber-500/30 rounded-xl p-3.5 hover:border-amber-400 transition">
               <label class="flex items-start space-x-3 cursor-pointer select-none">
                 <input type="checkbox" id="chk-delete-all-from-drive" checked class="mt-0.5 w-4 h-4 rounded text-rose-500 focus:ring-rose-400 border-slate-600 bg-slate-700 cursor-pointer">
                 <div class="space-y-0.5">
                   <span class="font-bold text-amber-300 text-xs block">
-                    Delete event datas from Google Drive also (Move to Trash)
+                    Move all event datas (receipts & overall report) to Archive folder in Google Drive
                   </span>
                 </div>
               </label>
@@ -5619,8 +5726,8 @@
               Cancel
             </button>
             <button type="button" id="btn-confirm-all-events-delete" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-xs font-bold rounded-xl text-white shadow-lg shadow-rose-900/40 transition flex items-center justify-center space-x-1.5 cursor-pointer">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Delete All (${savedEvents.length})</span>
+              <i data-lucide="archive" class="w-4 h-4"></i>
+              <span>Delete & Archive All (${savedEvents.length})</span>
             </button>
           </div>
         </div>
@@ -5633,7 +5740,7 @@
       const btn = document.getElementById('btn-confirm-all-events-delete');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = 'Deleting...';
+        btn.innerHTML = 'Archiving...';
       }
 
       try {
@@ -5694,7 +5801,7 @@
         // 5. Save DB first so cleanOrphanedBackupFolders & Google Drive db.json are updated immediately
         await saveDb();
 
-        // 6. Delete event folders on server, Chromebook local folder handle, and Google Drive (moves folders to Google Drive Trash)
+        // 6. Delete event folders on server, Chromebook local folder handle, and Google Drive (moves folders to Archive folder in Google Drive)
         for (const ev of savedEvents) {
           if (state.localSaveDirHandle && typeof state.localSaveDirHandle.removeEntry === 'function') {
             const candidates = [
@@ -5708,6 +5815,24 @@
                 await state.localSaveDirHandle.removeEntry(cand, { recursive: true });
               } catch (e) {}
             }
+            try {
+              const bHandle = await state.localSaveDirHandle.getDirectoryHandle('Backup', { create: false });
+              if (bHandle && typeof bHandle.removeEntry === 'function') {
+                for (const cand of candidates) {
+                  try {
+                    await bHandle.removeEntry(cand, { recursive: true });
+                  } catch (e) {}
+                }
+                const offHandle = await bHandle.getDirectoryHandle('offline', { create: false });
+                if (offHandle && typeof offHandle.removeEntry === 'function') {
+                  for (const cand of candidates) {
+                    try {
+                      await offHandle.removeEntry(cand, { recursive: true });
+                    } catch (e) {}
+                  }
+                }
+              }
+            } catch (eOff) {}
           }
 
           if (state.hasLocalServer !== false) {
@@ -5745,7 +5870,7 @@
         document.getElementById('event-delete-modal-root').innerHTML = '';
         renderApp();
 
-        const successMsg = `All ${savedEvents.length} saved events successfully deleted locally and from Google Drive.`;
+        const successMsg = `All ${savedEvents.length} saved events successfully deleted from Event Master and data moved to Archive folder in Google Drive.`;
         if (typeof window.showToast === 'function') {
           window.showToast(successMsg, 'success');
         } else {

@@ -678,6 +678,7 @@ function cleanOrphanedBackupFolders(db, cleanGoogleDrive = true) {
     validEventTitles.add('note entry');
     validEventTitles.add('archive');
     validEventTitles.add('.archive');
+    validEventTitles.add('offline');
 
     if (Array.isArray(db.events)) {
       for (const ev of db.events) {
@@ -713,7 +714,7 @@ function cleanOrphanedBackupFolders(db, cleanGoogleDrive = true) {
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const folderName = entry.name.toLowerCase();
-          if (folderName === 'archive' || folderName === '.archive') continue;
+          if (folderName === 'archive' || folderName === '.archive' || folderName === 'offline' || folderName === 'note entry') continue;
           if (!validEventTitles.has(folderName)) {
             const fullPath = path.join(dirPath, entry.name);
             try {
@@ -853,17 +854,27 @@ const server = http.createServer((req, res) => {
       const gDriveBackup = 'G:\\My Drive\\moi\\Backup';
       const hasGoogleDrive = fs.existsSync(gDriveBackup);
       let driveFolderNames = [];
+      let archivedFolderNames = [];
       if (hasGoogleDrive) {
         try {
           driveFolderNames = fs.readdirSync(gDriveBackup, { withFileTypes: true })
-            .filter(e => e.isDirectory() && e.name.toLowerCase() !== 'note entry')
+            .filter(e => e.isDirectory() && e.name.toLowerCase() !== 'note entry' && e.name.toLowerCase() !== 'archive' && e.name.toLowerCase() !== 'offline')
             .map(e => e.name);
         } catch (e) {}
+
+        const gDriveArchive = 'G:\\My Drive\\moi\\Archive';
+        if (fs.existsSync(gDriveArchive)) {
+          try {
+            archivedFolderNames = fs.readdirSync(gDriveArchive, { withFileTypes: true })
+              .filter(e => e.isDirectory() && e.name.toLowerCase() !== 'offline')
+              .map(e => e.name);
+          } catch (e) {}
+        }
       }
 
       if (!fs.existsSync(DB_PATH)) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ success: true, deletedCount: 0, hasGoogleDrive, driveFolderNames, events: [], receipts: [] }));
+        return res.end(JSON.stringify({ success: true, deletedCount: 0, hasGoogleDrive, driveFolderNames, archivedFolderNames, events: [], receipts: [] }));
       }
       const db = readDb();
       const deletedCount = syncEventsWithDriveFolders(db);
@@ -874,6 +885,7 @@ const server = http.createServer((req, res) => {
         deletedCount,
         hasGoogleDrive,
         driveFolderNames,
+        archivedFolderNames,
         events: db.events || [],
         receipts: db.receipts || [],
         deletedEventIds: db.deletedEventIds || [],
@@ -916,7 +928,10 @@ const server = http.createServer((req, res) => {
 
         for (const dirPath of baseDirs) {
           if (!fs.existsSync(dirPath)) continue;
-          const archiveDir = path.join(dirPath, 'Archive');
+          let archiveDir = path.join(dirPath, 'Archive');
+          if (dirPath.toLowerCase().includes('my drive\\moi')) {
+            archiveDir = 'G:\\My Drive\\moi\\Archive';
+          }
           try {
             if (!fs.existsSync(archiveDir)) fs.mkdirSync(archiveDir, { recursive: true });
           } catch (e) {}
@@ -941,11 +956,39 @@ const server = http.createServer((req, res) => {
               }
             }
           }
+
+          // Also archive offline receipts folder: dirPath/offline/<cand> -> archiveDir/offline/<cand>
+          const offlineDir = path.join(dirPath, 'offline');
+          if (fs.existsSync(offlineDir)) {
+            const archOfflineDir = path.join(archiveDir, 'offline');
+            try {
+              if (!fs.existsSync(archOfflineDir)) fs.mkdirSync(archOfflineDir, { recursive: true });
+            } catch (e) {}
+            for (const cand of candidateNames) {
+              const offTarget = path.join(offlineDir, cand);
+              if (fs.existsSync(offTarget)) {
+                try {
+                  const offDest = path.join(archOfflineDir, cand);
+                  if (fs.existsSync(offDest)) {
+                    try { fs.rmSync(offDest, { recursive: true, force: true }); } catch (e) {}
+                  }
+                  try {
+                    fs.renameSync(offTarget, offDest);
+                  } catch (eRen) {
+                    fs.cpSync(offTarget, offDest, { recursive: true });
+                    fs.rmSync(offTarget, { recursive: true, force: true });
+                  }
+                  console.log(`[Event Archive] Moved offline event folder ${cand} to ${archOfflineDir}`);
+                } catch (e) {}
+              }
+            }
+          }
+
           // Also archive any Google Drive conflict folders like "<EventName> (1)"
           try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
             for (const entry of entries) {
-              if (!entry.isDirectory() || entry.name.toLowerCase() === 'note entry' || entry.name.toLowerCase() === 'archive') continue;
+              if (!entry.isDirectory() || entry.name.toLowerCase() === 'note entry' || entry.name.toLowerCase() === 'archive' || entry.name.toLowerCase() === 'offline') continue;
               const lowerEntry = entry.name.toLowerCase();
               const matchesCandidate = candidateNames.some(c => {
                 const lc = c.toLowerCase();

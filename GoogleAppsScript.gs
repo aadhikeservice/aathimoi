@@ -125,13 +125,41 @@ function doGet(e) {
     var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'getDb';
 
     if (action === 'getDb') {
+      var activeBackupFolderNames = [];
+      try {
+        var bFolder = getOrCreateBackupFolder();
+        var bIter = bFolder.getFolders();
+        while (bIter.hasNext()) {
+          var bSub = bIter.next();
+          var bName = bSub.getName();
+          if (bName !== 'offline' && bName !== 'Offline' && bName !== 'Archive' && bName !== 'archive' && bName !== 'Note Entry') {
+            activeBackupFolderNames.push(bName);
+          }
+        }
+      } catch (eBf) {}
+
+      var archivedFolderNames = [];
+      try {
+        var aFolder = getOrCreateArchiveFolder();
+        var aIter = aFolder.getFolders();
+        while (aIter.hasNext()) {
+          var aSub = aIter.next();
+          var aName = aSub.getName();
+          if (aName !== 'offline' && aName !== 'Offline') {
+            archivedFolderNames.push(aName);
+          }
+        }
+      } catch (eAf) {}
+
       var data = {
         events: getSheetDataAsJson(ss.getSheetByName('Events')),
         receipts: getSheetDataAsJson(ss.getSheetByName('Receipts')),
         payouts: getSheetDataAsJson(ss.getSheetByName('Payouts')),
         users: getSheetDataAsJson(ss.getSheetByName('Users')),
         noteEvents: getSheetDataAsJson(ss.getSheetByName('Note Events')),
-        noteEntries: getSheetDataAsJson(ss.getSheetByName('Note Entries'))
+        noteEntries: getSheetDataAsJson(ss.getSheetByName('Note Entries')),
+        activeBackupFolderNames: activeBackupFolderNames,
+        archivedFolderNames: archivedFolderNames
       };
       return createJsonResponse({ status: 'success', data: data, spreadsheetUrl: ss.getUrl() });
     }
@@ -402,29 +430,68 @@ function deleteEventEntry(contents) {
   var eventName = contents.eventName || contents.memberName || contents.displayName1 || '';
   var majorName = contents.displayName1 || contents.memberName || contents.eventName || '';
   var name1 = contents.displayName1 ? (contents.memberName || '') : '';
-  var folderTitle = (majorName ? (majorName + (name1 ? (' - ' + name1) : '')) : '');
+  var folderTitle = (majorName && name1 && majorName !== name1) ? (majorName + ' - ' + name1) : (majorName || '');
+
+  var candidateNames = [];
+  if (folderTitle) candidateNames.push(folderTitle);
+  if (majorName && !candidateNames.includes(majorName)) candidateNames.push(majorName);
+  if (eventName && !candidateNames.includes(eventName)) candidateNames.push(eventName);
+
+  var isMatch = function(val) {
+    if (!val) return false;
+    var str = val.toString().trim();
+    return candidateNames.some(function(c) {
+      return c && (str == c || str.toLowerCase() == c.toLowerCase());
+    });
+  };
 
   var ss = getSs();
   
-  // 1. Delete rows in Receipts sheet matching eventId or eventName
+  // 1. Move rows in Receipts sheet matching eventId or eventName to Archived Receipts
   var receiptSheet = ss.getSheetByName('Receipts');
   if (receiptSheet) {
+    var archReceiptSheet = ss.getSheetByName('Archived Receipts');
+    if (!archReceiptSheet) {
+      archReceiptSheet = ss.insertSheet('Archived Receipts');
+      archReceiptSheet.appendRow([
+        'Bill No', 'Event Name', 'Place', 'Initial', 'Name', 'Job', 'Name 1', 
+        'Relationship', 'Mobile Number', 'Amount (₹)', 'Amount in Words', 'Mode', 
+        'UPI Ref / Time', 'Created By', 'Date', 'Time', 'Timestamp', 'Archived At'
+      ]);
+      archReceiptSheet.getRange(1, 1, 1, 18).setFontWeight('bold').setBackground('#475569').setFontColor('#FFFFFF');
+    }
+
     var rData = receiptSheet.getDataRange().getValues();
     for (var i = rData.length - 1; i >= 1; i--) {
       var rowEvName = rData[i][1]; // Column 2: Event Name
-      if (rowEvName && (rowEvName == eventName || rowEvName == majorName || rowEvName == folderTitle)) {
+      if (isMatch(rowEvName)) {
+        var rCopy = rData[i].slice();
+        rCopy.push(new Date().toISOString());
+        archReceiptSheet.appendRow(rCopy);
         receiptSheet.deleteRow(i + 1);
       }
     }
   }
 
-  // 2. Delete rows in Payouts sheet matching eventId or eventName
+  // 2. Move rows in Payouts sheet matching eventId or eventName to Archived Payouts
   var payoutSheet = ss.getSheetByName('Payouts');
   if (payoutSheet) {
+    var archPayoutSheet = ss.getSheetByName('Archived Payouts');
+    if (!archPayoutSheet) {
+      archPayoutSheet = ss.insertSheet('Archived Payouts');
+      archPayoutSheet.appendRow([
+        'Payout ID', 'Event Name', 'Name', 'Reason', 'Amount (₹)', 'Created By', 'Date', 'Time', 'Timestamp', 'Archived At'
+      ]);
+      archPayoutSheet.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#475569').setFontColor('#FFFFFF');
+    }
+
     var pData = payoutSheet.getDataRange().getValues();
     for (var j = pData.length - 1; j >= 1; j--) {
       var rowEvNameP = pData[j][1]; // Column 2: Event Name
-      if (rowEvNameP && (rowEvNameP == eventName || rowEvNameP == majorName || rowEvNameP == folderTitle)) {
+      if (isMatch(rowEvNameP)) {
+        var pCopy = pData[j].slice();
+        pCopy.push(new Date().toISOString());
+        archPayoutSheet.appendRow(pCopy);
         payoutSheet.deleteRow(j + 1);
       }
     }
@@ -445,7 +512,7 @@ function deleteEventEntry(contents) {
     for (var k = eData.length - 1; k >= 1; k--) {
       var rowEvId = eData[k][0]; // Column 1: Event ID
       var rowMember = eData[k][1]; // Column 2: Member Name
-      if ((eventId && rowEvId == eventId) || (rowMember && (rowMember == eventName || rowMember == majorName))) {
+      if ((eventId && rowEvId == eventId) || isMatch(rowMember)) {
         var rowCopy = eData[k].slice();
         rowCopy.push(new Date().toISOString());
         archiveSheet.appendRow(rowCopy);
@@ -454,36 +521,70 @@ function deleteEventEntry(contents) {
     }
   }
 
-  // 4. Move Google Drive Folder for the event into Backup/Archive folder (preserve in archive, don't show)
+  // 4. Move Google Drive Folders for the event (Receipts & Overall Report) into Archive folder
   try {
-    var backupFolder = getOrCreateBackupFolder();
-    var archiveFolder = getOrCreateArchiveFolder();
+    var backupFolder = getOrCreateBackupFolder();   // moi/Backup
+    var archiveFolder = getOrCreateArchiveFolder(); // moi/Archive
 
-    var moveFolderToArchive = function(f) {
+    var moveFolderToArchive = function(folderToMove, destParent, srcParent) {
       try {
-        if (typeof f.moveTo === 'function') {
-          f.moveTo(archiveFolder);
+        if (!folderToMove || !destParent) return;
+        if (typeof folderToMove.moveTo === 'function') {
+          folderToMove.moveTo(destParent);
         } else {
-          archiveFolder.addFolder(f);
-          backupFolder.removeFolder(f);
+          destParent.addFolder(folderToMove);
+          if (srcParent) srcParent.removeFolder(folderToMove);
         }
       } catch (eMove) {
         Logger.log('Archive move notice: ' + eMove.toString());
       }
     };
 
-    if (folderTitle) {
-      var folders = backupFolder.getFoldersByName(folderTitle);
+    // 4a. Move main event folder from Backup to Archive
+    for (var c = 0; c < candidateNames.length; c++) {
+      var cand = candidateNames[c];
+      var folders = backupFolder.getFoldersByName(cand);
       while (folders.hasNext()) {
-        moveFolderToArchive(folders.next());
+        moveFolderToArchive(folders.next(), archiveFolder, backupFolder);
       }
     }
-    if (majorName && majorName !== folderTitle) {
-      var altFolders = backupFolder.getFoldersByName(majorName);
-      while (altFolders.hasNext()) {
-        moveFolderToArchive(altFolders.next());
+
+    // 4b. Move offline receipt folder from Backup/offline/<cand> into Archive/offline/<cand>
+    var offFolders = backupFolder.getFoldersByName('offline');
+    if (!offFolders.hasNext()) offFolders = backupFolder.getFoldersByName('Offline');
+    if (offFolders.hasNext()) {
+      var offlineFolder = offFolders.next();
+      
+      var archOfflineFolder;
+      var aOffFolders = archiveFolder.getFoldersByName('offline');
+      if (!aOffFolders.hasNext()) aOffFolders = archiveFolder.getFoldersByName('Offline');
+      if (aOffFolders.hasNext()) {
+        archOfflineFolder = aOffFolders.next();
+      } else {
+        archOfflineFolder = archiveFolder.createFolder('offline');
+      }
+
+      for (var oc = 0; oc < candidateNames.length; oc++) {
+        var oCand = candidateNames[oc];
+        var oFolders = offlineFolder.getFoldersByName(oCand);
+        while (oFolders.hasNext()) {
+          moveFolderToArchive(oFolders.next(), archOfflineFolder, offlineFolder);
+        }
       }
     }
+
+    // 4c. Move any legacy Backup/Archive folders into moi/Archive
+    try {
+      var legacyArchFolders = backupFolder.getFoldersByName('Archive');
+      if (legacyArchFolders.hasNext()) {
+        var legArch = legacyArchFolders.next();
+        var legSubFolders = legArch.getFolders();
+        while (legSubFolders.hasNext()) {
+          moveFolderToArchive(legSubFolders.next(), archiveFolder, legArch);
+        }
+      }
+    } catch (eLeg) {}
+
   } catch (err) {
     Logger.log('Drive folder archive notice: ' + err.toString());
   }
@@ -518,15 +619,16 @@ function getOrCreateBackupFolder() {
   }
 }
 
-// Helper to locate or create Archive folder inside "Backup" folder
+// Helper to locate or create dedicated "Archive" folder inside "moi" folder in Google Drive
 function getOrCreateArchiveFolder() {
   try {
-    var backupFolder = getOrCreateBackupFolder();
-    var folders = backupFolder.getFoldersByName('Archive');
+    var moiFolder = getOrCreateMoiFolder();
+    var folders = moiFolder.getFoldersByName('Archive');
+    if (!folders.hasNext()) folders = moiFolder.getFoldersByName('archive');
     if (folders.hasNext()) {
       return folders.next();
     } else {
-      return backupFolder.createFolder('Archive');
+      return moiFolder.createFolder('Archive');
     }
   } catch (e) {
     return getOrCreateBackupFolder();

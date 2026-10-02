@@ -7896,6 +7896,66 @@
     }
   }
 
+  // Helper to build a fresh 76mm thermal iframe (kept in DOM while spooling so print job never aborts)
+  function createReadyThermalIframe(copyHtml, copyTitle) {
+    const prevIframe = document.getElementById('aathi-thermal-print-iframe');
+    if (prevIframe && prevIframe.parentNode) {
+      try { prevIframe.parentNode.removeChild(prevIframe); } catch (e) {}
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'aathi-thermal-print-iframe';
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:300px;height:420px;border:0;opacity:0.01;pointer-events:none;z-index:-9999;';
+    document.body.appendChild(iframe);
+
+    const frameWin = iframe.contentWindow;
+    const frameDoc = frameWin ? frameWin.document : iframe.contentDocument;
+    if (!frameWin || !frameDoc) {
+      return null;
+    }
+
+    frameDoc.open();
+    frameDoc.write(`<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <title>${copyTitle}</title>
+  <style>
+    @page {
+      size: 76mm auto;
+      margin: 0mm !important;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      width: 76mm !important;
+      max-width: 76mm !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      background: #fff !important;
+      color: #000 !important;
+      font-family: monospace, 'Noto Sans Tamil', 'Latha', 'Vijaya', sans-serif !important;
+    }
+    .thermal-receipt-container {
+      width: 76mm !important;
+      max-width: 76mm !important;
+      margin: 0 auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+  </style>
+</head>
+<body>
+  ${copyHtml}
+</body>
+</html>`);
+    frameDoc.close();
+    return { iframe, frameWin, frameDoc };
+  }
+
   // ==========================================
   // Thermal Receipt Printing (2 Separate Sequential Prints - 3 Inch / 76mm, No Popup Window)
   // ==========================================
@@ -8045,66 +8105,6 @@
     }
 
     // 2. Web Browser / Chromebook / Offline Standalone / Extension:
-    // Helper to build a fresh 76mm thermal iframe (kept in DOM while spooling so print job never aborts)
-    const createReadyThermalIframe = (copyHtml, copyTitle) => {
-      const prevIframe = document.getElementById('aathi-thermal-print-iframe');
-      if (prevIframe && prevIframe.parentNode) {
-        try { prevIframe.parentNode.removeChild(prevIframe); } catch (e) {}
-      }
-
-      const iframe = document.createElement('iframe');
-      iframe.id = 'aathi-thermal-print-iframe';
-      iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:300px;height:420px;border:0;opacity:0.01;pointer-events:none;z-index:-9999;';
-      document.body.appendChild(iframe);
-
-      const frameWin = iframe.contentWindow;
-      const frameDoc = frameWin ? frameWin.document : iframe.contentDocument;
-      if (!frameWin || !frameDoc) {
-        return null;
-      }
-
-      frameDoc.open();
-      frameDoc.write(`<!DOCTYPE html>
-<html lang="ta">
-<head>
-  <meta charset="UTF-8">
-  <title>${copyTitle}</title>
-  <style>
-    @page {
-      size: 76mm auto;
-      margin: 0mm !important;
-    }
-    * {
-      box-sizing: border-box;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    html, body {
-      width: 76mm !important;
-      max-width: 76mm !important;
-      margin: 0 auto !important;
-      padding: 0 !important;
-      background: #fff !important;
-      color: #000 !important;
-      font-family: monospace, 'Noto Sans Tamil', 'Latha', 'Vijaya', sans-serif !important;
-    }
-    .thermal-receipt-container {
-      width: 76mm !important;
-      max-width: 76mm !important;
-      margin: 0 auto !important;
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-    }
-  </style>
-</head>
-<body>
-  ${copyHtml}
-</body>
-</html>`);
-      frameDoc.close();
-      return { iframe, frameWin, frameDoc };
-    };
-
     const printSingleCopyInFreshIframe = (copyHtml, copyTitle, isAutoSecondCopy = false) => {
       return new Promise((resolve) => {
         const frameObj = createReadyThermalIframe(copyHtml, copyTitle);
@@ -8368,24 +8368,27 @@
     if (!payout) return;
 
     const activeEv = ev || (state.events ? state.events.find(e => e.id === payout.eventId) : null);
-    const majorName = (activeEv && activeEv.displayName1) || payout.displayName1 || (activeEv && activeEv.memberName) || payout.memberName || (activeEv && activeEv.eventName) || '';
-    const name1 = (activeEv && activeEv.displayName1) ? ((activeEv && activeEv.memberName) || payout.memberName || '') : '';
-    const candidateCombined = [majorName, name1].filter(Boolean).join(' - ');
-    const evTitle = (activeEv && activeEv.eventTitle) || payout.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== majorName && activeEv.eventName !== name1 && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
-    const evPlace = (activeEv && activeEv.place) || payout.place || '';
+    const disp1 = (activeEv && activeEv.displayName1) || payout.displayName1 || '';
+    const memName = activeEv ? activeEv.memberName : (payout.memberName || '');
+    const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
+    const evTitle = (activeEv && activeEv.eventTitle) || payout.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
+    const evPlace = (activeEv && activeEv.place) || payout.place || payout.eventPlace || '';
     const payoutWords = window.TamilWords ? window.TamilWords.amountToTamilWords(payout.amount) : (payout.amount + ' ரூபாய் மட்டுமே');
     const voucherNo = payout.id ? String(payout.id).replace(/^payout_/, '') : '';
 
     const payoutReceiptHtml = `
       <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
-          <h2 style="font-size: 15pt; font-weight: bold; margin: 0; color: #000;">ஆதி மொய்</h2>
-<p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2px;">
+            ${getThermalLogoSvgHtml()}
+            <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
+          </div>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
           <p style="font-size: 8.5pt; font-weight: bold; margin: 0 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; line-height: 1.2; font-family: monospace, sans-serif;">(98656 07179)</p>
-          ${majorName ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000;">${majorName}</h3>` : ''}
-          ${name1 ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000;">${name1}</h4>` : ''}
-          ${evTitle ? `<p style="font-size: 10pt; font-weight: 900; margin: 1px 0; color: #000;">${evTitle}</p>` : ''}
-          ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 0; color: #000;">${evPlace}</p>` : ''}
+          ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
+          ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
+          ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
+          ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2;">${evPlace}</p>` : ''}
         </div>
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px;">
@@ -8401,7 +8404,7 @@
           
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 2px solid #000; padding-top: 5px;">
             <span style="font-size: 13pt; font-weight: 900;">செலவுத் தொகை:</span>
-            <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(payout.amount).toLocaleString('en-IN')}</span>
+            <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(payout.amount || 0).toLocaleString('en-IN')}</span>
           </div>
           <div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; text-align: center; color: #000;">(${payoutWords})</div>
         </div>
@@ -8412,6 +8415,7 @@
       </div>
     `;
 
+    // Hide A4 report print area so only thermal receipt is active for print media
     const a4Area = document.getElementById('a4-report-print-area');
     if (a4Area) {
       a4Area.classList.add('hidden');
@@ -8419,21 +8423,41 @@
     }
 
     const printArea = document.getElementById('thermal-print-area');
-    if (!printArea) return;
+    if (printArea) {
+      printArea.classList.remove('hidden');
+      printArea.innerHTML = payoutReceiptHtml;
+    }
 
+    isThermalPrintSequenceActive = true;
     setThermalPageSizeStyle(true);
-    printArea.classList.remove('hidden');
-    printArea.innerHTML = payoutReceiptHtml;
 
     const finishPayoutPrint = () => {
-      setThermalPageSizeStyle(false);
+      isThermalPrintSequenceActive = false;
+      setTimeout(() => {
+        if (!isThermalPrintSequenceActive) {
+          setThermalPageSizeStyle(false);
+          if (printArea) {
+            printArea.classList.add('hidden');
+            printArea.innerHTML = '';
+          }
+        }
+      }, 2500);
       const senderElem = document.getElementById('payout-sender') || document.getElementById('payout-name');
       if (senderElem) senderElem.focus();
     };
 
+    // 1. Electron Desktop App: Direct print on mainWindow
     if (window.electronApi && typeof window.electronApi.printCurrentWindow === 'function') {
       (async () => {
         try {
+          if (printArea) {
+            const imgs = Array.from(printArea.querySelectorAll('img'));
+            await Promise.all(imgs.map(img => {
+              if (img.decode) return img.decode().catch(() => {});
+              if (img.complete) return Promise.resolve();
+              return new Promise(r => { img.onload = r; img.onerror = r; });
+            }));
+          }
           await new Promise(r => setTimeout(r, 150));
           await window.electronApi.printCurrentWindow({ silent: false });
         } catch (err) {
@@ -8445,15 +8469,61 @@
       return;
     }
 
-    const onPayoutAfterPrint = () => {
-      window.removeEventListener('afterprint', onPayoutAfterPrint);
+    // 2. Web Browser / Chromebook / Offline Standalone / Extension:
+    // Print isolated 76mm thermal iframe so browser print preview locks to 76mm receipt size
+    const copyTitle = `Payout Receipt #${voucherNo || 'New'}`;
+    const frameObj = createReadyThermalIframe(payoutReceiptHtml, copyTitle);
+    if (!frameObj) {
+      finishPayoutPrint();
+      return;
+    }
+    const { frameWin, frameDoc } = frameObj;
+
+    let done = false;
+    const cleanupAndFinish = () => {
+      if (done) return;
+      done = true;
+      try {
+        window.removeEventListener('afterprint', cleanupAndFinish);
+        frameWin.removeEventListener('afterprint', cleanupAndFinish);
+      } catch (e) {}
       finishPayoutPrint();
     };
-    window.addEventListener('afterprint', onPayoutAfterPrint);
 
-    setTimeout(() => {
-      window.print();
-    }, 150);
+    window.addEventListener('afterprint', cleanupAndFinish);
+    try {
+      frameWin.addEventListener('afterprint', cleanupAndFinish);
+    } catch (e) {}
+
+    const triggerPayoutIframePrint = () => {
+      try {
+        frameWin.focus();
+        frameWin.print();
+        setTimeout(() => {
+          if (!done && document.hasFocus()) {
+            cleanupAndFinish();
+          }
+        }, 3000);
+      } catch (err) {
+        console.warn('Payout iframe print notice:', err);
+        cleanupAndFinish();
+      }
+    };
+
+    const imgs = Array.from(frameDoc.images || []);
+    if (imgs.length === 0 || imgs.every(img => img.complete && img.naturalWidth > 0)) {
+      setTimeout(triggerPayoutIframePrint, 40);
+    } else {
+      Promise.all(imgs.map(img => {
+        if (img.decode) return img.decode().catch(() => {});
+        if (img.complete) return Promise.resolve();
+        return new Promise(r => { img.onload = r; img.onerror = r; });
+      })).then(() => {
+        setTimeout(triggerPayoutIframePrint, 40);
+      }).catch(() => {
+        setTimeout(triggerPayoutIframePrint, 40);
+      });
+    }
   }
 
   window.appReprintPayoutThermal = function (payoutId) {

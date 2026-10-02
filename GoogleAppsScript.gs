@@ -1302,45 +1302,93 @@ function getOrCreatePayoutUserDriveFolder(payout) {
 
 function createPayoutHtmlInDrive(payout) {
   var majorName = payout.displayName1 || payout.memberName || payout.eventName || 'Event';
+  var name1 = payout.displayName1 ? (payout.memberName || '') : '';
+  var evTitle = payout.eventTitle || '';
+  var evPlace = payout.place || payout.eventPlace || '';
   var sanitize = function(str) {
     return (str || '').toString().replace(/[\\/:*?"<>|]/g, '_').trim();
   };
 
   var fileName = sanitize(payout.id || ('Payout_' + Date.now()));
+  var voucherNo = payout.id ? String(payout.id).replace(/^payout_/, '') : '';
+  var payoutWords = amountToTamilWords(payout.amount || 0);
 
   var htmlText = '<!DOCTYPE html>\n' +
     '<html lang="ta">\n' +
     '<head>\n' +
     '  <meta charset="UTF-8">\n' +
-    '  <title>ஆதி மொய் - பட்டுவாடா ரசீது</title>\n' +
+    '  <title>ஆதி மொய் - பட்டுவாடா ரசீது' + (voucherNo ? (' #' + escapeXml(voucherNo)) : '') + '</title>\n' +
     '  <style>\n' +
-    '    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; background-color: #f8fafc; }\n' +
-    '    .card { border: 2px solid #8B0000; padding: 24px; max-width: 450px; margin: 0 auto; border-radius: 12px; background: #FFF8DC; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }\n' +
-    '    .header { text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 10px; margin-bottom: 15px; }\n' +
-    '    h2 { color: #8B0000; font-size: 22pt; margin: 0; font-weight: bold; }\n' +
-    '    .sub { font-size: 11pt; font-weight: bold; color: #555; margin-top: 4px; }\n' +
-    '    .event-title { font-size: 16pt; font-weight: bold; color: #8B0000; margin-top: 8px; }\n' +
-    '    .row { display: flex; justify-content: space-between; font-size: 11pt; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; color: #1E293B; }\n' +
-    '    .bold { font-weight: bold; }\n' +
-    '    .amount-box { border-top: 2px solid #8B0000; border-bottom: 2px solid #8B0000; padding: 10px 0; margin-top: 15px; text-align: center; }\n' +
-    '    .amount-val { font-size: 24pt; font-weight: bold; color: #E11D48; }\n' +
+    '    @page {\n' +
+    '      size: 76mm auto;\n' +
+    '      margin: 0mm !important;\n' +
+    '    }\n' +
+    '    * {\n' +
+    '      box-sizing: border-box;\n' +
+    '      -webkit-print-color-adjust: exact !important;\n' +
+    '      print-color-adjust: exact !important;\n' +
+    '    }\n' +
+    '    html, body {\n' +
+    '      width: 76mm !important;\n' +
+    '      max-width: 76mm !important;\n' +
+    '      margin: 0 auto !important;\n' +
+    '      padding: 0 !important;\n' +
+    '      background: #fff !important;\n' +
+    '      color: #000 !important;\n' +
+    '      font-family: monospace, "Noto Sans Tamil", sans-serif !important;\n' +
+    '      font-weight: bold;\n' +
+    '    }\n' +
+    '    .thermal-receipt-container {\n' +
+    '      width: 76mm !important;\n' +
+    '      max-width: 76mm !important;\n' +
+    '      margin: 0 auto !important;\n' +
+    '      padding: 4mm 2mm;\n' +
+    '      page-break-inside: avoid !important;\n' +
+    '      break-inside: avoid !important;\n' +
+    '    }\n' +
+    '    .header { text-align: center; padding-bottom: 4px; margin-bottom: 6px; }\n' +
+    '    h2 { font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1; }\n' +
+    '    .sub { font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2; }\n' +
+    '    .phone { font-size: 8.5pt; font-weight: bold; margin: 0 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; line-height: 1.2; font-family: monospace, sans-serif; }\n' +
+    '    .disp1 { font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2; }\n' +
+    '    .mem-name { font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2; }\n' +
+    '    .ev-title { font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2; }\n' +
+    '    .ev-place { font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2; }\n' +
+    '    .badge { text-align: center; font-size: 10.5pt; font-weight: 900; margin-bottom: 4px; border-bottom: 1px dashed #000; padding-bottom: 3px; }\n' +
+    '    .body-section { font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px; }\n' +
+    '    .row { display: flex; justify-content: space-between; }\n' +
+    '    .amount-box { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 2px solid #000; padding-top: 5px; }\n' +
+    '    .amount-val { font-size: 18pt; font-weight: 900; font-family: sans-serif; }\n' +
+    '    .amount-words { font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; text-align: center; color: #000; }\n' +
+    '    .footer { text-align: center; margin-top: 8px; font-size: 8.5pt; border-top: 1px solid #000; padding-top: 4px; color: #000; font-weight: bold; }\n' +
     '  </style>\n' +
     '</head>\n' +
     '<body>\n' +
-    '  <div class="card">\n' +
+    '  <div class="thermal-receipt-container">\n' +
     '    <div class="header">\n' +
     '      <h2>ஆதி மொய்</h2>\n' +
-    '      <div class="sub">பட்டுவாடா ரசீது (Payout Expense Receipt)</div>\n' +
-    '      <div class="event-title">' + escapeXml(majorName) + '</div>\n' +
+    '      <p class="sub">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>\n' +
+    '      <p class="phone">(98656 07179)</p>\n' +
+    (majorName ? ('      <div class="disp1">' + escapeXml(majorName) + '</div>\n') : '') +
+    (name1 ? ('      <div class="mem-name">' + escapeXml(name1) + '</div>\n') : '') +
+    (evTitle ? ('      <div class="ev-title">' + escapeXml(evTitle) + '</div>\n') : '') +
+    (evPlace ? ('      <div class="ev-place">' + escapeXml(evPlace) + '</div>\n') : '') +
     '    </div>\n' +
-    '    <div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>' + escapeXml(payout.createdBy || 'admin') + '</span></div>\n' +
-    '    <div class="row"><span class="bold">தேதி & நேரம்:</span> <span>' + escapeXml((payout.date || '') + ' ' + (payout.time || '')) + '</span></div>\n' +
-    '    <div class="row"><span class="bold">பெயர்:</span> <span>' + escapeXml(payout.name || '') + '</span></div>\n' +
-    '    <div class="row"><span class="bold">காரணம்:</span> <span>' + escapeXml(payout.reason || '') + '</span></div>\n' +
-    '    <div class="amount-box">\n' +
-    '      <div style="font-size: 14pt; font-weight: bold; color: #8B0000;">செலவுத் தொகை:</div>\n' +
-    '      <div class="amount-val">₹' + escapeXml(payout.amount || '0') + '</div>\n' +
+    '    <div class="body-section">\n' +
+    '      <div class="badge">பட்டுவாடா ரசீது (Payout Receipt)</div>\n' +
+    (voucherNo ? ('      <div class="row"><span>ரசீது எண்:</span> <span>#' + escapeXml(voucherNo) + '</span></div>\n') : '') +
+    '      <div class="row"><span>தேதி & நேரம்:</span> <span>' + escapeXml((payout.date || '') + ' ' + (payout.time || '')) + '</span></div>\n' +
+    '      <div class="row"><span>பதிவு செய்தவர்:</span> <span>' + escapeXml(payout.createdBy || 'admin') + '</span></div>\n' +
+    '      <div class="row" style="border-top: 1px dashed #000; margin-top: 4px; padding-top: 4px;"><span>அனுப்புபவர்:</span> <span style="font-weight: 900;">' + escapeXml(payout.sender || payout.name || '-') + '</span></div>\n' +
+    '      <div class="row"><span>பெறுபவர்:</span> <span style="font-weight: 900;">' + escapeXml(payout.receiver || '-') + '</span></div>\n' +
+    '      <div class="row"><span>காரணம்:</span> <span>' + escapeXml(payout.reason || '-') + '</span></div>\n' +
+    '      <div class="amount-box">\n' +
+    '        <span style="font-size: 13pt; font-weight: 900;">செலவுத் தொகை:</span>\n' +
+    '        <span class="amount-val">₹' + escapeXml(parseFloat(payout.amount || 0).toLocaleString('en-IN')) + '</span>\n' +
+    '      </div>\n' +
+    (payoutWords ? ('      <div class="amount-words">(' + escapeXml(payoutWords) + ')</div>\n') : '') +
     '    </div>\n' +
+    '    <div class="footer">பட்டுவாடா பதிவு செய்யப்பட்டது</div>\n' +
     '  </div>\n' +
     '</body>\n' +
     '</html>';

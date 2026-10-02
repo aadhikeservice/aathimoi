@@ -543,39 +543,77 @@ function saveSinglePayoutToBackup(payoutData) {
 
       // Save HTML version
       const htmlPath = path.join(userFolderPath, `${baseFileName}.html`);
+      const voucherNo = String(payoutData.id || '').replace(/^payout_/, '');
       const htmlContent = `<!DOCTYPE html>
 <html lang="ta">
 <head>
   <meta charset="UTF-8">
-  <title>ஆதி மொய் - பட்டுவாடா ரசீது</title>
+  <title>ஆதி மொய் - பட்டுவாடா ரசீது${voucherNo ? ` #${voucherNo}` : ''}</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; }
-    .card { border: 2px solid #8B0000; padding: 20px; max-width: 400px; border-radius: 8px; background: #FFF8DC; }
-    h2 { color: #8B0000; text-align: center; margin-top: 0; margin-bottom: 2px; }
-    .sub { text-align: center; font-size: 11px; font-weight: bold; color: #555; border-bottom: 1px solid #8B0000; padding-bottom: 6px; margin-bottom: 10px; }
-    .title-banner { text-align: center; font-size: 14px; font-weight: bold; color: #8B0000; margin-bottom: 8px; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
-    .bold { font-weight: bold; }
-    .amount-box { border-top: 2px solid #8B0000; border-bottom: 2px solid #8B0000; padding: 8px 0; margin: 10px 0; text-align: center; }
-    .amount-val { font-size: 22px; font-weight: bold; color: #8B0000; }
+    @page {
+      size: 76mm auto;
+      margin: 0mm !important;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      width: 76mm !important;
+      max-width: 76mm !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      background: #fff !important;
+      color: #000 !important;
+      font-family: monospace, 'Noto Sans Tamil', 'Latha', 'Vijaya', sans-serif !important;
+      font-weight: bold;
+    }
+    .thermal-receipt-container {
+      width: 76mm !important;
+      max-width: 76mm !important;
+      margin: 0 auto !important;
+      padding: 4mm 2mm;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    .header { text-align: center; padding-bottom: 4px; margin-bottom: 6px; }
+    h2 { font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1; }
+    .sub { font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2; }
+    .phone { font-size: 8.5pt; font-weight: bold; margin: 0 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; line-height: 1.2; font-family: monospace, sans-serif; }
+    .disp1 { font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2; }
+    .mem-name { font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2; }
+    .badge { text-align: center; font-size: 10.5pt; font-weight: 900; margin-bottom: 4px; border-bottom: 1px dashed #000; padding-bottom: 3px; }
+    .body-section { font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px; }
+    .row { display: flex; justify-content: space-between; }
+    .amount-box { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 2px solid #000; padding-top: 5px; }
+    .amount-val { font-size: 18pt; font-weight: 900; font-family: sans-serif; }
+    .footer { text-align: center; margin-top: 8px; font-size: 8.5pt; border-top: 1px solid #000; padding-top: 4px; color: #000; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>ஆதி மொய் (Aathi Moi)</h2>
-<div class="sub">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
-    <div class="sub" style="margin-top: 2px;">(98656 07179)</div>
-    <div class="title-banner">பட்டுவாடா ரசீது (Payout Receipt)</div>
-    <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${String(payoutData.id || '').replace(/^payout_/, '')}</span></div>
-    <div class="row"><span class="bold">பதிவு செய்தவர்:</span> <span>${payoutData.createdBy || 'admin'}</span></div>
-    <div class="row"><span class="bold">தேதி & நேரம்:</span> <span>${payoutData.date || ''} ${payoutData.time || ''}</span></div>
-    <div class="row"><span class="bold">அனுப்புபவர்:</span> <span>${payoutData.sender || payoutData.name || ''}</span></div>
-    <div class="row"><span class="bold">பெறுபவர்:</span> <span>${payoutData.receiver || ''}</span></div>
-    <div class="row"><span class="bold">காரணம்:</span> <span>${payoutData.reason || ''}</span></div>
-    <div class="amount-box">
-      <div style="font-size: 13px; font-weight: bold; color: #8B0000;">செலவுத் தொகை</div>
-      <div class="amount-val">₹${parseFloat(payoutData.amount || 0).toLocaleString('en-IN')}</div>
+  <div class="thermal-receipt-container">
+    <div class="header">
+      <h2>ஆதி மொய்</h2>
+      <p class="sub">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
+      <p class="phone">(98656 07179)</p>
+      ${majorName ? `<div class="disp1">${majorName}</div>` : ''}
+      ${name1 ? `<div class="mem-name">${name1}</div>` : ''}
     </div>
+    <div class="body-section">
+      <div class="badge">பட்டுவாடா ரசீது (Payout Receipt)</div>
+      ${voucherNo ? `<div class="row"><span>ரசீது எண்:</span> <span>#${voucherNo}</span></div>` : ''}
+      <div class="row"><span>தேதி & நேரம்:</span> <span>${payoutData.date || ''} ${payoutData.time || ''}</span></div>
+      <div class="row"><span>பதிவு செய்தவர்:</span> <span>${payoutData.createdBy || 'admin'}</span></div>
+      <div class="row" style="border-top: 1px dashed #000; margin-top: 4px; padding-top: 4px;"><span>அனுப்புபவர்:</span> <span style="font-weight: 900;">${payoutData.sender || payoutData.name || '-'}</span></div>
+      <div class="row"><span>பெறுபவர்:</span> <span style="font-weight: 900;">${payoutData.receiver || '-'}</span></div>
+      <div class="row"><span>காரணம்:</span> <span>${payoutData.reason || '-'}</span></div>
+      <div class="amount-box">
+        <span style="font-size: 13pt; font-weight: 900;">செலவுத் தொகை:</span>
+        <span class="amount-val">₹${parseFloat(payoutData.amount || 0).toLocaleString('en-IN')}</span>
+      </div>
+    </div>
+    <div class="footer">பட்டுவாடா பதிவு செய்யப்பட்டது</div>
   </div>
 </body>
 </html>`;

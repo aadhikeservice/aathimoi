@@ -114,6 +114,99 @@ function setupSheets() {
 // ==========================================
 // 2. WEB APP API (doGet & doPost)
 // ==========================================
+function getActiveBackupFolderNames() {
+  var activeBackupFolderNames = [];
+  try {
+    var bFolder = getOrCreateBackupFolder();
+    // 1. Direct folders in Backup (e.g. Backup/<event>)
+    var bIter = bFolder.getFolders();
+    while (bIter.hasNext()) {
+      var bSub = bIter.next();
+      var bName = bSub.getName();
+      if (bName !== 'offline' && bName !== 'Offline' && bName !== 'ofline' && bName !== 'Ofline' &&
+          bName !== 'online' && bName !== 'Online' && bName !== 'Archive' && bName !== 'archive' && bName !== 'Note Entry') {
+        if (activeBackupFolderNames.indexOf(bName) === -1) activeBackupFolderNames.push(bName);
+      }
+    }
+    // 2. Event folders in Backup/offline (and ofline)
+    var offIter = bFolder.getFoldersByName('offline');
+    if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('Offline');
+    if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('ofline');
+    if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('Ofline');
+    if (offIter.hasNext()) {
+      var offF = offIter.next();
+      var oSubIter = offF.getFolders();
+      while (oSubIter.hasNext()) {
+        var oSub = oSubIter.next();
+        var oName = oSub.getName();
+        if (activeBackupFolderNames.indexOf(oName) === -1) activeBackupFolderNames.push(oName);
+      }
+    }
+    // 3. Event folders in Backup/online
+    var onlIter = bFolder.getFoldersByName('online');
+    if (!onlIter.hasNext()) onlIter = bFolder.getFoldersByName('Online');
+    if (onlIter.hasNext()) {
+      var onlF = onlIter.next();
+      var onSubIter = onlF.getFolders();
+      while (onSubIter.hasNext()) {
+        var onSub = onSubIter.next();
+        var onName = onSub.getName();
+        if (activeBackupFolderNames.indexOf(onName) === -1) activeBackupFolderNames.push(onName);
+      }
+    }
+  } catch (eBf) {}
+  return activeBackupFolderNames;
+}
+
+function getArchivedFolderNames() {
+  var archivedFolderNames = [];
+  try {
+    var aFolder = getOrCreateArchiveFolder();
+    var aIter = aFolder.getFolders();
+    while (aIter.hasNext()) {
+      var aSub = aIter.next();
+      var aName = aSub.getName();
+      if (aName !== 'offline' && aName !== 'Offline' && aName !== 'online' && aName !== 'Online') {
+        if (archivedFolderNames.indexOf(aName) === -1) archivedFolderNames.push(aName);
+      }
+    }
+    var aOffIter = aFolder.getFoldersByName('offline');
+    if (!aOffIter.hasNext()) aOffIter = aFolder.getFoldersByName('Offline');
+    if (!aOffIter.hasNext()) aOffIter = aFolder.getFoldersByName('ofline');
+    if (aOffIter.hasNext()) {
+      var aOffSub = aOffIter.next().getFolders();
+      while (aOffSub.hasNext()) {
+        var aOffName = aOffSub.next().getName();
+        if (archivedFolderNames.indexOf(aOffName) === -1) archivedFolderNames.push(aOffName);
+      }
+    }
+    var aOnlIter = aFolder.getFoldersByName('online');
+    if (!aOnlIter.hasNext()) aOnlIter = aFolder.getFoldersByName('Online');
+    if (aOnlIter.hasNext()) {
+      var aOnlSub = aOnlIter.next().getFolders();
+      while (aOnlSub.hasNext()) {
+        var aOnlName = aOnlSub.next().getName();
+        if (archivedFolderNames.indexOf(aOnlName) === -1) archivedFolderNames.push(aOnlName);
+      }
+    }
+  } catch (eAf) {}
+  return archivedFolderNames;
+}
+
+function getFullDatabase(ss) {
+  if (!ss) ss = getSs();
+  return {
+    events: getSheetDataAsJson(ss.getSheetByName('Events')),
+    receipts: getSheetDataAsJson(ss.getSheetByName('Receipts')),
+    payouts: getSheetDataAsJson(ss.getSheetByName('Payouts')),
+    users: getSheetDataAsJson(ss.getSheetByName('Users')),
+    noteEvents: getSheetDataAsJson(ss.getSheetByName('Note Events')),
+    noteEntries: getSheetDataAsJson(ss.getSheetByName('Note Entries')),
+    activeBackupFolderNames: getActiveBackupFolderNames(),
+    archivedFolderNames: getArchivedFolderNames()
+  };
+}
+
 function doGet(e) {
   try {
     var ss = getSs();
@@ -125,88 +218,7 @@ function doGet(e) {
     var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'getDb';
 
     if (action === 'getDb') {
-      var activeBackupFolderNames = [];
-      try {
-        var bFolder = getOrCreateBackupFolder();
-        // 1. Direct folders in Backup (e.g. Backup/<event>)
-        var bIter = bFolder.getFolders();
-        while (bIter.hasNext()) {
-          var bSub = bIter.next();
-          var bName = bSub.getName();
-          if (bName !== 'offline' && bName !== 'Offline' && bName !== 'ofline' && bName !== 'Ofline' &&
-              bName !== 'online' && bName !== 'Online' && bName !== 'Archive' && bName !== 'archive' && bName !== 'Note Entry') {
-            if (activeBackupFolderNames.indexOf(bName) === -1) activeBackupFolderNames.push(bName);
-          }
-        }
-        // 2. Event folders in Backup/offline (and ofline)
-        var offIter = bFolder.getFoldersByName('offline');
-        if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('Offline');
-        if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('ofline');
-        if (!offIter.hasNext()) offIter = bFolder.getFoldersByName('Ofline');
-        if (offIter.hasNext()) {
-          var offF = offIter.next();
-          var oSubIter = offF.getFolders();
-          while (oSubIter.hasNext()) {
-            var oSub = oSubIter.next();
-            var oName = oSub.getName();
-            if (activeBackupFolderNames.indexOf(oName) === -1) activeBackupFolderNames.push(oName);
-          }
-        }
-        // 3. Event folders in Backup/online
-        var onlIter = bFolder.getFoldersByName('online');
-        if (!onlIter.hasNext()) onlIter = bFolder.getFoldersByName('Online');
-        if (onlIter.hasNext()) {
-          var onlF = onlIter.next();
-          var onSubIter = onlF.getFolders();
-          while (onSubIter.hasNext()) {
-            var onSub = onSubIter.next();
-            var onName = onSub.getName();
-            if (activeBackupFolderNames.indexOf(onName) === -1) activeBackupFolderNames.push(onName);
-          }
-        }
-      } catch (eBf) {}
-
-      var archivedFolderNames = [];
-      try {
-        var aFolder = getOrCreateArchiveFolder();
-        var aIter = aFolder.getFolders();
-        while (aIter.hasNext()) {
-          var aSub = aIter.next();
-          var aName = aSub.getName();
-          if (aName !== 'offline' && aName !== 'Offline' && aName !== 'online' && aName !== 'Online') {
-            if (archivedFolderNames.indexOf(aName) === -1) archivedFolderNames.push(aName);
-          }
-        }
-        var aOffIter = aFolder.getFoldersByName('offline');
-        if (!aOffIter.hasNext()) aOffIter = aFolder.getFoldersByName('Offline');
-        if (aOffIter.hasNext()) {
-          var aOffSub = aOffIter.next().getFolders();
-          while (aOffSub.hasNext()) {
-            var aOffName = aOffSub.next().getName();
-            if (archivedFolderNames.indexOf(aOffName) === -1) archivedFolderNames.push(aOffName);
-          }
-        }
-        var aOnlIter = aFolder.getFoldersByName('online');
-        if (!aOnlIter.hasNext()) aOnlIter = aFolder.getFoldersByName('Online');
-        if (aOnlIter.hasNext()) {
-          var aOnlSub = aOnlIter.next().getFolders();
-          while (aOnlSub.hasNext()) {
-            var aOnlName = aOnlSub.next().getName();
-            if (archivedFolderNames.indexOf(aOnlName) === -1) archivedFolderNames.push(aOnlName);
-          }
-        }
-      } catch (eAf) {}
-
-      var data = {
-        events: getSheetDataAsJson(ss.getSheetByName('Events')),
-        receipts: getSheetDataAsJson(ss.getSheetByName('Receipts')),
-        payouts: getSheetDataAsJson(ss.getSheetByName('Payouts')),
-        users: getSheetDataAsJson(ss.getSheetByName('Users')),
-        noteEvents: getSheetDataAsJson(ss.getSheetByName('Note Events')),
-        noteEntries: getSheetDataAsJson(ss.getSheetByName('Note Entries')),
-        activeBackupFolderNames: activeBackupFolderNames,
-        archivedFolderNames: archivedFolderNames
-      };
+      var data = getFullDatabase(ss);
       return createJsonResponse({ status: 'success', data: data, spreadsheetUrl: ss.getUrl() });
     }
 
@@ -278,29 +290,217 @@ function doPost(e) {
       var eventCount = 0;
       var receiptCount = 0;
       var payoutCount = 0;
+      var isOffline = (contents.isOffline === true || contents.isOffline === 'true');
 
+      // 1. Process Events in Batch
       if (contents.events && contents.events.length > 0) {
         for (var i = 0; i < contents.events.length; i++) {
-          try { createEventEntry(contents.events[i]); eventCount++; } catch(errEv){}
+          try {
+            var evItem = contents.events[i];
+            if (evItem) {
+              createEventEntry(evItem);
+              eventCount++;
+            }
+          } catch(errEv){}
         }
       }
 
+      // Folder cache to speed up Drive file creation without repeated lookups
+      var folderCache = {};
+      var getCachedEventFolders = function(evtName, isOff) {
+        var key = (evtName || 'Event').toString().trim() + '_' + (isOff ? '1' : '0');
+        if (folderCache[key]) return folderCache[key];
+        var res = getOrCreateEventReceiptPathFolders(evtName, isOff);
+        folderCache[key] = res;
+        return res;
+      };
+
+      // 2. Process Receipts in Batch
       if (contents.receipts && contents.receipts.length > 0) {
+        var rcptSheet = ss.getSheetByName('Receipts');
+        if (!rcptSheet) {
+          setupSheets();
+          rcptSheet = ss.getSheetByName('Receipts');
+        }
+
+        var existingBillNos = {};
+        if (rcptSheet.getLastRow() > 1) {
+          var bData = rcptSheet.getRange(2, 1, rcptSheet.getLastRow() - 1, 1).getValues();
+          for (var b = 0; b < bData.length; b++) {
+            var bStr = String(bData[b][0] || '').trim();
+            if (bStr) existingBillNos[bStr] = true;
+          }
+        }
+
+        var newRcptRows = [];
+        var now = new Date();
+
         for (var j = 0; j < contents.receipts.length; j++) {
-          try { saveMoiReceipt(contents.receipts[j]); receiptCount++; } catch(errRc){}
+          var rItem = contents.receipts[j];
+          if (!rItem) continue;
+
+          var bNo = String(rItem.billNo || '').trim();
+          if (!bNo) {
+            var nextNo = rcptSheet.getLastRow() + newRcptRows.length + 1;
+            bNo = 'AM' + ('000' + nextNo).slice(-4);
+            rItem.billNo = bNo;
+          }
+
+          if (!rItem.amountWords && rItem.amount) {
+            rItem.amountWords = amountToTamilWords(parseFloat(rItem.amount));
+          }
+
+          var rDateStr = rItem.date || Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+          var rTimeStr = rItem.time || Utilities.formatDate(now, Session.getScriptTimeZone(), 'hh:mm a');
+
+          if (!existingBillNos[bNo]) {
+            newRcptRows.push([
+              bNo,
+              rItem.eventName || '',
+              rItem.place || '',
+              rItem.initial || '',
+              rItem.name || '',
+              rItem.job || '',
+              rItem.name1 || '',
+              rItem.relationship || '',
+              rItem.mobile || rItem.phone || '',
+              rItem.amount || 0,
+              rItem.amountWords || '',
+              rItem.mode || 'Cash',
+              rItem.upiTxTime || '',
+              rItem.createdBy || 'admin',
+              rDateStr,
+              rTimeStr,
+              now.toISOString()
+            ]);
+            existingBillNos[bNo] = true;
+          }
+
+          // Save Drive HTML and JSON files in the exact hierarchy:
+          // moi / Backup / (offline or online) / <event folder (Member Name & Member Name 1)> / receipt
+          try {
+            var rMajor = (rItem.displayName1 || rItem.memberName || rItem.eventName || 'Event').toString().trim();
+            var rSub = rItem.displayName1 ? (rItem.memberName || '').toString().trim() : '';
+            var rEvtMasterName = (rMajor && rSub && rMajor !== rSub) ? (rMajor + ' - ' + rSub) : rMajor;
+            var rIsOffline = (rItem.isOffline !== undefined) ? (rItem.isOffline === true || rItem.isOffline === 'true') : isOffline;
+
+            var pathInfo = getCachedEventFolders(rEvtMasterName, rIsOffline);
+            if (pathInfo && pathInfo.receiptFolder) {
+              var safeBillNo = bNo.replace(/[\\/:*?"<>|]/g, '_').trim();
+              var rHtml = rItem.receiptHtml;
+              if (!rHtml) {
+                rHtml = '<!DOCTYPE html><html lang="ta"><head><meta charset="UTF-8"><title>ரசீது #' + escapeXml(bNo) + '</title></head><body><h2>ஆதி மொய் - ரசீது #' + escapeXml(bNo) + '</h2><p>தொகை: ₹' + escapeXml(rItem.amount || '0') + '</p></body></html>';
+              }
+              var htmlBlob = Utilities.newBlob(rHtml, 'text/html', safeBillNo + '.html');
+              var jsonBlob = Utilities.newBlob(JSON.stringify(rItem, null, 2), 'application/json', safeBillNo + '.json');
+              
+              pathInfo.receiptFolder.createFile(htmlBlob);
+              pathInfo.receiptFolder.createFile(jsonBlob);
+
+              if (pathInfo.eventFolder) {
+                pathInfo.eventFolder.createFile(htmlBlob);
+              }
+            }
+          } catch(eRcptDrive) {
+            Logger.log('Drive receipt save notice: ' + eRcptDrive.toString());
+          }
+
+          receiptCount++;
+        }
+
+        // Batch append all new receipts in a single call
+        if (newRcptRows.length > 0) {
+          rcptSheet.getRange(rcptSheet.getLastRow() + 1, 1, newRcptRows.length, 17).setValues(newRcptRows);
         }
       }
 
+      // 3. Process Payouts in Batch
       if (contents.payouts && contents.payouts.length > 0) {
+        var poSheet = ss.getSheetByName('Payouts');
+        if (!poSheet) {
+          setupSheets();
+          poSheet = ss.getSheetByName('Payouts');
+        }
+
+        var existingPoIds = {};
+        if (poSheet.getLastRow() > 1) {
+          var poData = poSheet.getRange(2, 1, poSheet.getLastRow() - 1, 1).getValues();
+          for (var p = 0; p < poData.length; p++) {
+            var poStr = String(poData[p][0] || '').trim();
+            if (poStr) existingPoIds[poStr] = true;
+          }
+        }
+
+        var newPoRows = [];
+        var nowPo = new Date();
         for (var k = 0; k < contents.payouts.length; k++) {
-          try { savePayoutEntry(contents.payouts[k]); payoutCount++; } catch(errPo){}
+          var poItem = contents.payouts[k];
+          if (!poItem) continue;
+          var poId = poItem.id || ('payout_' + Date.now() + '_' + k);
+          var poDateStr = poItem.date || Utilities.formatDate(nowPo, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+          var poTimeStr = poItem.time || Utilities.formatDate(nowPo, Session.getScriptTimeZone(), 'hh:mm a');
+
+          if (!existingPoIds[poId]) {
+            newPoRows.push([
+              poId,
+              poItem.eventName || '',
+              poItem.name || '',
+              poItem.reason || poItem.description || '',
+              poItem.amount || 0,
+              poItem.createdBy || 'admin',
+              poDateStr,
+              poTimeStr,
+              nowPo.toISOString()
+            ]);
+            existingPoIds[poId] = true;
+          }
+          try {
+            createPayoutHtmlInDrive(poItem);
+          } catch(ePo) {}
+          payoutCount++;
+        }
+
+        if (newPoRows.length > 0) {
+          poSheet.getRange(poSheet.getLastRow() + 1, 1, newPoRows.length, 9).setValues(newPoRows);
         }
       }
+
+      // 4. Process Overall Reports
+      if (contents.overallReports && contents.overallReports.length > 0) {
+        for (var repIdx = 0; repIdx < contents.overallReports.length; repIdx++) {
+          var repItem = contents.overallReports[repIdx];
+          if (repItem && repItem.eventName && repItem.reportHtml) {
+            try {
+              saveOverallReportToDrive(repItem.eventName, repItem.username || 'admin', repItem.reportHtml);
+            } catch(eRep) {}
+          }
+        }
+      }
+
+      // 5. Process Note Events & Entries
+      if (contents.noteEvents && contents.noteEvents.length > 0) {
+        for (var nevIdx = 0; nevIdx < contents.noteEvents.length; nevIdx++) {
+          try { createNoteEventFolderInDrive(contents.noteEvents[nevIdx]); } catch(eNev){}
+        }
+      }
+      if (contents.noteEntries && contents.noteEntries.length > 0) {
+        for (var nentIdx = 0; nentIdx < contents.noteEntries.length; nentIdx++) {
+          try {
+            var nEnt = contents.noteEntries[nentIdx];
+            saveNoteEntryToDrive(nEnt.noteEventName || 'General', nEnt, nEnt.noteEntryHtml);
+          } catch(eNent){}
+        }
+      }
+
+      // 6. Return Complete Updated Database
+      var fullData = getFullDatabase(ss);
 
       return createJsonResponse({
         status: 'success',
-        message: 'Batch sync completed',
-        counts: { events: eventCount, receipts: receiptCount, payouts: payoutCount }
+        message: 'Batch sync completed successfully',
+        counts: { events: eventCount, receipts: receiptCount, payouts: payoutCount },
+        data: fullData,
+        spreadsheetUrl: ss.getUrl()
       });
     }
 
@@ -416,13 +616,19 @@ function createEventEntry(event) {
     sheet = ss.getSheetByName('Events');
   }
 
-  var displayName1 = event.displayName1 || event.memberName || '';
-  var memberName = event.memberName || '';
-  var eventTitle = event.eventTitle || '';
-  var folderTitle = (displayName1 ? displayName1 : '') + (memberName ? (' - ' + memberName) : '');
-  if (!folderTitle) folderTitle = 'Event';
+  var displayName1 = (event.displayName1 || '').toString().trim();
+  var memberName = (event.memberName || '').toString().trim();
+  var eventTitle = (event.eventTitle || event.eventName || '').toString().trim();
+  if (!displayName1 && memberName) displayName1 = memberName;
+  if (!memberName && displayName1) memberName = displayName1;
+  var folderTitle = (displayName1 && memberName && displayName1 !== memberName) 
+    ? (displayName1 + ' - ' + memberName) 
+    : (displayName1 || memberName || eventTitle || 'Event');
 
-  // Create Google Drive Folder for Event inside Backup folder
+  // Create Google Drive Folders in exact paths:
+  // 1. moi / Backup / <folderTitle>
+  // 2. moi / Backup / offline / <folderTitle> / receipt
+  // 3. moi / Backup / online / <folderTitle> / receipt
   var folderId = event.folderId || '';
   try {
     var backupFolder = getOrCreateBackupFolder();
@@ -433,6 +639,9 @@ function createEventEntry(event) {
       var newFolder = backupFolder.createFolder(folderTitle);
       folderId = newFolder.getId();
     }
+
+    try { getOrCreateEventReceiptPathFolders(folderTitle, true); } catch(eOff){}
+    try { getOrCreateEventReceiptPathFolders(folderTitle, false); } catch(eOnl){}
   } catch (e) {
     Logger.log('Folder creation notice: ' + e.toString());
   }

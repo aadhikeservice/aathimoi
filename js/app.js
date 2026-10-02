@@ -2430,17 +2430,28 @@
   };
 
   function isEventDeletedInState(ev) {
-    if (!ev) return true;
+    if (!ev) return false;
+    // If it is a receipt (has billNo)
+    if (ev.billNo || ev.billno || ev['Bill No']) {
+      const rEvId = String(ev.eventId || ev.eventid || '').trim();
+      const rEvName = String(ev.eventName || ev.eventname || ev['Event Name'] || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const deletedIds = (state.deletedEventIds || []).map(x => String(x).trim()).filter(Boolean);
+      if (rEvId && deletedIds.includes(rEvId)) return true;
+      const deletedNames = (state.deletedEventNames || []).map(x => String(x).toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean);
+      if (rEvName && deletedNames.includes(rEvName)) return true;
+      return false;
+    }
+
     const evId = String(ev.eventId || ev.eventid || ev['Event ID'] || ev.id || '').trim();
     const primaryName = String(ev.memberName || ev.membername || ev['Member Name'] || '').trim();
     const name1 = String(ev.displayName1 || ev.membername1 || ev['Member Name 1'] || '').trim();
     const eName = String(ev.eventName || ev.eventTitle || ev.eventtitle || '').trim();
-    if (!evId && !primaryName && !name1 && !eName) return true;
+    if (!evId && !primaryName && !name1 && !eName) return false;
 
-    const deletedIds = (state.deletedEventIds || []).map(x => String(x).trim());
+    const deletedIds = (state.deletedEventIds || []).map(x => String(x).trim()).filter(Boolean);
     if (evId && deletedIds.includes(evId)) return true;
 
-    const deletedNames = (state.deletedEventNames || []).map(x => String(x).toLowerCase().replace(/\s+/g, ' ').trim());
+    const deletedNames = (state.deletedEventNames || []).map(x => String(x).toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean);
     const candidates = [
       eName,
       primaryName,
@@ -2723,27 +2734,48 @@
     }
   }
 
-  async function syncToGas(action, payload) {
+  async function callGasApi(action, payload = {}) {
     const gasUrl = getGasUrl();
     if (!gasUrl) {
       console.log(`GAS Web App URL not configured. (Action: ${action})`);
-      return;
+      return null;
     }
 
+    const bodyStr = JSON.stringify({ action, ...payload });
+
+    // 1. Try standard CORS fetch with text/plain (CORS-safelisted simple request)
+    try {
+      const res = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: bodyStr
+      });
+      if (res.ok) {
+        const json = await res.json().catch(() => null);
+        if (json) return json;
+      }
+    } catch (corsErr) {
+      console.warn(`Standard CORS fetch notice for "${action}", falling back to no-cors:`, corsErr);
+    }
+
+    // 2. Fallback to no-cors mode to guarantee delivery even if CORS headers are restricted
     try {
       await fetch(gasUrl, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: action,
-          ...payload
-        })
+        body: bodyStr
       });
-      console.log(`Google Drive Sync (${action}) sent successfully.`);
-    } catch (err) {
-      console.warn(`Google Drive Sync (${action}) notice:`, err);
+      console.log(`Google Drive Sync (${action}) sent via no-cors fallback.`);
+      return { status: 'sent_no_cors' };
+    } catch (fallbackErr) {
+      console.warn(`Google Drive Sync (${action}) fallback error:`, fallbackErr);
+      return null;
     }
+  }
+
+  async function syncToGas(action, payload) {
+    return await callGasApi(action, payload);
   }
 
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -2800,94 +2832,16 @@
     try {
       // Step 1: Upload offline/local items to Google Drive & Sheets
       const localEvents = (state.events || []).filter(e => !isEventDeletedInState(e));
-
-      // Filter receipts and payouts: Only upload data belonging to active events (never upload archived/deleted events)
-      const isBelongingToActiveEvent = (item) => {
-        if (!item) return false;
-        if (isEventDeletedInState(item)) return false;
-        return localEvents.some(ev => 
-          (item.eventId && ev.id === item.eventId) ||
-          (item.eventName && (
-            item.eventName === ev.eventName || 
-            item.eventName === ev.memberName || 
-            item.eventName === ev.displayName1 ||
-            (ev.displayName1 && ev.memberName && item.eventName === `${ev.displayName1} - ${ev.memberName}`)
-          ))
-        );
-      };
-
-      const localReceipts = (state.receipts || []).filter(isBelongingToActiveEvent);
-      const localPayouts = (state.payouts || []).filter(isBelongingToActiveEvent);
+      const localReceipts = (state.receipts || []).filter(r => !isEventDeletedInState(r));
+      const localPayouts = (state.payouts || []).filter(p => !isEventDeletedInState(p));
       const localNoteEvents = state.noteEvents || [];
       const localNoteEntries = state.noteEntries || [];
-
-      // 1a. Upload local events
-      for (let i = 0; i < localEvents.length; i++) {
-        setSyncStatus(`Uploading Event ${i + 1}/${localEvents.length}...`);
-        try {
-          await syncToGas('createEvent', { event: localEvents[i] });
-        } catch (e) {}
-        await delay(80);
-      }
-
-      // 1b. Upload local receipts to Google Drive & Sheets (both event folder & backup/offline/<username>/receipt)
-      for (let j = 0; j < localReceipts.length; j++) {
-        setSyncStatus(`Uploading Receipt ${j + 1}/${localReceipts.length}...`);
-        const rcpt = localReceipts[j];
-        try {
-          const ev = localEvents.find(e => e.id === rcpt.eventId || e.eventName === rcpt.eventName || e.memberName === rcpt.eventName);
-          const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
-          const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : (ev && ev.displayName1 ? (ev.memberName || '') : '');
-          const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
-
-          const receiptHtml = buildSingleReceiptHtml(rcpt, ev);
-          await syncToGas('saveReceipt', {
-            eventName: folderTitle,
-            receipt: rcpt,
-            receiptHtml,
-            isOffline: true,
-            source: 'offline_sync',
-            username: rcpt.createdBy || (state.currentUser && state.currentUser.username) || 'admin'
-          });
-
-          if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
-            saveReceiptToChosenLocalFolder(rcpt, true).catch(() => {});
-          }
-        } catch (e) {
-          console.warn('Sync receipt error:', e);
-        }
-        await delay(80);
-      }
-
-      // 1c. Upload local payouts
-      for (let k = 0; k < localPayouts.length; k++) {
-        setSyncStatus(`Uploading Payout ${k + 1}/${localPayouts.length}...`);
-        try {
-          await syncToGas('savePayout', { payout: localPayouts[k] });
-        } catch (e) {}
-        await delay(80);
-      }
-
-      // 1d. Upload note events & entries
-      for (let m = 0; m < localNoteEvents.length; m++) {
-        try {
-          await syncToGas('createNoteEvent', { noteEvent: localNoteEvents[m] });
-        } catch (e) {}
-        await delay(80);
-      }
-      for (let n = 0; n < localNoteEntries.length; n++) {
-        const ne = localNoteEntries[n];
-        const nev = localNoteEvents.find(ev => ev.id === ne.noteEventId);
-        const nevName = nev ? nev.name : 'General';
-        try {
-          await saveNoteEntryFileToDrive(nevName, ne);
-        } catch (e) {}
-        await delay(80);
-      }
-
-      // 1e. Generate and Upload Overall Report for each active event into the same folder:
-      // "Backup/offline/<event master name>/<username>/receipt"
       const currentUser = (state.currentUser && state.currentUser.username) || 'admin';
+
+      setSyncStatus('Preparing offline data for Drive upload...');
+
+      // Build overall reports for each active event
+      const overallReports = [];
       for (let evIndex = 0; evIndex < localEvents.length; evIndex++) {
         const ev = localEvents[evIndex];
         const majorName = ev.displayName1 || ev.memberName || ev.eventName || 'Event';
@@ -2897,80 +2851,139 @@
         const evReceipts = localReceipts.filter(r => r.eventId === ev.id || r.eventName === ev.eventName || r.eventName === ev.memberName || (ev.displayName1 && r.eventName === ev.displayName1));
         const evPayouts = localPayouts.filter(p => p.eventId === ev.id || p.eventName === ev.eventName || p.eventName === ev.memberName);
 
-        setSyncStatus(`Uploading Overall Report: ${folderTitle}...`);
         const reportHtml = generateEventOverallReportHtml(ev, evReceipts, evPayouts);
+        overallReports.push({
+          eventName: folderTitle,
+          username: currentUser,
+          reportHtml: reportHtml
+        });
 
-        // Upload to Google Apps Script / Google Drive
-        try {
-          await syncToGas('saveOverallReport', {
-            eventName: folderTitle,
-            username: currentUser,
-            reportHtml: reportHtml
-          });
-        } catch (errRepGas) {
-          console.warn('Sync overall report to GAS notice:', errRepGas);
-        }
-
-        // Local / Chromebook file backup in the SAME folder path:
-        // Backup / offline / <event master name> / <user name> / receipt / Overall_Report_<event master name>.html
+        // Also save Overall Report locally to disk / Chromebook in exact path:
+        // Backup / offline / <event folder (Member Name & Member Name 1)> / receipt / Overall_Report_<eventName>.html
         if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
           try {
             const safeEvFolder = folderTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'General_Event';
-            const safeUserFolder = String(currentUser).replace(/[\\/:*?"<>|]/g, '_').trim() || 'admin';
             const reportFileName = `Overall_Report_${safeEvFolder}.html`;
 
             const backupDirHandle = await state.localSaveDirHandle.getDirectoryHandle('Backup', { create: true });
             const offDirHandle = await backupDirHandle.getDirectoryHandle('offline', { create: true });
             const evDirHandle = await offDirHandle.getDirectoryHandle(safeEvFolder, { create: true });
-            const userDirHandle = await evDirHandle.getDirectoryHandle(safeUserFolder, { create: true });
-            const rcptDirHandle = await userDirHandle.getDirectoryHandle('receipt', { create: true });
+            const rcptDirHandle = await evDirHandle.getDirectoryHandle('receipt', { create: true });
 
             const repFileHandle = await rcptDirHandle.getFileHandle(reportFileName, { create: true });
             const repWriter = await repFileHandle.createWritable();
             await repWriter.write(reportHtml);
             await repWriter.close();
 
-            // Also save in main event directory
-            try {
-              const rootEvDir = await state.localSaveDirHandle.getDirectoryHandle(safeEvFolder, { create: true });
-              const rootRepFile = await rootEvDir.getFileHandle(reportFileName, { create: true });
-              const rootWriter = await rootRepFile.createWritable();
-              await rootWriter.write(reportHtml);
-              await rootWriter.close();
-            } catch (eRoot) {}
+            const evRepFileHandle = await evDirHandle.getFileHandle(reportFileName, { create: true });
+            const evRepWriter = await evRepFileHandle.createWritable();
+            await evRepWriter.write(reportHtml);
+            await evRepWriter.close();
           } catch (localFsErr) {
             console.warn('Local offline overall report save notice:', localFsErr);
           }
         }
+      }
 
-        // Also save to local server if present
-        if (state.hasLocalServer !== false) {
-          try {
-            await fetch('/api/reports/save-overall', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ eventName: folderTitle, username: currentUser, reportHtml })
-            });
-          } catch (eServ) {}
+      // Build prepared receipts with exact event master name & receipt HTML
+      const preparedReceipts = localReceipts.map(rcpt => {
+        const ev = localEvents.find(e => e.id === rcpt.eventId || e.eventName === rcpt.eventName || e.memberName === rcpt.eventName);
+        const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
+        const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : (ev && ev.displayName1 ? (ev.memberName || '') : '');
+        const folderTitle = (majorName && name1 && majorName !== name1) ? `${majorName} - ${name1}` : majorName;
+        const receiptHtml = buildSingleReceiptHtml(rcpt, ev);
+
+        // Also save receipt to Chromebook / local directory in exact path:
+        // Backup / offline / <event folder> / receipt
+        if (state.localSaveDirHandle && typeof state.localSaveDirHandle.getDirectoryHandle === 'function') {
+          saveReceiptToChosenLocalFolder(rcpt, true).catch(() => {});
         }
 
-        await delay(80);
+        return {
+          ...rcpt,
+          displayName1: rcpt.displayName1 || (ev ? ev.displayName1 : '') || majorName,
+          memberName: rcpt.memberName || (ev ? ev.memberName : '') || name1,
+          eventName: folderTitle,
+          receiptHtml: receiptHtml,
+          isOffline: true,
+          source: 'offline_sync',
+          createdBy: rcpt.createdBy || currentUser
+        };
+      });
+
+      setSyncStatus(`Uploading ${preparedReceipts.length} receipts & ${localEvents.length} events...`);
+
+      // 1. Send Batch Upload to Google Apps Script
+      let batchResult = null;
+      try {
+        batchResult = await callGasApi('syncBatch', {
+          isOffline: true,
+          events: localEvents,
+          receipts: preparedReceipts,
+          payouts: localPayouts,
+          overallReports: overallReports,
+          noteEvents: localNoteEvents,
+          noteEntries: localNoteEntries
+        });
+      } catch (batchErr) {
+        console.warn('syncBatch notice, falling back:', batchErr);
+      }
+
+      // If batchResult was rejected as invalid action (older GAS script), fall back to individual calls
+      if (batchResult && batchResult.status === 'error' && String(batchResult.message || '').includes('Invalid action')) {
+        for (let i = 0; i < localEvents.length; i++) {
+          setSyncStatus(`Uploading Event ${i + 1}/${localEvents.length}...`);
+          try { await callGasApi('createEvent', { event: localEvents[i] }); } catch(e){}
+          await delay(60);
+        }
+        for (let j = 0; j < preparedReceipts.length; j++) {
+          setSyncStatus(`Uploading Receipt ${j + 1}/${preparedReceipts.length}...`);
+          try {
+            await callGasApi('saveReceipt', {
+              eventName: preparedReceipts[j].eventName,
+              receipt: preparedReceipts[j],
+              receiptHtml: preparedReceipts[j].receiptHtml,
+              isOffline: true,
+              source: 'offline_sync',
+              username: preparedReceipts[j].createdBy
+            });
+          } catch(e){}
+          await delay(60);
+        }
+        for (let k = 0; k < localPayouts.length; k++) {
+          try { await callGasApi('savePayout', { payout: localPayouts[k] }); } catch(e){}
+          await delay(60);
+        }
+        for (let r = 0; r < overallReports.length; r++) {
+          try {
+            await callGasApi('saveOverallReport', {
+              eventName: overallReports[r].eventName,
+              username: currentUser,
+              reportHtml: overallReports[r].reportHtml
+            });
+          } catch(e){}
+          await delay(60);
+        }
       }
 
       // Step 2: Download latest database from Google Drive & Sheets
-      setSyncStatus('Downloading from Drive...');
-      const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getDb';
-      const res = await fetch(fetchUrl);
-      if (!res.ok) {
-        throw new Error('Failed to connect to Google Drive Web App (HTTP ' + res.status + ')');
+      let onlineData = (batchResult && batchResult.data) ? batchResult.data : null;
+
+      if (!onlineData) {
+        setSyncStatus('Downloading latest data from Drive...');
+        const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getDb';
+        const res = await fetch(fetchUrl);
+        if (!res.ok) {
+          throw new Error('Failed to connect to Google Drive Web App (HTTP ' + res.status + ')');
+        }
+
+        const json = await res.json();
+        if (json.status !== 'success' || !json.data) {
+          throw new Error(json.message || 'Invalid response from Google Drive Web App');
+        }
+        onlineData = json.data;
       }
 
-      const json = await res.json();
-      if (json.status !== 'success' || !json.data) {
-        throw new Error(json.message || 'Invalid response from Google Drive Web App');
-      }
-
-      const onlineData = json.data;
       const deletedIdsSet = new Set((state.deletedEventIds || []).map(x => String(x).trim()));
       const deletedNamesSet = new Set((state.deletedEventNames || []).map(x => String(x).trim().toLowerCase().replace(/\s+/g, ' ')));
 
@@ -3068,8 +3081,6 @@
       }
 
       // 2a-2. AUTO-CREATE Active Events from Google Drive Backup Folders & Receipts
-      // This ensures all active data in Backup folders (e.g. Backup/offline/<event folder>)
-      // and their receipts are fully represented in Event Master and visible!
       const activeCandidates = new Map();
       if (Array.isArray(onlineData.activeBackupFolderNames)) {
         onlineData.activeBackupFolderNames.forEach(fn => {
@@ -3159,13 +3170,23 @@
             ))
           );
 
-          const targetEventId = matchedEv ? matchedEv.id : rEvId;
-          const targetEventName = matchedEv ? (matchedEv.memberName || matchedEv.displayName1 || matchedEv.eventName) : rEvName;
+          let targetEventId = matchedEv ? matchedEv.id : rEvId;
+          let targetEventName = matchedEv ? (matchedEv.memberName || matchedEv.displayName1 || matchedEv.eventName) : rEvName;
+          if (!targetEventId && activeEvList.length === 1) {
+            targetEventId = activeEvList[0].id;
+            targetEventName = activeEvList[0].memberName || activeEvList[0].displayName1 || activeEvList[0].eventName;
+          }
 
-          const existingRcpt = state.receipts.find(r => String(r.billNo).trim() === bNo && (!targetEventId || !r.eventId || r.eventId === targetEventId));
+          const existingRcpt = state.receipts.find(r => 
+            String(r.billNo).trim().toLowerCase() === bNo.toLowerCase() && 
+            (!targetEventId || !r.eventId || r.eventId === targetEventId)
+          );
           if (existingRcpt) {
             if (targetEventId && !existingRcpt.eventId) existingRcpt.eventId = targetEventId;
             if (targetEventName && !existingRcpt.eventName) existingRcpt.eventName = targetEventName;
+            if (!existingRcpt.name && drcpt.name) existingRcpt.name = drcpt.name;
+            if (!existingRcpt.place && drcpt.place) existingRcpt.place = drcpt.place;
+            if (!existingRcpt.amount && drcpt.amount) existingRcpt.amount = parseFloat(drcpt.amount);
           } else {
             state.receipts.push({
               id: 'rcpt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -3204,9 +3225,9 @@
               eventId: dpo.eventId || dpo.eventid || '',
               eventName: dpo.eventName || dpo.eventname || '',
               category: dpo.category || 'General',
-              description: dpo.description || '',
+              description: dpo.description || dpo.reason || '',
               amount: parseFloat(dpo.amount || 0),
-              paidTo: dpo.paidTo || dpo.paidto || '',
+              paidTo: dpo.paidTo || dpo.paidto || dpo.name || '',
               paymentMode: dpo.paymentMode || dpo.paymentmode || 'Cash',
               createdBy: dpo.createdBy || dpo.createdby || 'admin',
               date: dpo.date || '',
@@ -3236,53 +3257,12 @@
         });
       }
 
-      // Ensure local server creates backup folders
-      if (state.hasLocalServer !== false) {
-        for (const ev of state.events) {
-          try {
-            await fetch('/api/events/ensure-folder', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                eventName: ev.eventName,
-                displayName1: ev.displayName1,
-                memberName: ev.memberName
-              })
-            });
-          } catch (e) {}
-        }
-      }
-
-      // 2e. Enforce that ONLY active data from the Backup folder is retained and shown!
-      // Any event moved to the Archive folder (and its receipts/payouts) are excluded from the active view.
+      // 2e. Enforce that ONLY explicitly deleted data is filtered out
       state.events = (state.events || []).filter(e => !isEventDeletedInState(e));
+      state.receipts = (state.receipts || []).filter(r => !isEventDeletedInState(r));
+      state.payouts = (state.payouts || []).filter(p => !isEventDeletedInState(p));
 
       const activeEvIdsSet = new Set(state.events.map(e => String(e.id || '').trim()));
-      const activeEvNamesSet = new Set();
-      state.events.forEach(e => {
-        [e.eventName, e.memberName, e.displayName1, (e.displayName1 && e.memberName ? `${e.displayName1} - ${e.memberName}` : '')]
-          .filter(Boolean)
-          .forEach(n => activeEvNamesSet.add(String(n).toLowerCase().replace(/\s+/g, ' ').trim()));
-      });
-
-      state.receipts = (state.receipts || []).filter(r => {
-        if (isEventDeletedInState(r)) return false;
-        const rId = String(r.eventId || '').trim();
-        const rName = String(r.eventName || '').toLowerCase().replace(/\s+/g, ' ').trim();
-        if (rId && activeEvIdsSet.has(rId)) return true;
-        if (rName && activeEvNamesSet.has(rName)) return true;
-        return false;
-      });
-
-      state.payouts = (state.payouts || []).filter(p => {
-        if (isEventDeletedInState(p)) return false;
-        const pId = String(p.eventId || '').trim();
-        const pName = String(p.eventName || '').toLowerCase().replace(/\s+/g, ' ').trim();
-        if (pId && activeEvIdsSet.has(pId)) return true;
-        if (pName && activeEvNamesSet.has(pName)) return true;
-        return false;
-      });
-
       if (state.activeEventId && !activeEvIdsSet.has(state.activeEventId)) {
         state.activeEventId = state.events.length > 0 ? state.events[0].id : null;
       }
@@ -3302,11 +3282,11 @@
       }
 
       const activeTotalEvents = state.events.length;
-      const successMsg = `✓ Sync completed! Showing active data from Backup folder (${activeTotalEvents} events, ${state.receipts.length} receipts). Archived events preserved in Archive folder.`;
+      const successMsg = `✓ Sync completed! Offline data uploaded to Google Drive & active data downloaded (${activeTotalEvents} events, ${state.receipts.length} receipts).`;
       if (typeof window.showToast === 'function') {
         window.showToast(successMsg, 'success');
       } else {
-        alert(`✅ Google Drive Sync Completed!\n\n• Showing active data from Backup folder\n• Active Events: ${activeTotalEvents}\n• Total Receipts: ${state.receipts.length}\n• Total Payouts: ${state.payouts.length}\n\nDeleted events & overall reports are safely preserved in the Archive folder in Google Drive.`);
+        alert(`✅ Google Drive Sync Completed!\n\n• Offline data uploaded to Google Drive\n• Active Events: ${activeTotalEvents}\n• Total Receipts: ${state.receipts.length}\n• Total Payouts: ${state.payouts.length}\n\nArchived and active data organized in Google Drive.`);
       }
     } catch (err) {
       console.error('Error during Google Drive sync:', err);

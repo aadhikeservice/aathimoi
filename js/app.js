@@ -10992,6 +10992,10 @@
   // ==========================================
   function renderReportPanel() {
     const isAdmin = hasFullAccess();
+    const visibleEvents = getVisibleEvents();
+    if ((!state.activeEventId || !visibleEvents.some(e => e.id === state.activeEventId)) && visibleEvents.length > 0) {
+      state.activeEventId = visibleEvents[0].id;
+    }
     const activeEv = getActiveEvent();
     const allReceipts = state.receipts.filter(r => !state.activeEventId || r.eventId === state.activeEventId);
     const allPayouts = state.payouts.filter(p => !state.activeEventId || p.eventId === state.activeEventId);
@@ -11055,8 +11059,8 @@
             <div>
               <label class="block text-xs font-semibold text-amber-400 mb-1">Select Event</label>
               <select id="rpt-filter-event" class="input-styled" ${!isAdmin ? 'disabled' : ''}>
-                ${isAdmin ? '<option value="">All Events</option>' : ''}
-                ${getVisibleEvents().map(ev => `
+                ${visibleEvents.length === 0 ? '<option value="">No Events</option>' : ''}
+                ${visibleEvents.map(ev => `
                   <option value="${ev.id}" ${ev.id === state.activeEventId ? 'selected' : ''}>
                     ${ev.displayName1 || ev.memberName}${ev.displayName1 && ev.memberName ? ' - ' + ev.memberName : ''} (${ev.place})
                   </option>
@@ -13724,6 +13728,7 @@
 
   function renderEditSavedDataPanel() {
     ensureMembersFromReceipts();
+    const isAdmin = hasFullAccess();
     const members = state.members || [];
     (members || []).forEach(m => {
       if (!m.id) {
@@ -13818,10 +13823,12 @@
                           <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                           <span>Edit</span>
                         </button>
+                        ${isAdmin ? `
                         <button type="button" onclick="window.appDeleteMember('${safeId}')" class="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/40 font-semibold text-xs inline-flex items-center space-x-1 transition cursor-pointer">
                           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                           <span>Delete</span>
                         </button>
+                        ` : ''}
                       </td>
                     </tr>
                   `;
@@ -14100,8 +14107,12 @@
   };
 
   window.appDeleteMember = async function (memberId) {
+    if (!hasFullAccess()) {
+      alert('Access Restricted: Only Admin can delete saved donors!');
+      return;
+    }
     if (!confirm('Are you sure you want to remove this donor from the suggestions directory?')) return;
-    state.members = (state.members || []).filter(m => m.id !== memberId);
+    state.members = (state.members || []).filter(m => String(m.id) !== String(memberId));
     await saveDb();
     if (typeof window.showToast === 'function') {
       window.showToast('Donor removed from directory.', 'info');

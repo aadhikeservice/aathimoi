@@ -371,8 +371,8 @@ input[type=number] {
     display: block !important;
     visibility: visible !important;
     position: static !important;
-    width: 76mm !important;
-    max-width: 76mm !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     height: auto !important;

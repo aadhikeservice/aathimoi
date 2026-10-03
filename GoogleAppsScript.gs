@@ -1320,7 +1320,7 @@ function createPayoutHtmlInDrive(payout) {
     '  <title>ஆதி மொய் - பட்டுவாடா ரசீது' + (voucherNo ? (' #' + escapeXml(voucherNo)) : '') + '</title>\n' +
     '  <style>\n' +
     '    @page {\n' +
-    '      size: 76mm auto;\n' +
+    '      size: 80mm auto;\n' +
     '      margin: 0mm !important;\n' +
     '    }\n' +
     '    * {\n' +
@@ -1329,8 +1329,8 @@ function createPayoutHtmlInDrive(payout) {
     '      print-color-adjust: exact !important;\n' +
     '    }\n' +
     '    html, body {\n' +
-    '      width: 76mm !important;\n' +
-    '      max-width: 76mm !important;\n' +
+    '      width: 80mm !important;\n' +
+    '      max-width: 80mm !important;\n' +
     '      margin: 0 auto !important;\n' +
     '      padding: 0 !important;\n' +
     '      background: #fff !important;\n' +
@@ -1339,10 +1339,10 @@ function createPayoutHtmlInDrive(payout) {
     '      font-weight: bold;\n' +
     '    }\n' +
     '    .thermal-receipt-container {\n' +
-    '      width: 76mm !important;\n' +
-    '      max-width: 76mm !important;\n' +
+    '      width: 80mm !important;\n' +
+    '      max-width: 80mm !important;\n' +
     '      margin: 0 auto !important;\n' +
-    '      padding: 4mm 2mm;\n' +
+    '      padding: 4mm 2.5mm;\n' +
     '      page-break-inside: avoid !important;\n' +
     '      break-inside: avoid !important;\n' +
     '    }\n' +

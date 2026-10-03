@@ -551,7 +551,7 @@ function saveSinglePayoutToBackup(payoutData) {
   <title>ஆதி மொய் - பட்டுவாடா ரசீது${voucherNo ? ` #${voucherNo}` : ''}</title>
   <style>
     @page {
-      size: 76mm auto;
+      size: 80mm auto;
       margin: 0mm !important;
     }
     * {
@@ -560,8 +560,8 @@ function saveSinglePayoutToBackup(payoutData) {
       print-color-adjust: exact !important;
     }
     html, body {
-      width: 76mm !important;
-      max-width: 76mm !important;
+      width: 80mm !important;
+      max-width: 80mm !important;
       margin: 0 auto !important;
       padding: 0 !important;
       background: #fff !important;
@@ -570,10 +570,10 @@ function saveSinglePayoutToBackup(payoutData) {
       font-weight: bold;
     }
     .thermal-receipt-container {
-      width: 76mm !important;
-      max-width: 76mm !important;
+      width: 80mm !important;
+      max-width: 80mm !important;
       margin: 0 auto !important;
-      padding: 4mm 2mm;
+      padding: 4mm 2.5mm;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     }

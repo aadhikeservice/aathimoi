@@ -7868,8 +7868,8 @@
     `;
   }
 
-  // Helper to toggle 3-Inch (76mm) vs A4 @page rules dynamically for direct window printing
-  function setThermalPageSizeStyle(isThermal) {
+  // Helper to toggle 3-Inch (80mm) vs A4 @page rules dynamically for direct window printing
+  function setThermalPageSizeStyle(isThermal, paperSize = '80mm') {
     let styleEl = document.getElementById('aathi-dynamic-page-size');
     if (isThermal) {
       if (!styleEl) {
@@ -7880,12 +7880,12 @@
       styleEl.textContent = `
         @media print {
           @page {
-            size: 76mm auto !important;
+            size: ${paperSize} auto !important;
             margin: 0mm !important;
           }
           html, body {
-            width: 76mm !important;
-            max-width: 76mm !important;
+            width: ${paperSize} !important;
+            max-width: ${paperSize} !important;
             margin: 0 auto !important;
             padding: 0 !important;
           }
@@ -7896,8 +7896,8 @@
     }
   }
 
-  // Helper to build a fresh 76mm thermal iframe (kept in DOM while spooling so print job never aborts)
-  function createReadyThermalIframe(copyHtml, copyTitle) {
+  // Helper to build a fresh 3-Inch (80mm) thermal iframe (kept in DOM while spooling so print job never aborts)
+  function createReadyThermalIframe(copyHtml, copyTitle, paperSize = '80mm') {
     const prevIframe = document.getElementById('aathi-thermal-print-iframe');
     if (prevIframe && prevIframe.parentNode) {
       try { prevIframe.parentNode.removeChild(prevIframe); } catch (e) {}
@@ -7905,7 +7905,7 @@
 
     const iframe = document.createElement('iframe');
     iframe.id = 'aathi-thermal-print-iframe';
-    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:300px;height:420px;border:0;opacity:0.01;pointer-events:none;z-index:-9999;';
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:320px;height:420px;border:0;opacity:0.01;pointer-events:none;z-index:-9999;';
     document.body.appendChild(iframe);
 
     const frameWin = iframe.contentWindow;
@@ -7922,7 +7922,7 @@
   <title>${copyTitle}</title>
   <style>
     @page {
-      size: 76mm auto;
+      size: ${paperSize} auto;
       margin: 0mm !important;
     }
     * {
@@ -7931,8 +7931,8 @@
       print-color-adjust: exact !important;
     }
     html, body {
-      width: 76mm !important;
-      max-width: 76mm !important;
+      width: ${paperSize} !important;
+      max-width: ${paperSize} !important;
       margin: 0 auto !important;
       padding: 0 !important;
       background: #fff !important;
@@ -7940,8 +7940,8 @@
       font-family: monospace, 'Noto Sans Tamil', 'Latha', 'Vijaya', sans-serif !important;
     }
     .thermal-receipt-container {
-      width: 76mm !important;
-      max-width: 76mm !important;
+      width: ${paperSize} !important;
+      max-width: ${paperSize} !important;
       margin: 0 auto !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
@@ -7957,7 +7957,7 @@
   }
 
   // ==========================================
-  // Thermal Receipt Printing (2 Separate Sequential Prints - 3 Inch / 76mm, No Popup Window)
+  // Thermal Receipt Printing (2 Separate Sequential Prints - 3 Inch / 80mm, No Popup Window)
   // ==========================================
   function printThermalReceipt(rcpt, ev, singleCopy = false, onAfterPrintCallback = null, waUrl = null) {
     if (!rcpt) return;
@@ -7971,7 +7971,7 @@
 
     // First Copy (Customer Copy - Page 1)
     const copy1Html = `
-      <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
+      <div class="thermal-receipt-container" style="width: 80mm; max-width: 80mm; padding: 4mm 2.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2px;">
             ${getThermalLogoSvgHtml()}
@@ -8005,7 +8005,7 @@
 
     // Second Copy (Office / Created By Copy - Page 2)
     const copy2Html = `
-      <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
+      <div class="thermal-receipt-container" style="width: 80mm; max-width: 80mm; padding: 4mm 2.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px dashed #000;">
           <div style="font-size: 9pt; font-weight: bold; color: #000;">Created By: ${rcpt.createdBy || 'admin'}</div>
         </div>
@@ -8035,7 +8035,7 @@
     if (!printArea) return;
 
     isThermalPrintSequenceActive = true;
-    setThermalPageSizeStyle(true);
+    setThermalPageSizeStyle(true, '80mm');
     printArea.classList.remove('hidden');
     // Load ONLY Page 1 (Customer Copy) first
     printArea.innerHTML = copy1Html;
@@ -8362,7 +8362,7 @@
   }
 
   // ==========================================
-  // Payout Thermal Receipt Printing (Same Size & Layout as Moi Receipt - 3 Inch / 76mm, No Popup Window)
+  // Payout Thermal Receipt Printing (Same Size & Layout as Moi Receipt - 3 Inch / 80mm, No Popup Window)
   // ==========================================
   function printPayoutThermalReceipt(payout, ev) {
     if (!payout) return;
@@ -8377,7 +8377,7 @@
     const voucherNo = payout.id ? String(payout.id).replace(/^payout_/, '') : '';
 
     const payoutReceiptHtml = `
-      <div class="thermal-receipt-container" style="width: 76mm; max-width: 76mm; padding: 4mm 2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
+      <div class="thermal-receipt-container" style="width: 80mm; max-width: 80mm; padding: 4mm 2.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2px;">
             ${getThermalLogoSvgHtml()}
@@ -8429,7 +8429,7 @@
     }
 
     isThermalPrintSequenceActive = true;
-    setThermalPageSizeStyle(true);
+    setThermalPageSizeStyle(true, '80mm');
 
     const finishPayoutPrint = () => {
       isThermalPrintSequenceActive = false;
@@ -8470,9 +8470,9 @@
     }
 
     // 2. Web Browser / Chromebook / Offline Standalone / Extension:
-    // Print isolated 76mm thermal iframe so browser print preview locks to 76mm receipt size
+    // Print isolated 80mm thermal iframe so browser print preview locks to 3-inch 80mm receipt size
     const copyTitle = `Payout Receipt #${voucherNo || 'New'}`;
-    const frameObj = createReadyThermalIframe(payoutReceiptHtml, copyTitle);
+    const frameObj = createReadyThermalIframe(payoutReceiptHtml, copyTitle, '80mm');
     if (!frameObj) {
       finishPayoutPrint();
       return;

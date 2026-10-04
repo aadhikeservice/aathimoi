@@ -570,10 +570,13 @@ function saveSinglePayoutToBackup(payoutData) {
       font-weight: bold;
     }
     .thermal-receipt-container {
-      width: 80mm !important;
-      max-width: 80mm !important;
+      width: 78mm !important;
+      max-width: 78mm !important;
       margin: 0 auto !important;
-      padding: 4mm 2.5mm;
+      padding: 3.5mm 3mm;
+      border: 2px solid #000;
+      border-radius: 4px;
+      box-sizing: border-box;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     }

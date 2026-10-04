@@ -1487,7 +1487,21 @@ function getSheetDataAsJson(sheet) {
     var row = {};
     for (var j = 0; j < headers.length; j++) {
       var headerKey = headers[j].toString().toLowerCase().replace(/[^a-z0-9]/g, '');
-      row[headerKey] = values[i][j];
+      var cellVal = values[i][j];
+
+      // Format Date objects returned by Google Sheets
+      if (cellVal instanceof Date) {
+        if (headerKey === 'time' || headerKey === 'upitxtime') {
+          cellVal = Utilities.formatDate(cellVal, 'Asia/Kolkata', 'hh:mm a');
+        } else if (headerKey === 'date' || headerKey === 'eventdate') {
+          if (cellVal.getFullYear() < 1970) {
+            cellVal = '';
+          } else {
+            cellVal = Utilities.formatDate(cellVal, 'Asia/Kolkata', 'dd/MM/yyyy');
+          }
+        }
+      }
+      row[headerKey] = cellVal;
     }
     rows.push(row);
   }

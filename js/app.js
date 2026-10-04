@@ -2491,8 +2491,10 @@
         }
         state.events = (data.events || []).filter(ev => !isEventDeletedInState(ev));
         state.receipts = data.receipts || [];
+        (state.receipts || []).forEach(normalizeReceiptData);
         state.members = data.members || [];
         state.payouts = data.payouts || [];
+        (state.payouts || []).forEach(normalizeReceiptData);
         state.users = data.users || [];
         state.noteEvents = data.noteEvents || [];
         state.noteEntries = data.noteEntries || [];
@@ -2548,8 +2550,10 @@
           }
           state.events = (data.events || []).filter(ev => !isEventDeletedInState(ev));
           state.receipts = data.receipts || [];
+          (state.receipts || []).forEach(normalizeReceiptData);
           state.members = data.members || [];
           state.payouts = data.payouts || [];
+          (state.payouts || []).forEach(normalizeReceiptData);
           state.users = data.users || [];
           state.noteEvents = data.noteEvents || [];
           state.noteEntries = data.noteEntries || [];
@@ -3556,10 +3560,12 @@
 
   function buildSingleReceiptHtml(rcpt, ev) {
     if (!rcpt) return '';
+    normalizeReceiptData(rcpt);
     const eventObj = ev || (state.events ? state.events.find(e => e.id === rcpt.eventId) : null);
     const majorName = rcpt.displayName1 || (eventObj ? eventObj.displayName1 : '') || rcpt.memberName || (eventObj ? eventObj.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (eventObj ? eventObj.memberName : '')) : (eventObj && eventObj.displayName1 ? (eventObj.memberName || '') : '');
     const eventTitle = rcpt.eventTitle || (eventObj ? eventObj.eventTitle : '') || '';
+    const dateTimeStr = [rcpt.date, rcpt.time].filter(Boolean).join(' ');
 
     return `<!DOCTYPE html>
 <html lang="ta">
@@ -3587,7 +3593,7 @@
 <div class="subtitle">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
     <div class="subtitle" style="margin-top: 2px; font-family: monospace, sans-serif;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
-    <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
+    <div class="row"><span class="bold">தேதி:</span> <span>${dateTimeStr}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
     ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
@@ -3597,7 +3603,7 @@
     <div class="amount-box">
       <div class="amount-title">தொகை</div>
       <div class="amount-val">₹${parseFloat(rcpt.amount || 0).toLocaleString('en-IN')}</div>
-      <div class="amount-words">(${rcpt.amountWords || ''})</div>
+      ${rcpt.amountWords ? `<div class="amount-words">(${rcpt.amountWords})</div>` : ''}
     </div>
     <div class="row"><span class="bold">செலுத்திய முறை:</span> <span>${rcpt.mode || 'ரொக்கம்'}</span></div>
     <div class="footer">தங்கள் வருகைக்கு நன்றி</div>
@@ -5008,6 +5014,11 @@
             }
             state.events = (syncData.events || []).filter(ev => !isEventDeletedInState(ev));
             state.receipts = syncData.receipts || [];
+            (state.receipts || []).forEach(normalizeReceiptData);
+            if (Array.isArray(syncData.payouts)) {
+              state.payouts = syncData.payouts;
+              (state.payouts || []).forEach(normalizeReceiptData);
+            }
           }
         }
       } catch (e) {}
@@ -5272,6 +5283,8 @@
             const rEvName = String(r.eventName || '').trim().toLowerCase().replace(/\s+/g, ' ');
             return (rEvId && finalActiveIds.has(rEvId)) || (rEvName && finalActiveNames.has(rEvName));
           });
+          (state.receipts || []).forEach(normalizeReceiptData);
+          (state.payouts || []).forEach(normalizeReceiptData);
 
           if (addedCount > 0 || updatedCount > 0) {
             await saveDb();
@@ -7896,6 +7909,119 @@
     }
   }
 
+  // Robust Helpers for Receipt Date, Time, and Amount in Words Normalization
+  function formatReceiptTime(val, fallbackDate = null) {
+    if (!val && fallbackDate) {
+      try {
+        const d = new Date(fallbackDate);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      } catch (e) {}
+    }
+    if (!val) return '';
+    val = String(val).trim();
+    if (!val || val === 'null' || val === 'undefined') return '';
+    if (/^\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)$/i.test(val)) {
+      return val.toUpperCase();
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+      try {
+        const timePart = val.split('T')[1].replace('Z', '').split('.')[0];
+        const modernIso = '2026-01-01T' + timePart + (val.endsWith('Z') ? 'Z' : '');
+        const d = new Date(modernIso);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      } catch (e) {}
+    }
+    if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(val)) {
+      try {
+        const parts = val.split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      } catch (e) {}
+    }
+    return val;
+  }
+
+  function formatReceiptDate(val, fallbackDate = null) {
+    if (!val && fallbackDate) {
+      try {
+        const d = new Date(fallbackDate);
+        if (!isNaN(d.getTime()) && d.getFullYear() >= 1970) {
+          return d.toLocaleDateString('ta-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+      } catch (e) {}
+    }
+    if (!val) return '';
+    val = String(val).trim();
+    if (!val || val === 'null' || val === 'undefined') return '';
+    if (val.startsWith('1899-') || val.includes('1899-12-30')) {
+      if (fallbackDate) {
+        try {
+          const fd = new Date(fallbackDate);
+          if (!isNaN(fd.getTime()) && fd.getFullYear() >= 1970) {
+            return fd.toLocaleDateString('ta-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          }
+        } catch (e) {}
+      }
+      return '';
+    }
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+      return val;
+    }
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+      try {
+        const d = new Date(val);
+        if (!isNaN(d.getTime()) && d.getFullYear() >= 1970) {
+          return d.toLocaleDateString('ta-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+      } catch (e) {}
+    }
+    return val;
+  }
+
+  function getReceiptAmountWords(rcpt) {
+    if (!rcpt) return '';
+    let words = rcpt.amountWords;
+    if (typeof words === 'string') {
+      words = words.trim();
+      if (words.startsWith('(') && words.endsWith(')')) {
+        words = words.slice(1, -1).trim();
+      }
+    } else {
+      words = '';
+    }
+    if (!words || words === '()' || words === 'null' || words === 'undefined') {
+      const num = parseFloat(rcpt.amount);
+      if (!isNaN(num) && num > 0 && window.TamilWords && typeof window.TamilWords.amountToTamilWords === 'function') {
+        try {
+          words = window.TamilWords.amountToTamilWords(num);
+        } catch (e) {
+          words = num + ' ரூபாய் மட்டும்';
+        }
+      } else if (!isNaN(num) && num > 0) {
+        words = num + ' ரூபாய் மட்டும்';
+      } else {
+        words = '';
+      }
+    }
+    return words;
+  }
+
+  function normalizeReceiptData(rcpt) {
+    if (!rcpt) return rcpt;
+    const fallback = rcpt.createdAt || rcpt.timestamp;
+    rcpt.time = formatReceiptTime(rcpt.time, fallback);
+    rcpt.date = formatReceiptDate(rcpt.date, fallback);
+    rcpt.amountWords = getReceiptAmountWords(rcpt);
+    return rcpt;
+  }
+
   // Helper to build a fresh 3-Inch (80mm) thermal iframe (kept in DOM while spooling so print job never aborts)
   function createReadyThermalIframe(copyHtml, copyTitle, paperSize = '80mm') {
     const prevIframe = document.getElementById('aathi-thermal-print-iframe');
@@ -7940,9 +8066,13 @@
       font-family: monospace, 'Noto Sans Tamil', 'Latha', 'Vijaya', sans-serif !important;
     }
     .thermal-receipt-container {
-      width: ${paperSize} !important;
-      max-width: ${paperSize} !important;
-      margin: 0 auto !important;
+      width: 78mm !important;
+      max-width: 78mm !important;
+      margin: 1mm auto !important;
+      padding: 3.5mm 3mm !important;
+      border: 2px solid #000 !important;
+      border-radius: 4px !important;
+      box-sizing: border-box !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     }
@@ -7961,6 +8091,7 @@
   // ==========================================
   function printThermalReceipt(rcpt, ev, singleCopy = false, onAfterPrintCallback = null, waUrl = null) {
     if (!rcpt) return;
+    normalizeReceiptData(rcpt);
 
     const activeEv = ev || (state.events ? state.events.find(e => e.id === rcpt.eventId) : null);
     const disp1 = (activeEv && activeEv.displayName1) || rcpt.displayName1 || '';
@@ -7968,16 +8099,20 @@
     const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
     const evTitle = (activeEv && activeEv.eventTitle) || rcpt.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
     const evPlace = (activeEv && activeEv.place) || rcpt.eventPlace || '';
+    const formattedDate = formatReceiptDate(rcpt.date, rcpt.createdAt || rcpt.timestamp);
+    const formattedTime = formatReceiptTime(rcpt.time, rcpt.createdAt || rcpt.timestamp);
+    const dateTimeStr = [formattedDate, formattedTime].filter(Boolean).join(' ');
+    const amtWords = getReceiptAmountWords(rcpt);
 
     // First Copy (Customer Copy - Page 1)
     const copy1Html = `
-      <div class="thermal-receipt-container" style="width: 80mm; max-width: 80mm; padding: 4mm 2.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
+      <div class="thermal-receipt-container" style="width: 78mm; max-width: 78mm; margin: 0 auto; padding: 3.5mm 3mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 2px solid #000; border-radius: 4px; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2px;">
             ${getThermalLogoSvgHtml()}
             <h2 style="font-size: 15.5pt; font-weight: 900; margin: 0; color: #000; line-height: 1.1;">ஆதி மொய்</h2>
           </div>
-<p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
+          <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">கருணாக்கமுத்தன் பட்டி, கம்பம்</p>
           <p style="font-size: 8.5pt; font-weight: bold; margin: 0 0 5px 0; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; line-height: 1.2; font-family: monospace, sans-serif;">(98656 07179)</p>
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
@@ -7987,12 +8122,12 @@
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px;">
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span>${rcpt.date} ${rcpt.time}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span>${dateTimeStr}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">இடம்:</span> <span>${rcpt.place}</span></div>
           ${rcpt.relationship ? `<div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 2px solid #000; padding-top: 5px;"><span style="font-size: 13pt; font-weight: 900;">தொகை:</span> <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</span></div>
-          <div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; color: #000;">(${rcpt.amountWords})</div>
+          ${amtWords ? `<div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; color: #000;">(${amtWords})</div>` : ''}
           <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span style="font-weight: bold;">செலுத்திய முறை:</span> <span>${rcpt.mode}</span></div>
           ${rcpt.upiTxTime ? `<div style="font-size: 8pt; color: #000;"><span>UPI Ref/Time:</span> <span>${rcpt.upiTxTime}</span></div>` : ''}
         </div>
@@ -8005,19 +8140,19 @@
 
     // Second Copy (Office / Created By Copy - Page 2)
     const copy2Html = `
-      <div class="thermal-receipt-container" style="width: 80mm; max-width: 80mm; padding: 4mm 2.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
+      <div class="thermal-receipt-container" style="width: 78mm; max-width: 78mm; margin: 0 auto; padding: 3.5mm 3mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 2px solid #000; border-radius: 4px; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px dashed #000;">
           <div style="font-size: 9pt; font-weight: bold; color: #000;">Created By: ${rcpt.createdBy || 'admin'}</div>
         </div>
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000;">
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span>${rcpt.date} ${rcpt.time}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span>${dateTimeStr}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">இடம்:</span> <span>${rcpt.place}</span></div>
           ${rcpt.relationship ? `<div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 2px solid #000; padding-top: 5px;"><span style="font-size: 13pt; font-weight: 900;">தொகை:</span> <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</span></div>
-          <div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; color: #000;">(${rcpt.amountWords})</div>
+          ${amtWords ? `<div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; color: #000;">(${amtWords})</div>` : ''}
           <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span style="font-weight: bold;">செலுத்திய முறை:</span> <span>${rcpt.mode}</span></div>
           ${rcpt.upiTxTime ? `<div style="font-size: 8pt; color: #000;"><span>UPI Ref/Time:</span> <span>${rcpt.upiTxTime}</span></div>` : ''}
         </div>
@@ -8366,6 +8501,7 @@
   // ==========================================
   function printPayoutThermalReceipt(payout, ev) {
     if (!payout) return;
+    normalizeReceiptData(payout);
 
     const activeEv = ev || (state.events ? state.events.find(e => e.id === payout.eventId) : null);
     const disp1 = (activeEv && activeEv.displayName1) || payout.displayName1 || '';
@@ -8373,11 +8509,14 @@
     const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
     const evTitle = (activeEv && activeEv.eventTitle) || payout.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
     const evPlace = (activeEv && activeEv.place) || payout.place || payout.eventPlace || '';
-    const payoutWords = window.TamilWords ? window.TamilWords.amountToTamilWords(payout.amount) : (payout.amount + ' ரூபாய் மட்டுமே');
+    const payoutDate = formatReceiptDate(payout.date, payout.createdAt || payout.timestamp);
+    const payoutTime = formatReceiptTime(payout.time, payout.createdAt || payout.timestamp);
+    const payoutDateTimeStr = [payoutDate, payoutTime].filter(Boolean).join(' ');
+    const payoutWords = getReceiptAmountWords(payout);
     const voucherNo = payout.id ? String(payout.id).replace(/^payout_/, '') : '';
 
     const payoutReceiptHtml = `
-      <div class="thermal-receipt-container" style="width: 80mm; max-width: 80mm; padding: 4mm 2.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: none; box-sizing: border-box;">
+      <div class="thermal-receipt-container" style="width: 78mm; max-width: 78mm; margin: 0 auto; padding: 3.5mm 3mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 2px solid #000; border-radius: 4px; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
           <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2px;">
             ${getThermalLogoSvgHtml()}
@@ -8396,7 +8535,7 @@
             பட்டுவாடா ரசீது (Payout Receipt)
           </div>
           ${voucherNo ? `<div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது எண்:</span> <span>#${voucherNo}</span></div>` : ''}
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி & நேரம்:</span> <span>${payout.date || ''} ${payout.time || ''}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி & நேரம்:</span> <span>${payoutDateTimeStr}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பதிவு செய்தவர்:</span> <span>${payout.createdBy || 'admin'}</span></div>
           <div style="display: flex; justify-content: space-between; border-top: 1px dashed #000; margin-top: 4px; padding-top: 4px;"><span style="font-weight: bold;">அனுப்புபவர்:</span> <span style="font-weight: 900;">${payout.sender || payout.name || '-'}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பெறுபவர்:</span> <span style="font-weight: 900;">${payout.receiver || '-'}</span></div>
@@ -8406,7 +8545,7 @@
             <span style="font-size: 13pt; font-weight: 900;">செலவுத் தொகை:</span>
             <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(payout.amount || 0).toLocaleString('en-IN')}</span>
           </div>
-          <div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; text-align: center; color: #000;">(${payoutWords})</div>
+          ${payoutWords ? `<div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; text-align: center; color: #000;">(${payoutWords})</div>` : ''}
         </div>
 
         <div style="text-align: center; margin-top: 8px; font-size: 8.5pt; border-top: 1px solid #000; padding-top: 4px; color: #000;">
@@ -8529,6 +8668,7 @@
   window.appReprintPayoutThermal = function (payoutId) {
     const payout = state.payouts.find(p => p.id === payoutId);
     if (!payout) return;
+    normalizeReceiptData(payout);
     const ev = state.events.find(e => e.id === payout.eventId) || { memberName: payout.eventName || 'Aathi Moi', place: '-' };
     printPayoutThermalReceipt(payout, ev);
   };
@@ -8765,6 +8905,7 @@
   window.appReprintThermal = function (receiptId) {
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
+    normalizeReceiptData(rcpt);
     const ev = state.events.find(e => e.id === rcpt.eventId) || { memberName: rcpt.memberName || 'Aathi Moi', place: rcpt.place || '-' };
     printThermalReceipt(rcpt, ev);
   };
@@ -9807,11 +9948,13 @@
   window.appSaveAsReceiptToLocalDisk = async function (receiptId) {
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
+    normalizeReceiptData(rcpt);
 
     const ev = state.events.find(e => e.id === rcpt.eventId);
     const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
     const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
+    const dateTimeStr = [rcpt.date, rcpt.time].filter(Boolean).join(' ');
 
     const htmlContent = `<!DOCTYPE html>
 <html lang="ta">
@@ -9839,7 +9982,7 @@
 <div class="subtitle">கருணாக்கமுத்தன் பட்டி, கம்பம்</div>
     <div class="subtitle" style="margin-top: 2px; font-family: monospace, sans-serif;">(98656 07179)</div>
     <div class="row"><span class="bold">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
-    <div class="row"><span class="bold">தேதி:</span> <span>${rcpt.date || ''} ${rcpt.time || ''}</span></div>
+    <div class="row"><span class="bold">தேதி:</span> <span>${dateTimeStr}</span></div>
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
     ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
@@ -9849,7 +9992,7 @@
     <div class="amount-box">
       <div class="amount-title">தொகை</div>
       <div class="amount-val">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</div>
-      <div class="amount-words">(${rcpt.amountWords || ''})</div>
+      ${rcpt.amountWords ? `<div class="amount-words">(${rcpt.amountWords})</div>` : ''}
     </div>
     <div class="row"><span class="bold">செலுத்திய முறை:</span> <span>${rcpt.mode || 'ரொக்கம்'}</span></div>
     <div class="footer">தங்கள் வருகைக்கு நன்றி</div>
@@ -9897,6 +10040,7 @@
   window.appOpenReceiptModal = function (receiptId) {
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
+    normalizeReceiptData(rcpt);
     const ev = state.events.find(e => e.id === rcpt.eventId);
 
     let modalEl = document.getElementById('receipt-download-modal');
@@ -9909,6 +10053,7 @@
 
     const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
+    const dateTimeStr = [rcpt.date, rcpt.time].filter(Boolean).join(' ');
 
     modalEl.innerHTML = `
       <div class="glass-card max-w-md w-full p-6 space-y-5 border border-amber-500/30 shadow-2xl relative animate-fade-in">
@@ -9928,7 +10073,7 @@
             ஆதி மொய் (Aathi Moi)
           </div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Bill No:</span><span class="font-mono font-bold text-amber-400">#${rcpt.billNo}</span></div>
-          <div class="flex justify-between"><span class="text-slate-400 font-semibold">Date/Time:</span><span>${rcpt.date} ${rcpt.time}</span></div>
+          <div class="flex justify-between"><span class="text-slate-400 font-semibold">Date/Time:</span><span>${dateTimeStr}</span></div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Member:</span><span class="font-bold text-amber-300">${majorName} ${name1 ? '(' + name1 + ')' : ''}</span></div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Name:</span><span class="font-bold text-slate-100">${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Place:</span><span>${rcpt.place}</span></div>
@@ -9936,7 +10081,7 @@
           <div class="bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/30 text-center my-2">
             <div class="text-xs text-amber-400 font-semibold">Amount</div>
             <div class="text-xl font-black text-amber-300">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</div>
-            <div class="text-[11px] italic text-slate-300">(${rcpt.amountWords})</div>
+            ${rcpt.amountWords ? `<div class="text-[11px] italic text-slate-300">(${rcpt.amountWords})</div>` : ''}
           </div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Payment Mode:</span><span class="font-bold text-emerald-400">${rcpt.mode}</span></div>
         </div>
@@ -10072,6 +10217,8 @@
   };
 
   function openEditReceiptFormModal(rcpt) {
+    if (!rcpt) return;
+    normalizeReceiptData(rcpt);
     let modalRoot = document.getElementById('receipt-edit-modal-root');
     if (!modalRoot) {
       modalRoot = document.createElement('div');
@@ -10269,6 +10416,7 @@
   window.appEditReceipt = function (receiptId) {
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
+    normalizeReceiptData(rcpt);
     openEditReceiptFormModal(rcpt);
   };
   window.appOpenEditReceiptModal = window.appEditReceipt;

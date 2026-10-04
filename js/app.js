@@ -3565,7 +3565,6 @@
     const majorName = rcpt.displayName1 || (eventObj ? eventObj.displayName1 : '') || rcpt.memberName || (eventObj ? eventObj.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (eventObj ? eventObj.memberName : '')) : (eventObj && eventObj.displayName1 ? (eventObj.memberName || '') : '');
     const eventTitle = rcpt.eventTitle || (eventObj ? eventObj.eventTitle : '') || '';
-    const evPhone = (eventObj && eventObj.phone) || rcpt.eventPhone || rcpt.phone || '';
     const dateTimeStr = [rcpt.date, rcpt.time].filter(Boolean).join(' ');
 
     return `<!DOCTYPE html>
@@ -3598,7 +3597,6 @@
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
     ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
-    ${evPhone ? `<div class="row"><span class="bold">நிகழ்வு எண்:</span> <span>${evPhone}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name || ''}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${rcpt.place || ''}</span></div>
     ${rcpt.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
@@ -8024,15 +8022,12 @@
     return rcpt;
   }
 
-  // Helper to build a fresh 3-Inch (80mm) or 1.5-Inch (38mm) thermal iframe (kept in DOM while spooling so print job never aborts)
+  // Helper to build a fresh 3-Inch (80mm) thermal iframe (kept in DOM while spooling so print job never aborts)
   function createReadyThermalIframe(copyHtml, copyTitle, paperSize = '80mm') {
     const prevIframe = document.getElementById('aathi-thermal-print-iframe');
     if (prevIframe && prevIframe.parentNode) {
       try { prevIframe.parentNode.removeChild(prevIframe); } catch (e) {}
     }
-
-    const isSmallPaper = paperSize === '38mm' || parseInt(paperSize) < 50;
-    const containerWidth = isSmallPaper ? '38mm' : '78mm';
 
     const iframe = document.createElement('iframe');
     iframe.id = 'aathi-thermal-print-iframe';
@@ -8071,24 +8066,15 @@
       font-family: monospace, 'Noto Sans Tamil', 'Latha', 'Vijaya', sans-serif !important;
     }
     .thermal-receipt-container {
-      width: ${containerWidth} !important;
-      max-width: ${containerWidth} !important;
-      margin: 0.5mm auto !important;
-      padding: ${isSmallPaper ? '2mm 1.5mm' : '3.5mm 3mm'} !important;
-      border: ${isSmallPaper ? '1.5px' : '2px'} solid #000 !important;
-      border-radius: ${isSmallPaper ? '3px' : '4px'} !important;
+      width: 78mm !important;
+      max-width: 78mm !important;
+      margin: 1mm auto !important;
+      padding: 3.5mm 3mm !important;
+      border: 2px solid #000 !important;
+      border-radius: 4px !important;
       box-sizing: border-box !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
-    }
-    .thermal-receipt-container.office-copy {
-      width: 38mm !important;
-      max-width: 38mm !important;
-      padding: 2mm 1.5mm !important;
-      border: 1.5px solid #000 !important;
-      border-radius: 3px !important;
-      font-size: 7pt !important;
-      line-height: 1.3 !important;
     }
   </style>
 </head>
@@ -8101,7 +8087,7 @@
   }
 
   // ==========================================
-  // Thermal Receipt Printing (2 Separate Sequential Prints - 3 Inch / 80mm Customer Copy, 1.5 Inch / 38mm Office Copy, No Popup Window)
+  // Thermal Receipt Printing (2 Separate Sequential Prints - 3 Inch / 80mm, No Popup Window)
   // ==========================================
   function printThermalReceipt(rcpt, ev, singleCopy = false, onAfterPrintCallback = null, waUrl = null) {
     if (!rcpt) return;
@@ -8112,14 +8098,13 @@
     const memName = activeEv ? activeEv.memberName : (rcpt.memberName || '');
     const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
     const evTitle = (activeEv && activeEv.eventTitle) || rcpt.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
-    const evPhone = (activeEv && activeEv.phone) || rcpt.eventPhone || rcpt.phone || '';
     const evPlace = (activeEv && activeEv.place) || rcpt.eventPlace || '';
     const formattedDate = formatReceiptDate(rcpt.date, rcpt.createdAt || rcpt.timestamp);
     const formattedTime = formatReceiptTime(rcpt.time, rcpt.createdAt || rcpt.timestamp);
     const dateTimeStr = [formattedDate, formattedTime].filter(Boolean).join(' ');
     const amtWords = getReceiptAmountWords(rcpt);
 
-    // First Copy (Customer Copy - Page 1, 3 Inch / 80mm)
+    // First Copy (Customer Copy - Page 1)
     const copy1Html = `
       <div class="thermal-receipt-container" style="width: 78mm; max-width: 78mm; margin: 0 auto; padding: 3.5mm 3mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 2px solid #000; border-radius: 4px; box-sizing: border-box;">
         <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px;">
@@ -8132,7 +8117,6 @@
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
-          ${evPhone ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2; font-family: monospace, sans-serif;">(${evPhone.replace(/[()]/g, '')})</p>` : ''}
           ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2;">${evPlace}</p>` : ''}
         </div>
 
@@ -8154,27 +8138,23 @@
       </div>
     `;
 
-    // Second Copy (Office / Created By Copy - Page 2, Half Size: 1.5 Inch / 38mm)
+    // Second Copy (Office / Created By Copy - Page 2)
     const copy2Html = `
-      <div class="thermal-receipt-container office-copy" style="width: 38mm; max-width: 38mm; margin: 0 auto; padding: 2mm 1.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 1.5px solid #000; border-radius: 3px; box-sizing: border-box; font-size: 7pt; line-height: 1.3;">
-        <div style="text-align: center; padding-bottom: 2px; margin-bottom: 3px; border-bottom: 1px dashed #000;">
-          <div style="font-size: 7.5pt; font-weight: 900; color: #000;">Created By: ${rcpt.createdBy || 'admin'}</div>
+      <div class="thermal-receipt-container" style="width: 78mm; max-width: 78mm; margin: 0 auto; padding: 3.5mm 3mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 2px solid #000; border-radius: 4px; box-sizing: border-box;">
+        <div style="text-align: center; padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px dashed #000;">
+          <div style="font-size: 9pt; font-weight: bold; color: #000;">Created By: ${rcpt.createdBy || 'admin'}</div>
         </div>
 
-        <div style="font-size: 7pt; line-height: 1.3; color: #000;">
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது:</span> <span>#${rcpt.billNo}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span style="font-size: 6.5pt;">${dateTimeStr}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பெயர்:</span> <span style="text-align: right; word-break: break-word;">${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}</span></div>
+        <div style="font-size: 9.5pt; line-height: 1.45; color: #000;">
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span>${dateTimeStr}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">இடம்:</span> <span>${rcpt.place}</span></div>
           ${rcpt.relationship ? `<div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px; border-top: 1.5px solid #000; padding-top: 2px;"><span style="font-size: 8pt; font-weight: 900;">தொகை:</span> <span style="font-size: 11pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</span></div>
-          ${amtWords ? `<div style="font-size: 6.5pt; font-weight: bold; font-style: italic; margin-top: 1px; color: #000; word-break: break-word;">(${amtWords})</div>` : ''}
-          <div style="display: flex; justify-content: space-between; margin-top: 2px;"><span style="font-weight: bold;">முறை:</span> <span>${rcpt.mode}</span></div>
-          ${rcpt.upiTxTime ? `<div style="font-size: 6.5pt; color: #000;"><span>UPI:</span> <span>${rcpt.upiTxTime}</span></div>` : ''}
-        </div>
-
-        <div style="text-align: center; margin-top: 3px; font-size: 6.5pt; border-top: 1px dashed #000; padding-top: 2px; color: #000;">
-          <p style="font-weight: bold; margin: 0;">Office Copy (அலுவலக நகல்)</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 2px solid #000; padding-top: 5px;"><span style="font-size: 13pt; font-weight: 900;">தொகை:</span> <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</span></div>
+          ${amtWords ? `<div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; color: #000;">(${amtWords})</div>` : ''}
+          <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span style="font-weight: bold;">செலுத்திய முறை:</span> <span>${rcpt.mode}</span></div>
+          ${rcpt.upiTxTime ? `<div style="font-size: 8pt; color: #000;"><span>UPI Ref/Time:</span> <span>${rcpt.upiTxTime}</span></div>` : ''}
         </div>
       </div>
     `;
@@ -8216,7 +8196,7 @@
       }
     };
 
-    // 1. Offline Desktop App (Electron): Direct print on mainWindow (Page 1 first 80mm, then Page 2 38mm automatically)
+    // 1. Offline Desktop App (Electron): Direct print on mainWindow (Page 1 first, then Page 2 automatically)
     if (window.electronApi && typeof window.electronApi.printCurrentWindow === 'function') {
       (async () => {
         try {
@@ -8228,13 +8208,13 @@
             return new Promise(r => { img.onload = r; img.onerror = r; });
           }));
           await new Promise(r => setTimeout(r, 150));
-          // Print Page 1 (Customer Copy - 3 Inch / 80mm) directly without opening any popup window
+          // Print Page 1 (Customer Copy) directly without opening any popup window
           const res1 = await window.electronApi.printCurrentWindow({ silent: false });
 
-          // After Page 1 completes, automatically trigger a separate print for Page 2 (Office Copy - 1.5 Inch / 38mm)
+          // After Page 1 completes, automatically trigger a separate print for Page 2 (Office Copy)
           const wasCancelled = res1 && res1.ok === false && String(res1.error || '').toLowerCase().includes('cancel');
           if (!singleCopy && copy2Html && !wasCancelled) {
-            setThermalPageSizeStyle(true, '38mm');
+            setThermalPageSizeStyle(true);
             printArea.classList.remove('hidden');
             printArea.innerHTML = copy2Html;
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -8243,7 +8223,7 @@
             const wasCancelled2 = res2 && res2.ok === false && String(res2.error || '').toLowerCase().includes('cancel');
             if (res2 && res2.ok === false && !wasCancelled2) {
               // Retry once if Windows spooler was still releasing Page 1
-              setThermalPageSizeStyle(true, '38mm');
+              setThermalPageSizeStyle(true);
               printArea.classList.remove('hidden');
               printArea.innerHTML = copy2Html;
               await new Promise(r => setTimeout(r, 650));
@@ -8260,9 +8240,9 @@
     }
 
     // 2. Web Browser / Chromebook / Offline Standalone / Extension:
-    const printSingleCopyInFreshIframe = (copyHtml, copyTitle, isAutoSecondCopy = false, paperSize = '80mm') => {
+    const printSingleCopyInFreshIframe = (copyHtml, copyTitle, isAutoSecondCopy = false) => {
       return new Promise((resolve) => {
-        const frameObj = createReadyThermalIframe(copyHtml, copyTitle, paperSize);
+        const frameObj = createReadyThermalIframe(copyHtml, copyTitle);
         if (!frameObj) {
           resolve({ opened: false });
           return;
@@ -8385,7 +8365,7 @@
       if (prevIframe && prevIframe.parentNode) {
         try { prevIframe.parentNode.removeChild(prevIframe); } catch (e) {}
       }
-      setThermalPageSizeStyle(true, '38mm');
+      setThermalPageSizeStyle(true);
       printArea.classList.remove('hidden');
       printArea.innerHTML = copy2Html;
 
@@ -8399,7 +8379,7 @@
           <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center mx-auto text-amber-300">
             <i data-lucide="printer" class="w-6 h-6"></i>
           </div>
-          <h3 class="text-lg font-extrabold text-amber-300">Print 2nd Page (Office Copy - 1.5 Inch)</h3>
+          <h3 class="text-lg font-extrabold text-amber-300">Print 2nd Page (Office Copy)</h3>
           <p class="text-xs text-slate-300">1st Page (Customer Copy) completed. Press <strong>Enter</strong> or click below to print the 2nd Page (Office Copy #${rcpt.billNo}).</p>
           <div class="flex flex-col gap-2 pt-2">
             <button type="button" id="btn-print-office-copy-now" class="gold-button w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center space-x-2 shadow-lg cursor-pointer">
@@ -8437,7 +8417,7 @@
         window.removeEventListener('keydown', handleKey, true);
         if (modal && modal.parentNode) modal.remove();
 
-        setThermalPageSizeStyle(true, '38mm');
+        setThermalPageSizeStyle(true);
         printArea.classList.remove('hidden');
         printArea.innerHTML = copy2Html;
 
@@ -8486,20 +8466,20 @@
 
     (async () => {
       try {
-        // Step 1: Print Page 1 (Customer Copy - 3 Inch / 80mm)
-        setThermalPageSizeStyle(true, '80mm');
+        // Step 1: Print Page 1 (Customer Copy)
+        setThermalPageSizeStyle(true);
         printArea.classList.remove('hidden');
         printArea.innerHTML = copy1Html;
-        await printSingleCopyInFreshIframe(copy1Html, `Moi Receipt #${rcpt.billNo} - Page 1 (Customer Copy)`, false, '80mm');
+        await printSingleCopyInFreshIframe(copy1Html, `Moi Receipt #${rcpt.billNo} - Page 1 (Customer Copy)`, false);
 
-        // Step 2: Print Page 2 (Office Copy - 1.5 Inch / 38mm)
+        // Step 2: Print Page 2 (Office Copy)
         if (!singleCopy && copy2Html) {
-          setThermalPageSizeStyle(true, '38mm');
+          setThermalPageSizeStyle(true);
           printArea.classList.remove('hidden');
           printArea.innerHTML = copy2Html;
 
-          const copy2Title = `Moi Receipt #${rcpt.billNo} - Page 2 (Office Copy - 1.5 Inch)`;
-          const res2 = await printSingleCopyInFreshIframe(copy2Html, copy2Title, true, '38mm');
+          const copy2Title = `Moi Receipt #${rcpt.billNo} - Page 2 (Office Copy)`;
+          const res2 = await printSingleCopyInFreshIframe(copy2Html, copy2Title, true);
 
           // If browser blocked automatic 2nd print due to expired user activation, show instant Enter/Click prompt
           if (!res2 || !res2.opened) {
@@ -8528,7 +8508,6 @@
     const memName = activeEv ? activeEv.memberName : (payout.memberName || '');
     const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
     const evTitle = (activeEv && activeEv.eventTitle) || payout.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
-    const evPhone = (activeEv && activeEv.phone) || payout.eventPhone || payout.phone || '';
     const evPlace = (activeEv && activeEv.place) || payout.place || payout.eventPlace || '';
     const payoutDate = formatReceiptDate(payout.date, payout.createdAt || payout.timestamp);
     const payoutTime = formatReceiptTime(payout.time, payout.createdAt || payout.timestamp);
@@ -8548,7 +8527,6 @@
           ${disp1 ? `<h3 style="font-size: 12.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${disp1}</h3>` : ''}
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
-          ${evPhone ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2; font-family: monospace, sans-serif;">(${evPhone.replace(/[()]/g, '')})</p>` : ''}
           ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2;">${evPlace}</p>` : ''}
         </div>
 
@@ -8691,7 +8669,7 @@
     const payout = state.payouts.find(p => p.id === payoutId);
     if (!payout) return;
     normalizeReceiptData(payout);
-    const ev = state.events.find(e => e.id === payout.eventId) || { memberName: payout.eventName || 'Aathi Moi', place: '-', phone: payout.eventPhone || payout.phone || '' };
+    const ev = state.events.find(e => e.id === payout.eventId) || { memberName: payout.eventName || 'Aathi Moi', place: '-' };
     printPayoutThermalReceipt(payout, ev);
   };
 
@@ -8928,7 +8906,7 @@
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
     normalizeReceiptData(rcpt);
-    const ev = state.events.find(e => e.id === rcpt.eventId) || { memberName: rcpt.memberName || 'Aathi Moi', place: rcpt.place || '-', phone: rcpt.eventPhone || rcpt.phone || '' };
+    const ev = state.events.find(e => e.id === rcpt.eventId) || { memberName: rcpt.memberName || 'Aathi Moi', place: rcpt.place || '-' };
     printThermalReceipt(rcpt, ev);
   };
 
@@ -8944,8 +8922,7 @@
       displayName1: rcpt.displayName1 || '',
       place: rcpt.eventPlace || rcpt.place || '',
       eventName: rcpt.eventName || '',
-      eventTitle: rcpt.eventTitle || '',
-      phone: rcpt.eventPhone || rcpt.phone || ''
+      eventTitle: rcpt.eventTitle || ''
     };
 
     const orgName = 'ஆதி மொய்';
@@ -8955,7 +8932,6 @@
       : (eventObj ? eventObj.memberName : (rcpt.memberName || ''));
     const eventPlace = (eventObj && eventObj.place) || rcpt.eventPlace || '';
     const eventTitle = (eventObj && eventObj.eventTitle) || rcpt.eventTitle || (eventObj && eventObj.eventName && eventObj.eventName !== eventHeader ? eventObj.eventName : '');
-    const eventPhone = (eventObj && eventObj.phone) || rcpt.eventPhone || '';
     const donorName = `${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}`;
 
     return [
@@ -8963,7 +8939,6 @@
       `${orgContact}`,
       `━━━━━━━━━━━━━━━━━━`,
       `🎉 *நிகழ்வு:* ${eventHeader}${eventTitle ? ' (' + eventTitle + ')' : ''}`,
-      eventPhone ? `📞 *நிகழ்வு எண்:* ${eventPhone}` : null,
       `📍 *இடம்:* ${eventPlace}`,
       `━━━━━━━━━━━━━━━━━━`,
       `🧾 *ரசீது எண்:* #${rcpt.billNo}`,
@@ -9346,7 +9321,6 @@
         memberName: activeEv.memberName,
         eventTitle: activeEv.eventTitle || '',
         eventPlace: activeEv.place || '',
-        eventPhone: activeEv.phone || '',
         place,
         initial,
         name,
@@ -9980,7 +9954,6 @@
     const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
     const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
-    const evPhone = (ev && ev.phone) || rcpt.eventPhone || rcpt.phone || '';
     const dateTimeStr = [rcpt.date, rcpt.time].filter(Boolean).join(' ');
 
     const htmlContent = `<!DOCTYPE html>
@@ -10013,7 +9986,6 @@
     <div class="row"><span class="bold">உறுப்பினர் பெயர்:</span> <span>${majorName}</span></div>
     ${name1 ? `<div class="row"><span class="bold">உறுப்பினர் பெயர் 1:</span> <span>${name1}</span></div>` : ''}
     ${eventTitle ? `<div class="row"><span class="bold">நிகழ்வு தலைப்பு:</span> <span>${eventTitle}</span></div>` : ''}
-    ${evPhone ? `<div class="row"><span class="bold">நிகழ்வு எண்:</span> <span>${evPhone}</span></div>` : ''}
     <div class="row"><span class="bold">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name || ''}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
     <div class="row"><span class="bold">இடம்:</span> <span>${rcpt.place || ''}</span></div>
     ${rcpt.relationship ? `<div class="row"><span class="bold">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
@@ -10081,8 +10053,6 @@
 
     const majorName = rcpt.displayName1 || (ev ? ev.displayName1 : '') || rcpt.memberName || (ev ? ev.memberName : '') || 'Event';
     const name1 = rcpt.displayName1 ? (rcpt.memberName || (ev ? ev.memberName : '')) : '';
-    const eventTitle = rcpt.eventTitle || (ev ? ev.eventTitle : '') || '';
-    const evPhone = (ev && ev.phone) || rcpt.eventPhone || rcpt.phone || '';
     const dateTimeStr = [rcpt.date, rcpt.time].filter(Boolean).join(' ');
 
     modalEl.innerHTML = `
@@ -10105,8 +10075,6 @@
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Bill No:</span><span class="font-mono font-bold text-amber-400">#${rcpt.billNo}</span></div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Date/Time:</span><span>${dateTimeStr}</span></div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Member:</span><span class="font-bold text-amber-300">${majorName} ${name1 ? '(' + name1 + ')' : ''}</span></div>
-          ${eventTitle ? `<div class="flex justify-between"><span class="text-slate-400 font-semibold">Event:</span><span class="font-bold text-amber-300">${eventTitle}</span></div>` : ''}
-          ${evPhone ? `<div class="flex justify-between"><span class="text-slate-400 font-semibold">Event Phone:</span><span class="font-mono text-emerald-400 font-semibold">${evPhone}</span></div>` : ''}
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Name:</span><span class="font-bold text-slate-100">${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.job ? ' - ' + rcpt.job : ''}${rcpt.name1 ? ' ' + rcpt.name1 : ''}</span></div>
           <div class="flex justify-between"><span class="text-slate-400 font-semibold">Place:</span><span>${rcpt.place}</span></div>
           ${rcpt.relationship ? `<div class="flex justify-between"><span class="text-slate-400 font-semibold">Relationship:</span><span>${rcpt.relationship}</span></div>` : ''}
@@ -10711,12 +10679,6 @@
         id: 'payout_' + Date.now(),
         eventId: activeEv.id,
         eventName: activeEv.eventName || activeEv.memberName,
-        displayName1: activeEv.displayName1 || '',
-        memberName: activeEv.memberName || '',
-        eventTitle: activeEv.eventTitle || '',
-        eventPlace: activeEv.place || '',
-        eventPhone: activeEv.phone || '',
-        phone: activeEv.phone || '',
         sender,
         receiver,
         name: sender,

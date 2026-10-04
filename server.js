@@ -509,8 +509,6 @@ function saveSinglePayoutToBackup(payoutData) {
 
       const majorName = payoutData.displayName1 || payoutData.memberName || payoutData.eventName || 'Event';
       const name1 = payoutData.displayName1 ? (payoutData.memberName || '') : '';
-      const evTitle = payoutData.eventTitle || '';
-      const evPhone = payoutData.eventPhone || payoutData.phone || '';
       const folderTitle = (majorName ? (majorName + (name1 ? (' - ' + name1) : '')) : 'Event');
       
       let safeName = sanitizeFolderName(folderTitle);
@@ -604,8 +602,6 @@ function saveSinglePayoutToBackup(payoutData) {
       <p class="phone">(98656 07179)</p>
       ${majorName ? `<div class="disp1">${majorName}</div>` : ''}
       ${name1 ? `<div class="mem-name">${name1}</div>` : ''}
-      ${evTitle ? `<div style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</div>` : ''}
-      ${evPhone ? `<div style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2; font-family: monospace, sans-serif;">(${evPhone.replace(/[()]/g, '')})</div>` : ''}
     </div>
     <div class="body-section">
       <div class="badge">பட்டுவாடா ரசீது (Payout Receipt)</div>

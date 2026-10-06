@@ -369,6 +369,21 @@ input[type=number] {
     box-sizing: border-box !important;
   }
 
+  .thermal-office-copy {
+    width: 70mm !important;
+    max-width: 70mm !important;
+    height: 50mm !important;
+    max-height: 50mm !important;
+    margin: 0 auto !important;
+    padding: 1.5mm 2.2mm !important;
+    border: 2px solid #000 !important;
+    border-radius: 4px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   /* A4 Sheet Report Print Area - Searchable Tamil Vector Text in PDF */
   #a4-report-print-area:not(.hidden) {
     display: block !important;

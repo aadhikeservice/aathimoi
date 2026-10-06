@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aathi-moi-chromebook-offline-v13';
+const CACHE_NAME = 'aathi-moi-chromebook-offline-v14';
 const OFFLINE_ASSETS = [
   './',
   './index.html',

@@ -8768,13 +8768,52 @@
     switchPanel('receipt');
   };
 
+  function sortReceiptsDescending(receiptList) {
+    if (!receiptList || !Array.isArray(receiptList)) return [];
+    return [...receiptList].sort((a, b) => {
+      // 1. Primary: Numeric bill number descending (large number bill no to low bill no)
+      const digitsA = String(a.billNo || '').replace(/\D/g, '');
+      const digitsB = String(b.billNo || '').replace(/\D/g, '');
+      const numA = digitsA ? parseInt(digitsA, 10) : -1;
+      const numB = digitsB ? parseInt(digitsB, 10) : -1;
+
+      const validA = numA >= 0;
+      const validB = numB >= 0;
+
+      if (validA && validB && numA !== numB) {
+        return numB - numA;
+      }
+      if (validA && !validB) return -1;
+      if (!validA && validB) return 1;
+
+      // 2. String comparison fallback for billNo
+      const strA = String(a.billNo || '').trim();
+      const strB = String(b.billNo || '').trim();
+      if (strA !== strB) {
+        const comp = strB.localeCompare(strA, undefined, { numeric: true });
+        if (comp !== 0) return comp;
+      }
+
+      // 3. Fallback: Creation timestamp descending (last saved receipt on top)
+      const timeA = new Date(a.createdAt || a.timestamp || 0).getTime() || 0;
+      const timeB = new Date(b.createdAt || b.timestamp || 0).getTime() || 0;
+      if (timeA !== timeB) {
+        return timeB - timeA;
+      }
+
+      // 4. Stable tiebreaker: ID descending
+      return String(b.id || '').localeCompare(String(a.id || ''));
+    });
+  }
+
   function renderReceiptTableRows(receiptList) {
     if (!receiptList || receiptList.length === 0) {
       return '<tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">No receipts found.</td></tr>';
     }
+    const sortedList = sortReceiptsDescending(receiptList);
     const superAdmin = isSuperAdmin();
     const deleteDisabled = isAdminUser();
-    return receiptList.map(r => {
+    return sortedList.map(r => {
       return `
         <tr class="hover:bg-slate-900/50">
           <td class="px-4 py-3 font-mono font-bold text-amber-400">${r.billNo}</td>
@@ -8823,12 +8862,12 @@
       state.activeEventId = visibleEvents[0].id;
     }
     const activeEv = getActiveEvent();
-    const receipts = state.receipts.filter(r => {
+    const receipts = sortReceiptsDescending(state.receipts.filter(r => {
       if (!state.activeEventId) return true;
       if (r.eventId && r.eventId === state.activeEventId) return true;
       if (activeEv && r.eventName && (r.eventName === activeEv.memberName || r.eventName === activeEv.displayName1)) return true;
       return false;
-    });
+    }));
 
     return `
       <div class="max-w-5xl mx-auto space-y-6">
@@ -8924,12 +8963,12 @@
       }
 
       const activeEv = getActiveEvent();
-      const allCurrentReceipts = state.receipts.filter(r => {
+      const allCurrentReceipts = sortReceiptsDescending(state.receipts.filter(r => {
         if (!state.activeEventId) return true;
         if (r.eventId && r.eventId === state.activeEventId) return true;
         if (activeEv && r.eventName && (r.eventName === activeEv.memberName || r.eventName === activeEv.displayName1)) return true;
         return false;
-      });
+      }));
 
       const filtered = !q ? allCurrentReceipts : allCurrentReceipts.filter(r => {
         const billNo = String(r.billNo || '').toLowerCase();

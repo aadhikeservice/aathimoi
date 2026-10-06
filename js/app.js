@@ -7178,18 +7178,18 @@
           activePlaceIndex = (activePlaceIndex - 1 + items.length) % items.length;
           updatePlaceActiveHighlight(items);
         }
-      } else if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
-        if (isVisible) {
+      } else if (e.key === 'Enter') {
+        if (isVisible && activePlaceIndex >= 0) {
           e.preventDefault();
-          const chosenIdx = activePlaceIndex >= 0 ? activePlaceIndex : 0;
-          if (currentPlaceMatches[chosenIdx]) {
-            selectPlaceItem(currentPlaceMatches[chosenIdx].value);
+          if (currentPlaceMatches[activePlaceIndex]) {
+            selectPlaceItem(currentPlaceMatches[activePlaceIndex].value);
           } else {
             placeSuggDiv.classList.add('hidden');
             initialInput?.focus();
           }
         } else {
           e.preventDefault();
+          placeSuggDiv?.classList.add('hidden');
           if (placeInput.value && !/[\u0B80-\u0BFF]/.test(placeInput.value)) {
             const goog = await window.TamilTransliterate?.fetchGoogleInputToolsTamil(placeInput.value);
             if (goog && goog.length > 0) {
@@ -7201,6 +7201,20 @@
           initialInput?.focus();
           if (initialInput?.select) initialInput.select();
         }
+      } else if (e.key === 'Tab' && !e.shiftKey) {
+        // Tab key: Move to next text box WITHOUT autofill from suggestion
+        e.preventDefault();
+        placeSuggDiv?.classList.add('hidden');
+        if (placeInput.value && !/[\u0B80-\u0BFF]/.test(placeInput.value)) {
+          const goog = await window.TamilTransliterate?.fetchGoogleInputToolsTamil(placeInput.value);
+          if (goog && goog.length > 0) {
+            placeInput.value = goog[0].ta;
+          } else if (window.TamilTransliterate) {
+            placeInput.value = window.TamilTransliterate.transliterateText(placeInput.value);
+          }
+        }
+        initialInput?.focus();
+        if (initialInput?.select) initialInput.select();
       } else if (e.key === 'Escape') {
         placeSuggDiv?.classList.add('hidden');
       }
@@ -7473,11 +7487,10 @@
           activeNameIndex = (activeNameIndex - 1 + items.length) % items.length;
           updateNameActiveHighlight(items);
         }
-      } else if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
-        if (isVisible) {
+      } else if (e.key === 'Enter') {
+        if (isVisible && activeNameIndex >= 0) {
           e.preventDefault();
-          const chosenIdx = activeNameIndex >= 0 ? activeNameIndex : 0;
-          const match = currentNameMatches[chosenIdx];
+          const match = currentNameMatches[activeNameIndex];
           if (match) {
             if (match.type === 'donor') {
               selectNameDonor(match.data);
@@ -7490,6 +7503,7 @@
           }
         } else {
           e.preventDefault();
+          nameSuggDiv?.classList.add('hidden');
           if (nameInput.value && !/[\u0B80-\u0BFF]/.test(nameInput.value)) {
             const goog = await window.TamilTransliterate?.fetchGoogleInputToolsTamil(nameInput.value);
             if (goog && goog.length > 0) {
@@ -7501,6 +7515,20 @@
           name1Input?.focus();
           if (name1Input?.select) name1Input.select();
         }
+      } else if (e.key === 'Tab' && !e.shiftKey) {
+        // Tab key: Move to next text box WITHOUT autofill from suggestion
+        e.preventDefault();
+        nameSuggDiv?.classList.add('hidden');
+        if (nameInput.value && !/[\u0B80-\u0BFF]/.test(nameInput.value)) {
+          const goog = await window.TamilTransliterate?.fetchGoogleInputToolsTamil(nameInput.value);
+          if (goog && goog.length > 0) {
+            nameInput.value = goog[0].ta;
+          } else if (window.TamilTransliterate) {
+            nameInput.value = window.TamilTransliterate.transliterateText(nameInput.value);
+          }
+        }
+        name1Input?.focus();
+        if (name1Input?.select) name1Input.select();
       } else if (e.key === 'Escape') {
         nameSuggDiv?.classList.add('hidden');
       }
@@ -7518,14 +7546,15 @@
         if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
           e.preventDefault();
           const suggDiv = document.getElementById(suggId);
-          // If suggestion dropdown is open, pick top suggestion first
-          if (suggDiv && !suggDiv.classList.contains('hidden')) {
+          // Only on Enter, pick firstOption if dropdown is open. On Tab, do NOT autofill suggestion!
+          if (e.key === 'Enter' && suggDiv && !suggDiv.classList.contains('hidden')) {
             const firstOption = suggDiv.querySelector('.translit-item span.font-semibold');
             if (firstOption && firstOption.textContent) {
               currentInput.value = firstOption.textContent;
             }
-            suggDiv.classList.add('hidden');
-          } else if (currentInput.value && !/[\u0B80-\u0BFF]/.test(currentInput.value)) {
+          }
+          if (suggDiv) suggDiv.classList.add('hidden');
+          if (currentInput.value && !/[\u0B80-\u0BFF]/.test(currentInput.value)) {
             // Auto transliterate if typed in English
             const goog = await window.TamilTransliterate.fetchGoogleInputToolsTamil(currentInput.value);
             if (goog && goog.length > 0) {

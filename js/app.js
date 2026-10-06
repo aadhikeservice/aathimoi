@@ -8038,6 +8038,24 @@
     return rcpt;
   }
 
+  function formatReceiptEventPhone(phone) {
+    if (!phone) return '';
+    const trimmed = String(phone).trim();
+    if (!trimmed) return '';
+    const cleanDigits = trimmed.replace(/\D/g, '');
+    if (cleanDigits.length === 10) {
+      return `(${cleanDigits.slice(0, 5)} ${cleanDigits.slice(5)})`;
+    }
+    if (cleanDigits.length === 12 && cleanDigits.startsWith('91')) {
+      const d = cleanDigits.slice(2);
+      return `(${d.slice(0, 5)} ${d.slice(5)})`;
+    }
+    if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+      return trimmed;
+    }
+    return `(${trimmed})`;
+  }
+
   // Helper to build a fresh 3-Inch (80mm) thermal iframe (kept in DOM while spooling so print job never aborts)
   function createReadyThermalIframe(copyHtml, copyTitle, paperSize = '80mm') {
     const prevIframe = document.getElementById('aathi-thermal-print-iframe');
@@ -8109,12 +8127,13 @@
     if (!rcpt) return;
     normalizeReceiptData(rcpt);
 
-    const activeEv = ev || (state.events ? state.events.find(e => e.id === rcpt.eventId) : null);
+    const activeEv = ev || (state.events ? (state.events.find(e => e.id === rcpt.eventId) || state.events.find(e => e.eventName === rcpt.eventName) || state.events.find(e => e.memberName === rcpt.memberName)) : null);
     const disp1 = (activeEv && activeEv.displayName1) || rcpt.displayName1 || '';
     const memName = activeEv ? activeEv.memberName : (rcpt.memberName || '');
     const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
     const evTitle = (activeEv && activeEv.eventTitle) || rcpt.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
     const evPlace = (activeEv && activeEv.place) || rcpt.eventPlace || '';
+    const evPhone = formatReceiptEventPhone((activeEv && (activeEv.phone || activeEv.mobile)) || rcpt.eventPhone || rcpt.eventMobile || '');
     const formattedDate = formatReceiptDate(rcpt.date, rcpt.createdAt || rcpt.timestamp);
     const formattedTime = formatReceiptTime(rcpt.time, rcpt.createdAt || rcpt.timestamp);
     const dateTimeStr = [formattedDate, formattedTime].filter(Boolean).join(' ');
@@ -8134,6 +8153,7 @@
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
           ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2;">${evPlace}</p>` : ''}
+          ${evPhone ? `<p style="font-size: 8.5pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2; font-family: monospace, sans-serif;">${evPhone}</p>` : ''}
         </div>
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px;">
@@ -8519,12 +8539,13 @@
     if (!payout) return;
     normalizeReceiptData(payout);
 
-    const activeEv = ev || (state.events ? state.events.find(e => e.id === payout.eventId) : null);
+    const activeEv = ev || (state.events ? (state.events.find(e => e.id === payout.eventId) || state.events.find(e => e.eventName === payout.eventName) || state.events.find(e => e.memberName === payout.memberName)) : null);
     const disp1 = (activeEv && activeEv.displayName1) || payout.displayName1 || '';
     const memName = activeEv ? activeEv.memberName : (payout.memberName || '');
     const candidateCombined = [disp1, memName].filter(Boolean).join(' - ');
     const evTitle = (activeEv && activeEv.eventTitle) || payout.eventTitle || ((activeEv && activeEv.eventName && activeEv.eventName !== disp1 && activeEv.eventName !== memName && activeEv.eventName !== candidateCombined) ? activeEv.eventName : '');
     const evPlace = (activeEv && activeEv.place) || payout.place || payout.eventPlace || '';
+    const evPhone = formatReceiptEventPhone((activeEv && (activeEv.phone || activeEv.mobile)) || payout.eventPhone || payout.phone || '');
     const payoutDate = formatReceiptDate(payout.date, payout.createdAt || payout.timestamp);
     const payoutTime = formatReceiptTime(payout.time, payout.createdAt || payout.timestamp);
     const payoutDateTimeStr = [payoutDate, payoutTime].filter(Boolean).join(' ');
@@ -8544,6 +8565,7 @@
           ${memName ? `<h4 style="font-size: 11.5pt; font-weight: 900; margin: 2px 0; color: #000; line-height: 1.2;">${memName}</h4>` : ''}
           ${evTitle ? `<p style="font-size: 10.5pt; font-weight: 900; margin: 2px 0 1px 0; color: #000; line-height: 1.2;">${evTitle}</p>` : ''}
           ${evPlace ? `<p style="font-size: 9pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2;">${evPlace}</p>` : ''}
+          ${evPhone ? `<p style="font-size: 8.5pt; font-weight: bold; margin: 1px 0 0 0; color: #000; line-height: 1.2; font-family: monospace, sans-serif;">${evPhone}</p>` : ''}
         </div>
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px;">
@@ -9333,6 +9355,7 @@
         memberName: activeEv.memberName,
         eventTitle: activeEv.eventTitle || '',
         eventPlace: activeEv.place || '',
+        eventPhone: activeEv.phone || activeEv.mobile || '',
         place,
         initial,
         name,
@@ -10389,6 +10412,12 @@
       rcpt.amount = document.getElementById('edit-rcpt-amt').value.trim();
       rcpt.amountWords = document.getElementById('edit-rcpt-words').value.trim();
       rcpt.mode = document.getElementById('edit-rcpt-mode')?.value || rcpt.mode;
+      if (!rcpt.eventPhone) {
+        const evObj = state.events ? (state.events.find(e => e.id === rcpt.eventId) || state.events.find(e => e.eventName === rcpt.eventName)) : null;
+        if (evObj && (evObj.phone || evObj.mobile)) {
+          rcpt.eventPhone = evObj.phone || evObj.mobile || '';
+        }
+      }
 
       // Update in permanent members directory so future suggestions reflect updated name/place
       upsertMemberRecord(rcpt);

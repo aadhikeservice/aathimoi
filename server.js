@@ -604,7 +604,7 @@ function saveSinglePayoutToBackup(payoutData) {
       ${name1 ? `<div class="mem-name">${name1}</div>` : ''}
     </div>
     <div class="body-section">
-      <div class="badge">பட்டுவாடா ரசீது (Payout Receipt)</div>
+      <div class="badge">பட்டுவாடா ரசீது</div>
       ${voucherNo ? `<div class="row"><span>ரசீது எண்:</span> <span>#${voucherNo}</span></div>` : ''}
       <div class="row"><span>தேதி & நேரம்:</span> <span>${payoutData.date || ''} ${payoutData.time || ''}</span></div>
       <div class="row"><span>பதிவு செய்தவர்:</span> <span>${payoutData.createdBy || 'admin'}</span></div>
@@ -616,7 +616,6 @@ function saveSinglePayoutToBackup(payoutData) {
         <span class="amount-val">₹${parseFloat(payoutData.amount || 0).toLocaleString('en-IN')}</span>
       </div>
     </div>
-    <div class="footer">பட்டுவாடா பதிவு செய்யப்பட்டது</div>
   </div>
 </body>
 </html>`;

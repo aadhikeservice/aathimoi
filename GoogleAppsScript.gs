@@ -1375,7 +1375,7 @@ function createPayoutHtmlInDrive(payout) {
     (evPlace ? ('      <div class="ev-place">' + escapeXml(evPlace) + '</div>\n') : '') +
     '    </div>\n' +
     '    <div class="body-section">\n' +
-    '      <div class="badge">பட்டுவாடா ரசீது (Payout Receipt)</div>\n' +
+    '      <div class="badge">பட்டுவாடா ரசீது</div>\n' +
     (voucherNo ? ('      <div class="row"><span>ரசீது எண்:</span> <span>#' + escapeXml(voucherNo) + '</span></div>\n') : '') +
     '      <div class="row"><span>தேதி & நேரம்:</span> <span>' + escapeXml((payout.date || '') + ' ' + (payout.time || '')) + '</span></div>\n' +
     '      <div class="row"><span>பதிவு செய்தவர்:</span> <span>' + escapeXml(payout.createdBy || 'admin') + '</span></div>\n' +
@@ -1388,7 +1388,6 @@ function createPayoutHtmlInDrive(payout) {
     '      </div>\n' +
     (payoutWords ? ('      <div class="amount-words">(' + escapeXml(payoutWords) + ')</div>\n') : '') +
     '    </div>\n' +
-    '    <div class="footer">பட்டுவாடா பதிவு செய்யப்பட்டது</div>\n' +
     '  </div>\n' +
     '</body>\n' +
     '</html>';

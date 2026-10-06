@@ -9276,7 +9276,7 @@ body.light-theme .tamil-key-btn:hover {
 
         <div style="font-size: 9.5pt; line-height: 1.45; color: #000; border-top: 1px solid #000; padding-top: 5px;">
           <div style="text-align: center; font-size: 10.5pt; font-weight: 900; margin-bottom: 4px; border-bottom: 1px dashed #000; padding-bottom: 3px;">
-            பட்டுவாடா ரசீது (Payout Receipt)
+            பட்டுவாடா ரசீது
           </div>
           ${voucherNo ? `<div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது எண்:</span> <span>#${voucherNo}</span></div>` : ''}
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி & நேரம்:</span> <span>${payoutDateTimeStr}</span></div>
@@ -9290,10 +9290,6 @@ body.light-theme .tamil-key-btn:hover {
             <span style="font-size: 18pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(payout.amount || 0).toLocaleString('en-IN')}</span>
           </div>
           ${payoutWords ? `<div style="font-size: 9.5pt; font-weight: bold; font-style: italic; margin-top: 2px; text-align: center; color: #000;">(${payoutWords})</div>` : ''}
-        </div>
-
-        <div style="text-align: center; margin-top: 8px; font-size: 8.5pt; border-top: 1px solid #000; padding-top: 4px; color: #000;">
-          <p style="font-weight: bold; margin: 0;">பட்டுவாடா பதிவு செய்யப்பட்டது</p>
         </div>
       </div>
     `;

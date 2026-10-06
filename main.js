@@ -165,27 +165,33 @@ async function renderHtmlToPdfBuffer(html) {
 <base href="${baseHref}">
 <style>
 @font-face {
-  font-family: 'Adobe Tamil Regular';
-  src: url('fonts/AdobeTamil-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Adobe Tamil';
-  src: url('fonts/AdobeTamil-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
   font-family: 'Mukta Malar';
-  src: url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-  font-weight: bold;
+  src: url('fonts/MuktaMalar-Regular.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
 }
 @font-face {
   font-family: 'Mukta Malar';
   src: url('fonts/MuktaMalar-Regular.ttf') format('truetype');
   font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Mukta Malar';
+  src: url('fonts/MuktaMalar-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Mukta Malar';
+  src: url('fonts/MuktaMalar-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Mukta Malar';
+  src: url('fonts/MuktaMalar-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
   font-style: normal;
 }
 @page {
@@ -202,7 +208,12 @@ body {
   padding: 0;
   background: #fff !important;
   color: #000 !important;
-  font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+  font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+}
+table th, table td {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
 }
 </style>
 </head>
@@ -212,6 +223,7 @@ ${processedHtml}
 </html>`;
 
   fs.writeFileSync(tempHtmlPath, wrappedHtml, 'utf-8');
+  const tempPdfPath = path.join(baseDir, `${tempId}.pdf`);
 
   let pdfWin = null;
   try {
@@ -233,15 +245,39 @@ ${processedHtml}
     const pdfData = await pdfWin.webContents.printToPDF({
       pageSize: 'A4',
       printBackground: true,
+      generateTaggedPDF: true,
       margins: { marginType: 'none' }
     });
-    const buf = Buffer.isBuffer(pdfData) ? pdfData : Buffer.from(pdfData);
+    let buf = Buffer.isBuffer(pdfData) ? pdfData : Buffer.from(pdfData);
+
+    // Post-process with Python searchable text overlay if script exists
+    const pyScript = path.join(__dirname, 'make_searchable_pdf.py');
+    if (fs.existsSync(pyScript)) {
+      try {
+        fs.writeFileSync(tempPdfPath, buf);
+        const localPy = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe');
+        const pyCandidates = ['py', 'python', localPy, 'C:\\Users\\jkish\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'];
+        for (const pyExe of pyCandidates) {
+          try {
+            execFileSync(pyExe, [pyScript, tempPdfPath, tempHtmlPath], { timeout: 30000, stdio: 'ignore' });
+            if (fs.existsSync(tempPdfPath)) {
+              buf = fs.readFileSync(tempPdfPath);
+            }
+            break;
+          } catch (e) {}
+        }
+      } catch (postErr) {
+        console.warn('PDF searchable layer notice:', postErr.message);
+      }
+    }
+
     return buf;
   } finally {
     if (pdfWin && !pdfWin.isDestroyed()) {
       try { pdfWin.destroy(); } catch (e) {}
     }
     try { fs.unlinkSync(tempHtmlPath); } catch (e) {}
+    try { if (fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath); } catch (e) {}
   }
 }
 

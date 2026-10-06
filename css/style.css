@@ -1,42 +1,5 @@
 /* Modern Tamil Luxury Theme for ஆதி மொய் (Aathi Moi) */
 @font-face {
-  font-family: 'Adobe Tamil';
-  src: local('Adobe Tamil Regular'),
-       local('AdobeTamil-Regular'),
-       local('Adobe Tamil'),
-       local('AdobeTamil'),
-       url('/fonts/AdobeTamil-Regular.ttf') format('truetype'),
-       url('/fonts/AdobeTamil-Regular.otf') format('opentype'),
-       url('../fonts/AdobeTamil-Regular.ttf') format('truetype'),
-       url('../fonts/AdobeTamil-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Adobe Tamil Regular';
-  src: local('Adobe Tamil Regular'),
-       local('AdobeTamil-Regular'),
-       local('Adobe Tamil'),
-       local('AdobeTamil'),
-       url('/fonts/AdobeTamil-Regular.ttf') format('truetype'),
-       url('/fonts/AdobeTamil-Regular.otf') format('opentype'),
-       url('../fonts/AdobeTamil-Regular.ttf') format('truetype'),
-       url('../fonts/AdobeTamil-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Adobe Tamil';
-  src: local('Adobe Tamil Bold'),
-       local('AdobeTamil-Bold'),
-       url('/fonts/AdobeTamil-Bold.ttf') format('truetype'),
-       url('/fonts/AdobeTamil-Bold.otf') format('opentype'),
-       url('../fonts/AdobeTamil-Bold.ttf') format('truetype'),
-       url('../fonts/AdobeTamil-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-}
-@font-face {
   font-family: 'Mukta Malar';
   src: local('Mukta Malar Bold'),
        local('MuktaMalar-Bold'),
@@ -417,7 +380,7 @@ input[type=number] {
     margin: 0 !important;
     padding: 0 !important;
     color: #000 !important;
-    font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', 'Latha', 'Vijaya', Arial, sans-serif !important;
+    font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
     user-select: text !important;
@@ -426,12 +389,20 @@ input[type=number] {
 
   #a4-report-print-area:not(.hidden) * {
     visibility: visible !important;
-    font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', 'Latha', 'Vijaya', Arial, sans-serif !important;
+    font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
     -webkit-font-smoothing: antialiased;
     user-select: text !important;
     -webkit-user-select: text !important;
+  }
+
+  #a4-report-print-area:not(.hidden) table th,
+  #a4-report-print-area:not(.hidden) table td {
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    white-space: normal !important;
+    overflow: visible !important;
   }
 
   .a4-page {
@@ -443,7 +414,7 @@ input[type=number] {
     margin-bottom: 0 !important;
     border: none !important;
     padding: 6px 8px !important;
-    font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', 'Latha', 'Vijaya', Arial, sans-serif !important;
+    font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
     user-select: text !important;

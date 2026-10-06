@@ -24,6 +24,8 @@ temp_*
 _temp_*
 public/temp_*
 public/_temp_*
+__pycache__/
+*.pyc
 
 # Operating System Files
 .DS_Store

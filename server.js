@@ -1598,52 +1598,15 @@ const server = http.createServer((req, res) => {
 <link rel="stylesheet" href="css/style.css">
 <style>
 @font-face {
-  font-family: 'Adobe Tamil';
-  src: local('Adobe Tamil Regular'),
-       local('AdobeTamil-Regular'),
-       local('Adobe Tamil'),
-       local('AdobeTamil'),
-       url('fonts/AdobeTamil-Regular.ttf') format('truetype'),
-       url('fonts/AdobeTamil-Regular.otf') format('opentype');
+  font-family: 'Mukta Malar';
+  src: url('fonts/MuktaMalar-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Adobe Tamil Regular';
-  src: local('Adobe Tamil Regular'),
-       local('AdobeTamil-Regular'),
-       local('Adobe Tamil'),
-       local('AdobeTamil'),
-       url('fonts/AdobeTamil-Regular.ttf') format('truetype'),
-       url('fonts/AdobeTamil-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Adobe Tamil';
-  src: local('Adobe Tamil Bold'),
-       local('AdobeTamil-Bold'),
-       url('fonts/AdobeTamil-Bold.ttf') format('truetype'),
-       url('fonts/AdobeTamil-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-}
-@font-face {
   font-family: 'Mukta Malar';
-  src: url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Mukta Malar';
-  src: url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Mukta Malar';
-  src: url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-  font-weight: 900;
+  src: url('fonts/MuktaMalar-Regular.ttf') format('truetype');
+  font-weight: 500;
   font-style: normal;
 }
 @font-face {
@@ -1654,14 +1617,14 @@ const server = http.createServer((req, res) => {
 }
 @font-face {
   font-family: 'Mukta Malar';
-  src: url('fonts/MuktaMalar-Regular.ttf') format('truetype');
-  font-weight: 400;
+  src: url('fonts/MuktaMalar-Bold.ttf') format('truetype');
+  font-weight: 700;
   font-style: normal;
 }
 @font-face {
   font-family: 'Mukta Malar';
-  src: url('fonts/MuktaMalar-Regular.ttf') format('truetype');
-  font-weight: 500;
+  src: url('fonts/MuktaMalar-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
   font-style: normal;
 }
 @page {
@@ -1678,7 +1641,12 @@ body {
   padding: 0;
   background: #fff !important;
   color: #000 !important;
-  font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+  font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+}
+table th, table td {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
 }
 </style>
 </head>
@@ -1706,7 +1674,7 @@ ${processedHtml}
         }
 
         const fileUrl = 'file:///' + tempHtmlPath.replace(/\\/g, '/');
-        const { execFile } = require('child_process');
+        const { execFile, execFileSync } = require('child_process');
 
         execFile(chromePath, [
           '--headless=new',
@@ -1722,6 +1690,23 @@ ${processedHtml}
             if (err) throw err;
             if (!fs.existsSync(tempPdfPath)) {
               throw new Error('PDF output file was not created');
+            }
+
+            // Post-process with Python to add 100% searchable text layer if available
+            const pyScript = path.join(__dirname, 'make_searchable_pdf.py');
+            if (fs.existsSync(pyScript)) {
+              try {
+                const localPy = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe');
+                const pyCandidates = ['py', 'python', localPy, 'C:\\Users\\jkish\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'];
+                for (const pyExe of pyCandidates) {
+                  try {
+                    execFileSync(pyExe, [pyScript, tempPdfPath, tempHtmlPath], { timeout: 30000, stdio: 'ignore' });
+                    break;
+                  } catch (e) {}
+                }
+              } catch (pyErr) {
+                console.warn('[PDF Generator] Python searchable layer notice:', pyErr.message);
+              }
             }
 
             const pdfBuffer = fs.readFileSync(tempPdfPath);

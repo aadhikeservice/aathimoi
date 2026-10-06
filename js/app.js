@@ -401,71 +401,6 @@
     // Shared print CSS with Adobe Tamil Regular / PDF-acceptable Tamil TrueType fonts, pure black text, spiral binding margin, and strict normal letter-spacing
     const css = `<style>
       @font-face {
-        font-family: 'Adobe Tamil';
-        src: local('Adobe Tamil Regular'),
-             local('AdobeTamil-Regular'),
-             local('Adobe Tamil'),
-             local('AdobeTamil'),
-             url('/fonts/AdobeTamil-Regular.ttf') format('truetype'),
-             url('/fonts/AdobeTamil-Regular.otf') format('opentype'),
-             url('fonts/AdobeTamil-Regular.ttf') format('truetype'),
-             url('fonts/AdobeTamil-Regular.otf') format('opentype');
-        font-weight: 400;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Adobe Tamil Regular';
-        src: local('Adobe Tamil Regular'),
-             local('AdobeTamil-Regular'),
-             local('Adobe Tamil'),
-             local('AdobeTamil'),
-             url('/fonts/AdobeTamil-Regular.ttf') format('truetype'),
-             url('/fonts/AdobeTamil-Regular.otf') format('opentype'),
-             url('fonts/AdobeTamil-Regular.ttf') format('truetype'),
-             url('fonts/AdobeTamil-Regular.otf') format('opentype');
-        font-weight: 400;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Adobe Tamil';
-        src: local('Adobe Tamil Bold'),
-             local('AdobeTamil-Bold'),
-             url('/fonts/AdobeTamil-Bold.ttf') format('truetype'),
-             url('/fonts/AdobeTamil-Bold.otf') format('opentype'),
-             url('fonts/AdobeTamil-Bold.ttf') format('truetype'),
-             url('fonts/AdobeTamil-Bold.otf') format('opentype');
-        font-weight: 700;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-Bold.ttf') format('truetype'),
-             url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-        font-weight: 700;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-Bold.ttf') format('truetype'),
-             url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-        font-weight: 800;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-Bold.ttf') format('truetype'),
-             url('fonts/MuktaMalar-Bold.ttf') format('truetype');
-        font-weight: 900;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-SemiBold.ttf') format('truetype'),
-             url('fonts/MuktaMalar-SemiBold.ttf') format('truetype');
-        font-weight: 600;
-        font-style: normal;
-      }
-      @font-face {
         font-family: 'Mukta Malar';
         src: url('/fonts/MuktaMalar-Regular.ttf') format('truetype'),
              url('fonts/MuktaMalar-Regular.ttf') format('truetype');
@@ -479,6 +414,34 @@
         font-weight: 500;
         font-style: normal;
       }
+      @font-face {
+        font-family: 'Mukta Malar';
+        src: url('/fonts/MuktaMalar-SemiBold.ttf') format('truetype'),
+             url('fonts/MuktaMalar-SemiBold.ttf') format('truetype');
+        font-weight: 600;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Mukta Malar';
+        src: url('/fonts/MuktaMalar-Bold.ttf') format('truetype'),
+             url('fonts/MuktaMalar-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Mukta Malar';
+        src: url('/fonts/MuktaMalar-ExtraBold.ttf') format('truetype'),
+             url('fonts/MuktaMalar-ExtraBold.ttf') format('truetype');
+        font-weight: 800;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Mukta Malar';
+        src: url('/fonts/MuktaMalar-ExtraBold.ttf') format('truetype'),
+             url('fonts/MuktaMalar-ExtraBold.ttf') format('truetype');
+        font-weight: 900;
+        font-style: normal;
+      }
       @page {
         size: A4 portrait;
         margin: 6mm 4mm 6mm 14mm;
@@ -489,7 +452,7 @@
         print-color-adjust: exact !important;
       }
       body {
-        font-family: 'Mukta Malar', 'MuktaMalar-Bold', 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Nirmala UI', Arial, sans-serif !important;
+        font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
         color: #000;
         background: #fff;
         margin: 0;
@@ -511,7 +474,7 @@
         break-after: page;
         page-break-inside: avoid;
         break-inside: avoid;
-        font-family: 'Mukta Malar', 'MuktaMalar-Bold', 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Nirmala UI', Arial, sans-serif !important;
+        font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
         letter-spacing: normal !important;
         word-spacing: normal !important;
       }
@@ -617,8 +580,6 @@
         font-size: 8.5pt;
         line-height: 1.15;
         letter-spacing: normal !important;
-        box-sizing: border-box !important;
-        overflow: hidden;
       }
       table.ledger-table thead th.th-vishesham {
         background: #000 !important;
@@ -636,8 +597,6 @@
         text-align: center;
         padding: 3px 4px !important;
         vertical-align: middle;
-        box-sizing: border-box !important;
-        overflow: hidden;
       }
       .col-sno-rno .sno-hdr {
         font-size: 7.8pt !important;
@@ -676,7 +635,7 @@
         white-space: nowrap;
       }
 
-      /* ஊர் (Place data) column width - wrap text enabled */
+      /* ஊர் (Place data) column width - wrap text enabled without breaking Tamil syllables */
       .col-place {
         width: 16.0%;
         text-align: center;
@@ -685,13 +644,11 @@
         padding: 3px 4px !important;
         vertical-align: middle;
         white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: break-word !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
         line-height: 1.25 !important;
         letter-spacing: normal !important;
         color: #000;
-        box-sizing: border-box !important;
-        overflow: hidden;
       }
 
       /* பெயர் மற்றும் தொழில் */
@@ -702,10 +659,8 @@
         letter-spacing: normal !important;
         vertical-align: middle;
         white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: break-word !important;
-        box-sizing: border-box !important;
-        overflow: hidden;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
       }
       .col-name .name-entry-primary {
         font-weight: 800;
@@ -713,8 +668,8 @@
         line-height: 1.25;
         color: #000000 !important;
         white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: break-word !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
       }
       .col-name .name-entry-job {
         font-weight: 600;
@@ -723,8 +678,8 @@
         color: #1e293b !important;
         margin-top: 1px;
         white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: break-word !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
       }
       .col-name .name-entry-phone {
         font-weight: 600;
@@ -733,8 +688,8 @@
         color: #1e293b !important;
         margin-top: 1px;
         white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: break-word !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
       }
 
       /* செய்த மொய் column width */
@@ -745,8 +700,6 @@
         font-size: 8.2pt;
         padding: 3px 4px !important;
         vertical-align: middle;
-        box-sizing: border-box !important;
-        overflow: hidden;
       }
 
       /* வந்த மொய் column width */
@@ -758,8 +711,6 @@
         padding: 3px 5px !important;
         line-height: 1.15;
         vertical-align: middle;
-        box-sizing: border-box !important;
-        overflow: hidden;
       }
       .col-vantha .amt-val {
         font-weight: 900;
@@ -795,8 +746,6 @@
         padding: 2px 1px !important;
         letter-spacing: 0px !important;
         white-space: nowrap !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
       }
       .col-vishesha-1 {
         width: 7.5%;
@@ -810,8 +759,6 @@
       .col-vishesha-cell {
         padding: 1px 2px !important;
         vertical-align: middle;
-        box-sizing: border-box !important;
-        overflow: hidden;
       }
 
       /* Place Row: Full-width centered bold */
@@ -1016,15 +963,9 @@
       let tbody = '';
       pageRows.forEach(row => {
         if (row.type === 'thaimaman') {
-          tbody += `
-            <tr class="place-row thaimaman-row">
-              <td colspan="8">${toSearchableUnicode('தாய்மாமன்கள்')} (${row.count})${row.isContinuation ? ' - ' + toSearchableUnicode('தொடர்ச்சி') : ''}</td>
-            </tr>`;
+          tbody += `<tr class="place-row thaimaman-row"><td colspan="8">${toSearchableUnicode('தாய்மாமன்கள்')} (${row.count})${row.isContinuation ? ' - ' + toSearchableUnicode('தொடர்ச்சி') : ''}</td></tr>`;
         } else if (row.type === 'place') {
-          tbody += `
-            <tr class="place-row">
-              <td colspan="8">${toSearchableUnicode(row.place)} (${row.count})${row.isContinuation ? ' - ' + toSearchableUnicode('தொடர்ச்சி') : ''}</td>
-            </tr>`;
+          tbody += `<tr class="place-row"><td colspan="8">${toSearchableUnicode(row.place)} (${row.count})${row.isContinuation ? ' - ' + toSearchableUnicode('தொடர்ச்சி') : ''}</td></tr>`;
         } else {
           globalSno++;
           const r = row.r;
@@ -1074,30 +1015,7 @@
           const hasSubName = !!(subName && subName !== cleanName);
           const fullDisplayName = hasSubName ? `${mainNameStr} - ${subName}` : mainNameStr;
 
-          tbody += `
-            <tr class="data-row">
-              <td class="col-sno-rno" style="width: 10.5%; padding: 3px 4px !important;">
-                <div class="sno-val" style="font-size: 12pt !important; padding: 3px 2px 3px 2px;">${globalSno}</div>
-                <div class="cell-sep" style="border-top: 1px solid #000; margin: 1px 2px;"></div>
-                <div class="rno-val" style="font-size: 8.6pt !important; padding: 3px 2px 3px 2px; white-space: nowrap;">${billNo}</div>
-              </td>
-              <td class="col-place" style="width: 16.0%; padding: 3px 4px !important; font-size: 8.4pt !important; white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important;">${escapeHtml(itemPlace)}</td>
-              <td class="col-name" style="width: 32.5%; white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important;">
-                <div class="name-entry-primary" style="white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important;">
-                  <span class="name-data" style="white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important;">${escapeHtml(fullDisplayName)}</span>
-                </div>
-                ${job ? `<div class="name-entry-job" style="white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important;">${escapeHtml(job)}</div>` : ''}
-                ${phone ? `<div class="name-entry-phone" style="white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important;">${escapeHtml(phone.replace(/[📞📱☎️]/g, '').trim())}</div>` : ''}
-              </td>
-              <td class="col-seitha"></td>
-              <td class="col-vantha">
-                <div class="amt-val">${amt.toLocaleString('en-IN')}</div>
-                <div class="col-mode-val" style="font-size: 8pt; font-weight: 700; line-height: 1.15; margin-top: 2px; text-align: right; color: ${mode === 'யூ.பி.ஐ' ? '#1e3a8a' : '#334155'};">${escapeHtml(mode)}</div>
-              </td>
-              <td class="col-vishesha-cell col-vishesha-1"></td>
-              <td class="col-vishesha-cell col-vishesha-2"></td>
-              <td class="col-vishesha-cell col-vishesha-3"></td>
-            </tr>`;
+          tbody += `<tr class="data-row"><td class="col-sno-rno" style="width: 10.5%; padding: 3px 4px !important;"><div class="sno-val" style="font-size: 12pt !important; padding: 3px 2px 3px 2px;">${globalSno}</div><div class="cell-sep" style="border-top: 1px solid #000; margin: 1px 2px;"></div><div class="rno-val" style="font-size: 8.6pt !important; padding: 3px 2px 3px 2px; white-space: nowrap;">${billNo}</div></td><td class="col-place" style="width: 16.0%; padding: 3px 4px !important; font-size: 8.4pt !important; white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important;">${escapeHtml(itemPlace)}</td><td class="col-name" style="width: 32.5%; white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important;"><div class="name-entry-primary" style="white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important;"><span class="name-data" style="white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important;">${escapeHtml(fullDisplayName)}</span></div>${job ? `<div class="name-entry-job" style="white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important;">${escapeHtml(job)}</div>` : ''}${phone ? `<div class="name-entry-phone" style="white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important;">${escapeHtml(phone.replace(/[📞📱☎️]/g, '').trim())}</div>` : ''}</td><td class="col-seitha"></td><td class="col-vantha"><div class="amt-val">${amt.toLocaleString('en-IN')}</div><div class="col-mode-val" style="font-size: 8pt; font-weight: 700; line-height: 1.15; margin-top: 2px; text-align: right; color: ${mode === 'யூ.பி.ஐ' ? '#1e3a8a' : '#334155'};">${escapeHtml(mode)}</div></td><td class="col-vishesha-cell col-vishesha-1"></td><td class="col-vishesha-cell col-vishesha-2"></td><td class="col-vishesha-cell col-vishesha-3"></td></tr>`;
         }
       });
 
@@ -1366,7 +1284,7 @@
           margin: 0 !important;
         }
       </style>
-      <div class="a4-page a4-cover-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; overflow: hidden; box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 25px !important; font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: url('${coverBgSrc}') no-repeat center center; background-size: 100% 100%; text-align: center; color: #451a03; display: flex; flex-direction: column; justify-content: space-between; align-items: center; border: none !important;">
+      <div class="a4-page a4-cover-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; overflow: hidden; box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 25px !important; font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: url('${coverBgSrc}') no-repeat center center; background-size: 100% 100%; text-align: center; color: #451a03; display: flex; flex-direction: column; justify-content: space-between; align-items: center; border: none !important;">
         <img src="${coverBgSrc}" alt="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; z-index: 0; pointer-events: none; display: block;" />
         
         <!-- Unified Event Master Data Card Centered Under Ganesha -->
@@ -1491,7 +1409,7 @@
     const secondaryMemberName = (activeEv && activeEv.displayName1 && activeEv.memberName) ? activeEv.memberName : '';
 
     return `
-      <div class="a4-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; box-sizing: border-box; padding: 25px; margin-bottom: 20px; font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: #fff; color: #000;">
+      <div class="a4-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; box-sizing: border-box; padding: 25px; margin-bottom: 20px; font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: #fff; color: #000;">
         <!-- Header -->
         <div style="text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 10px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -1581,7 +1499,7 @@
       }
 
       pagesHtml += `
-        <div class="a4-page extra-blank-page" style="page-break-after: ${p < pageCount - 1 ? 'always' : 'auto'} !important; break-after: ${p < pageCount - 1 ? 'page' : 'auto'} !important; page-break-inside: avoid !important; break-inside: avoid !important; box-sizing: border-box; width: 100%; margin: 0 auto; padding: 8px 0 0 2px; font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Noto Sans Tamil', 'Latha', 'Vijaya', Arial, sans-serif !important; background: #fff; color: #000;">
+        <div class="a4-page extra-blank-page" style="page-break-after: ${p < pageCount - 1 ? 'always' : 'auto'} !important; break-after: ${p < pageCount - 1 ? 'page' : 'auto'} !important; page-break-inside: avoid !important; break-inside: avoid !important; box-sizing: border-box; width: 100%; margin: 0 auto; padding: 8px 0 0 2px; font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important; background: #fff; color: #000;">
           <table style="width: 100%; border-collapse: collapse; border: 2px solid #000; table-layout: fixed; font-family: inherit;">
             <thead>
               <tr style="height: 32px; border-bottom: 2px solid #000; background: #fff;">
@@ -1668,7 +1586,7 @@
     }
 
     return `
-      <div class="a4-page denomination-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; box-sizing: border-box; width: 100%; max-width: 680px; margin: 0 auto; padding: 12px 16px; font-family: 'Adobe Tamil Regular', 'Adobe Tamil', 'AdobeTamil-Regular', 'Mukta Malar', 'Nirmala UI', 'Latha', 'Vijaya', Arial, sans-serif !important; color: #000; background: #fff;">
+      <div class="a4-page denomination-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; box-sizing: border-box; width: 100%; max-width: 680px; margin: 0 auto; padding: 12px 16px; font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important; color: #000; background: #fff;">
         <style>
           @page {
             size: A4 portrait;

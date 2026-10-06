@@ -306,12 +306,14 @@ input[type=number] {
     padding: 0 !important;
     background: #fff !important;
     color: #000 !important;
-    font-family: 'Noto Sans Tamil', 'Latha', 'Vijaya', 'Tiro Tamil', 'Hind Siliguri', 'Segoe UI', Arial, sans-serif !important;
+    font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
     height: auto !important;
     overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    text-rendering: optimizeLegibility !important;
+    text-rendering: geometricPrecision !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
   }
 
   /* Completely hide main application UI and toast notifications from print */
@@ -346,7 +348,7 @@ input[type=number] {
 
   #thermal-print-area:not(.hidden) * {
     visibility: visible !important;
-    font-family: 'Noto Sans Tamil', 'Latha', 'Vijaya', monospace, sans-serif !important;
+    font-family: 'Mukta Malar', 'Nirmala UI', monospace, sans-serif !important;
   }
 
   .thermal-page-break {
@@ -381,6 +383,8 @@ input[type=number] {
     padding: 0 !important;
     color: #000 !important;
     font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
     user-select: text !important;
@@ -390,6 +394,7 @@ input[type=number] {
   #a4-report-print-area:not(.hidden) * {
     visibility: visible !important;
     font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+    writing-mode: horizontal-tb !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
     -webkit-font-smoothing: antialiased;
@@ -399,6 +404,7 @@ input[type=number] {
 
   #a4-report-print-area:not(.hidden) table th,
   #a4-report-print-area:not(.hidden) table td {
+    writing-mode: horizontal-tb !important;
     word-break: normal !important;
     overflow-wrap: normal !important;
     white-space: normal !important;
@@ -415,6 +421,8 @@ input[type=number] {
     border: none !important;
     padding: 6px 8px !important;
     font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
     user-select: text !important;

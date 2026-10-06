@@ -402,42 +402,62 @@
     const css = `<style>
       @font-face {
         font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-Regular.ttf') format('truetype'),
+        src: local('Mukta Malar Regular'),
+             local('MuktaMalar-Regular'),
+             local('Mukta Malar'),
+             url('/fonts/MuktaMalar-Regular.ttf') format('truetype'),
              url('fonts/MuktaMalar-Regular.ttf') format('truetype');
         font-weight: 400;
         font-style: normal;
       }
       @font-face {
         font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-Regular.ttf') format('truetype'),
+        src: local('Mukta Malar Regular'),
+             local('MuktaMalar-Regular'),
+             local('Mukta Malar'),
+             url('/fonts/MuktaMalar-Regular.ttf') format('truetype'),
              url('fonts/MuktaMalar-Regular.ttf') format('truetype');
         font-weight: 500;
         font-style: normal;
       }
       @font-face {
         font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-SemiBold.ttf') format('truetype'),
+        src: local('Mukta Malar SemiBold'),
+             local('MuktaMalar-SemiBold'),
+             local('Mukta Malar'),
+             url('/fonts/MuktaMalar-SemiBold.ttf') format('truetype'),
              url('fonts/MuktaMalar-SemiBold.ttf') format('truetype');
         font-weight: 600;
         font-style: normal;
       }
       @font-face {
         font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-Bold.ttf') format('truetype'),
+        src: local('Mukta Malar Bold'),
+             local('MuktaMalar-Bold'),
+             local('Mukta Malar'),
+             url('/fonts/MuktaMalar-Bold.ttf') format('truetype'),
              url('fonts/MuktaMalar-Bold.ttf') format('truetype');
         font-weight: 700;
         font-style: normal;
       }
       @font-face {
         font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-ExtraBold.ttf') format('truetype'),
+        src: local('Mukta Malar ExtraBold'),
+             local('MuktaMalar-ExtraBold'),
+             local('Mukta Malar Bold'),
+             local('Mukta Malar'),
+             url('/fonts/MuktaMalar-ExtraBold.ttf') format('truetype'),
              url('fonts/MuktaMalar-ExtraBold.ttf') format('truetype');
         font-weight: 800;
         font-style: normal;
       }
       @font-face {
         font-family: 'Mukta Malar';
-        src: url('/fonts/MuktaMalar-ExtraBold.ttf') format('truetype'),
+        src: local('Mukta Malar ExtraBold'),
+             local('MuktaMalar-ExtraBold'),
+             local('Mukta Malar Bold'),
+             local('Mukta Malar'),
+             url('/fonts/MuktaMalar-ExtraBold.ttf') format('truetype'),
              url('fonts/MuktaMalar-ExtraBold.ttf') format('truetype');
         font-weight: 900;
         font-style: normal;
@@ -460,7 +480,9 @@
         -webkit-font-smoothing: antialiased;
         letter-spacing: normal !important;
         word-spacing: normal !important;
-        text-rendering: auto !important;
+        text-rendering: geometricPrecision !important;
+        writing-mode: horizontal-tb !important;
+        text-orientation: mixed !important;
         font-feature-settings: normal !important;
         font-variant-ligatures: normal !important;
         user-select: text !important;
@@ -475,6 +497,8 @@
         page-break-inside: avoid;
         break-inside: avoid;
         font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif !important;
+        writing-mode: horizontal-tb !important;
+        text-orientation: mixed !important;
         letter-spacing: normal !important;
         word-spacing: normal !important;
       }
@@ -549,6 +573,8 @@
         border-collapse: collapse;
         font-size: 9.5pt;
         border: 2px solid #000;
+        writing-mode: horizontal-tb !important;
+        text-orientation: mixed !important;
         letter-spacing: normal !important;
       }
       table.ledger-table th,
@@ -556,6 +582,8 @@
         border: 1px solid #000;
         padding: 2px 3px !important;
         vertical-align: middle;
+        writing-mode: horizontal-tb !important;
+        text-orientation: mixed !important;
         letter-spacing: normal !important;
       }
 
@@ -1188,15 +1216,18 @@
       };
     });
 
+    // Strip extraneous whitespace between tags to prevent carriage-return text nodes in PDF printer drivers
+    const cleanHtmlPages = htmlPages.replace(/>\s+</g, '><').trim();
+
     if (cfg.returnMeta) {
       return {
-        html: css + htmlPages,
+        html: css + cleanHtmlPages,
         indexRecords,
         totalPages: pages.length
       };
     }
 
-    return css + htmlPages;
+    return css + cleanHtmlPages;
   }
 
   function generateEventOverallReportHtml(ev, eventReceipts, eventPayouts) {
@@ -1337,7 +1368,7 @@
         </div>
 
       </div>
-    `;
+    `.replace(/>\s+</g, '><').trim();
   }
 
   // ==========================================
@@ -1469,7 +1500,7 @@
           <span>${toSearchableUnicode('மொத்த பக்கங்கள்: ' + (totalReportPages || 1))}</span>
         </div>
       </div>
-    `;
+    `.replace(/>\s+</g, '><').trim();
   }
 
   // ==========================================
@@ -1525,7 +1556,7 @@
       `;
     }
 
-    return pagesHtml;
+    return pagesHtml.replace(/>\s+</g, '><').trim();
   }
 
   // ==========================================
@@ -1818,7 +1849,7 @@
           </div>
         </div>
       </div>
-    `;
+    `.replace(/>\s+</g, '><').trim();
   }
 
   // Live Recalculate Cash Denominations
@@ -2085,22 +2116,98 @@
         setThermalPageSizeStyle(false);
       }
       if (typeof fallbackPrintFn === 'function') {
-        if (typeof window.showToast === 'function') {
-          window.showToast('Notice: In Print Destination, choose "Save as PDF" (do not select "Adobe PDF" printer)', 'info');
-        }
-        const prevTitle = document.title;
-        document.title = cleanFilename;
-        fallbackPrintFn();
-        setTimeout(() => {
-          document.title = prevTitle;
-          if (printArea) {
-            printArea.classList.add('hidden');
-            printArea.innerHTML = '';
+        showSaveAsPdfGuideModal({
+          filename: cleanFilename,
+          onProceed: async () => {
+            const prevTitle = document.title;
+            document.title = cleanFilename;
+            if (document.fonts && document.fonts.ready) {
+              try { await document.fonts.ready; } catch (e) {}
+            }
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            try {
+              await fallbackPrintFn();
+            } catch (pErr) {
+              fallbackPrintFn();
+            }
+            setTimeout(() => {
+              document.title = prevTitle;
+              if (printArea) {
+                printArea.classList.add('hidden');
+                printArea.innerHTML = '';
+              }
+            }, 3000);
           }
-        }, 1500);
+        });
       }
       return false;
     }
+  }
+
+  // Guidance modal to instruct user to select 'Save as PDF' instead of 'Adobe PDF'
+  function showSaveAsPdfGuideModal({ filename, onProceed }) {
+    document.getElementById('save-pdf-guide-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'save-pdf-guide-modal';
+    modal.className = 'fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 transition-opacity';
+    modal.innerHTML = `
+      <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/80 rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl text-white relative">
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 text-2xl font-bold flex-shrink-0">
+            📥
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-amber-300">PDF பதிவிறக்கம் (Save as PDF)</h3>
+            <p class="text-xs text-slate-300 mt-0.5">சரியான தமிழ் எழுத்துக்களுடன் PDF பெற வழிகாட்டுதல்</p>
+          </div>
+        </div>
+
+        <div class="space-y-3 bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 text-xs sm:text-sm text-slate-200">
+          <div class="flex items-start space-x-2.5">
+            <span class="text-emerald-400 font-bold text-base">✓</span>
+            <div>
+              <strong class="text-white">1. Destination (அச்சுப்பொறி):</strong>
+              <div class="text-amber-300 font-extrabold mt-0.5 bg-amber-950/60 border border-amber-500/40 px-2.5 py-1 rounded inline-block">
+                "Save as PDF" (PDF-ஆக சேமிக்க)
+              </div>
+              <span class="text-slate-300 block text-xs mt-1">என்பதைத் தேர்ந்தெடுக்கவும்.</span>
+            </div>
+          </div>
+
+          <div class="flex items-start space-x-2.5 border-t border-slate-700/60 pt-2.5">
+            <span class="text-rose-400 font-bold text-base">⚠️</span>
+            <div>
+              <strong class="text-rose-300">முக்கியம்:</strong>
+              <span class="text-slate-300"> தயவுசெய்து <strong class="text-rose-200">"Adobe PDF"</strong> என்பதைத் தேர்ந்தெடுக்க வேண்டாம் (அது தமிழ் எழுத்துக்களை சிதைத்துவிடும்).</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 flex items-center justify-end space-x-3">
+          <button type="button" id="btn-cancel-pdf-guide" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-600 transition cursor-pointer">
+            ரத்து செய் (Cancel)
+          </button>
+          <button type="button" id="btn-proceed-pdf-guide" class="gold-button px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center space-x-2 shadow-lg hover:scale-105 transition cursor-pointer">
+            <span>தொடரவும் / Save as PDF</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('btn-cancel-pdf-guide')?.addEventListener('click', () => {
+      modal.remove();
+    });
+
+    document.getElementById('btn-proceed-pdf-guide')?.addEventListener('click', () => {
+      modal.remove();
+      if (typeof onProceed === 'function') {
+        onProceed();
+      }
+    });
   }
 
   // Universal Helper to save Blobs with native "Save As" file picker popup window
@@ -11658,7 +11765,7 @@
 
       const evFileTitle = [activeEv.displayName1, activeEv.memberName].filter(Boolean).join(' - ') || activeEv.eventName || 'Aathi_Moi_Report';
 
-      const triggerPrint = () => {
+      const triggerPrint = async () => {
         if (window.lucide) window.lucide.createIcons();
         const origTitle = document.title;
         document.title = evFileTitle;
@@ -11671,6 +11778,10 @@
           printArea.classList.remove('hidden');
           printArea.innerHTML = fullBookHtml;
         }
+        if (document.fonts && document.fonts.ready) {
+          try { await document.fonts.ready; } catch (e) {}
+        }
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         window.print();
         setTimeout(() => {
           document.title = origTitle;

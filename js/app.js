@@ -7936,7 +7936,7 @@
         document.head.appendChild(styleEl);
       }
       const pageCss = pageSizeCss || `${paperSize} auto`;
-      const isOfficeCopy = (paperSize === '70mm' || pageCss.includes('50mm'));
+      const isOfficeCopy = (paperSize === '40mm' || pageCss.includes('40mm'));
       styleEl.textContent = `
         @media print {
           @page {
@@ -7946,25 +7946,25 @@
           html, body {
             width: ${paperSize} !important;
             max-width: ${paperSize} !important;
-            ${isOfficeCopy ? 'height: 50mm !important; max-height: 50mm !important; overflow: hidden !important;' : ''}
+            ${isOfficeCopy ? 'height: 40mm !important; max-height: 40mm !important; overflow: hidden !important;' : ''}
             margin: 0 auto !important;
             padding: 0 !important;
           }
           ${isOfficeCopy ? `
           #thermal-print-area:not(.hidden) {
-            width: 70mm !important;
-            max-width: 70mm !important;
-            height: 50mm !important;
-            max-height: 50mm !important;
+            width: 40mm !important;
+            max-width: 40mm !important;
+            height: 40mm !important;
+            max-height: 40mm !important;
             overflow: hidden !important;
             margin: 0 auto !important;
             padding: 0 !important;
           }
           .thermal-office-copy {
-            width: 70mm !important;
-            max-width: 70mm !important;
-            height: 50mm !important;
-            max-height: 50mm !important;
+            width: 40mm !important;
+            max-width: 40mm !important;
+            height: 40mm !important;
+            max-height: 40mm !important;
             overflow: hidden !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
@@ -8127,7 +8127,7 @@
     }
 
     const pageCss = pageSizeCss || `${paperSize} auto`;
-    const isOfficeCopy = (paperSize === '70mm' || pageCss.includes('50mm'));
+    const isOfficeCopy = (paperSize === '40mm' || pageCss.includes('40mm'));
 
     frameDoc.open();
     frameDoc.write(`<!DOCTYPE html>
@@ -8148,7 +8148,7 @@
     html, body {
       width: ${paperSize} !important;
       max-width: ${paperSize} !important;
-      ${isOfficeCopy ? 'height: 50mm !important; max-height: 50mm !important; overflow: hidden !important;' : ''}
+      ${isOfficeCopy ? 'height: 40mm !important; max-height: 40mm !important; overflow: hidden !important;' : ''}
       margin: 0 auto !important;
       padding: 0 !important;
       background: #fff !important;
@@ -8167,14 +8167,14 @@
       break-inside: avoid !important;
     }
     .thermal-office-copy {
-      width: 70mm !important;
-      max-width: 70mm !important;
-      height: 50mm !important;
-      max-height: 50mm !important;
+      width: 40mm !important;
+      max-width: 40mm !important;
+      height: 40mm !important;
+      max-height: 40mm !important;
       margin: 0 auto !important;
-      padding: 1.5mm 2.2mm !important;
-      border: 2px solid #000 !important;
-      border-radius: 4px !important;
+      padding: 1mm 1.5mm !important;
+      border: 1.5px solid #000 !important;
+      border-radius: 3px !important;
       box-sizing: border-box !important;
       overflow: hidden !important;
       page-break-inside: avoid !important;
@@ -8244,23 +8244,23 @@
       </div>
     `;
 
-    // Second Copy (Office / Created By Copy - Page 2) - 70mm x 50mm alone
+    // Second Copy (Office / Created By Copy - Page 2) - 40mm x 40mm alone
     const copy2Html = `
-      <div class="thermal-office-copy" style="width: 70mm; max-width: 70mm; height: 50mm; max-height: 50mm; margin: 0 auto; padding: 1.5mm 2.2mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 2px solid #000; border-radius: 4px; box-sizing: border-box; overflow: hidden;">
-        <div style="text-align: center; padding-bottom: 2px; margin-bottom: 3px; border-bottom: 1px dashed #000;">
-          <div style="font-size: 8.5pt; font-weight: bold; color: #000; line-height: 1.1;">Created By: ${rcpt.createdBy || 'admin'}</div>
+      <div class="thermal-office-copy" style="width: 40mm; max-width: 40mm; height: 40mm; max-height: 40mm; margin: 0 auto; padding: 1mm 1.5mm; font-family: monospace, 'Noto Sans Tamil', sans-serif; color: #000; font-weight: bold; border: 1.5px solid #000; border-radius: 3px; box-sizing: border-box; overflow: hidden;">
+        <div style="text-align: center; padding-bottom: 1px; margin-bottom: 1.5px; border-bottom: 1px dashed #000;">
+          <div style="font-size: 6.5pt; font-weight: bold; color: #000; line-height: 1.1;">Created By: ${rcpt.createdBy || 'admin'}</div>
         </div>
 
-        <div style="font-size: 8.5pt; line-height: 1.35; color: #000;">
+        <div style="font-size: 6.5pt; line-height: 1.25; color: #000;">
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">ரசீது எண்:</span> <span>#${rcpt.billNo}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span>${dateTimeStr}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">பெயர்:</span> <span>${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">தேதி:</span> <span style="font-size: 5.5pt;">${dateTimeStr}</span></div>
+          <div style="display: flex; justify-content: space-between; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="font-weight: bold; flex-shrink: 0; margin-right: 2px;">பெயர்:</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${rcpt.initial ? rcpt.initial + '. ' : ''}${rcpt.name}${rcpt.name1 ? ' ' + rcpt.name1 : ''}${rcpt.job ? ' - ' + rcpt.job : ''}</span></div>
           <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">இடம்:</span> <span>${rcpt.place}</span></div>
           ${rcpt.relationship ? `<div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">உறவு:</span> <span>${rcpt.relationship}</span></div>` : ''}
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px; border-top: 1.5px solid #000; padding-top: 2px;"><span style="font-size: 11pt; font-weight: 900;">தொகை:</span> <span style="font-size: 15pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</span></div>
-          ${amtWords ? `<div style="font-size: 7.5pt; font-weight: bold; font-style: italic; margin-top: 1px; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">(${amtWords})</div>` : ''}
-          <div style="display: flex; justify-content: space-between; margin-top: 2px;"><span style="font-weight: bold;">செலுத்திய முறை:</span> <span>${rcpt.mode}</span></div>
-          ${rcpt.upiTxTime ? `<div style="font-size: 7.5pt; color: #000;"><span>UPI Ref/Time:</span> <span>${rcpt.upiTxTime}</span></div>` : ''}
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5px; border-top: 1px solid #000; padding-top: 1px;"><span style="font-size: 8pt; font-weight: 900;">தொகை:</span> <span style="font-size: 11pt; font-weight: 900; font-family: sans-serif;">₹${parseFloat(rcpt.amount).toLocaleString('en-IN')}</span></div>
+          ${amtWords ? `<div style="font-size: 5.5pt; font-weight: bold; font-style: italic; margin-top: 0.5px; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1;">(${amtWords})</div>` : ''}
+          <div style="display: flex; justify-content: space-between; margin-top: 1px;"><span style="font-weight: bold;">செலுத்திய முறை:</span> <span>${rcpt.mode}</span></div>
+          ${rcpt.upiTxTime ? `<div style="font-size: 5.5pt; color: #000;"><span>UPI Ref/Time:</span> <span>${rcpt.upiTxTime}</span></div>` : ''}
         </div>
       </div>
     `;
@@ -8317,10 +8317,10 @@
           // Print Page 1 (Customer Copy - 80mm) directly without opening any popup window
           const res1 = await window.electronApi.printCurrentWindow({ silent: false });
 
-          // After Page 1 completes, automatically trigger a separate print for Page 2 (Office Copy - 70mm x 50mm alone)
+          // After Page 1 completes, automatically trigger a separate print for Page 2 (Office Copy - 40mm x 40mm alone)
           const wasCancelled = res1 && res1.ok === false && String(res1.error || '').toLowerCase().includes('cancel');
           if (!singleCopy && copy2Html && !wasCancelled) {
-            setThermalPageSizeStyle(true, '70mm', '70mm 50mm');
+            setThermalPageSizeStyle(true, '40mm', '40mm 40mm');
             printArea.classList.remove('hidden');
             printArea.innerHTML = copy2Html;
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -8329,7 +8329,7 @@
             const wasCancelled2 = res2 && res2.ok === false && String(res2.error || '').toLowerCase().includes('cancel');
             if (res2 && res2.ok === false && !wasCancelled2) {
               // Retry once if Windows spooler was still releasing Page 1
-              setThermalPageSizeStyle(true, '70mm', '70mm 50mm');
+              setThermalPageSizeStyle(true, '40mm', '40mm 40mm');
               printArea.classList.remove('hidden');
               printArea.innerHTML = copy2Html;
               await new Promise(r => setTimeout(r, 650));
@@ -8471,7 +8471,7 @@
       if (prevIframe && prevIframe.parentNode) {
         try { prevIframe.parentNode.removeChild(prevIframe); } catch (e) {}
       }
-      setThermalPageSizeStyle(true, '70mm', '70mm 50mm');
+      setThermalPageSizeStyle(true, '40mm', '40mm 40mm');
       printArea.classList.remove('hidden');
       printArea.innerHTML = copy2Html;
 
@@ -8486,7 +8486,7 @@
             <i data-lucide="printer" class="w-6 h-6"></i>
           </div>
           <h3 class="text-lg font-extrabold text-amber-300">Print 2nd Page (Office Copy)</h3>
-          <p class="text-xs text-slate-300">1st Page (Customer Copy) completed. Press <strong>Enter</strong> or click below to print the 2nd Page (Office Copy #${rcpt.billNo} - 70mm x 50mm).</p>
+          <p class="text-xs text-slate-300">1st Page (Customer Copy) completed. Press <strong>Enter</strong> or click below to print the 2nd Page (Office Copy #${rcpt.billNo} - 40mm x 40mm).</p>
           <div class="flex flex-col gap-2 pt-2">
             <button type="button" id="btn-print-office-copy-now" class="gold-button w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center space-x-2 shadow-lg cursor-pointer">
               <span>🖨️ Print 2nd Page (Office Copy)</span>
@@ -8523,7 +8523,7 @@
         window.removeEventListener('keydown', handleKey, true);
         if (modal && modal.parentNode) modal.remove();
 
-        setThermalPageSizeStyle(true, '70mm', '70mm 50mm');
+        setThermalPageSizeStyle(true, '40mm', '40mm 40mm');
         printArea.classList.remove('hidden');
         printArea.innerHTML = copy2Html;
 
@@ -8578,14 +8578,14 @@
         printArea.innerHTML = copy1Html;
         await printSingleCopyInFreshIframe(copy1Html, `Moi Receipt #${rcpt.billNo} - Page 1 (Customer Copy)`, false, '80mm', '80mm auto');
 
-        // Step 2: Print Page 2 (Office Copy - 70mm x 50mm alone)
+        // Step 2: Print Page 2 (Office Copy - 40mm x 40mm alone)
         if (!singleCopy && copy2Html) {
-          setThermalPageSizeStyle(true, '70mm', '70mm 50mm');
+          setThermalPageSizeStyle(true, '40mm', '40mm 40mm');
           printArea.classList.remove('hidden');
           printArea.innerHTML = copy2Html;
 
           const copy2Title = `Moi Receipt #${rcpt.billNo} - Page 2 (Office Copy)`;
-          const res2 = await printSingleCopyInFreshIframe(copy2Html, copy2Title, true, '70mm', '70mm 50mm');
+          const res2 = await printSingleCopyInFreshIframe(copy2Html, copy2Title, true, '40mm', '40mm 40mm');
 
           // If browser blocked automatic 2nd print due to expired user activation, show instant Enter/Click prompt
           if (!res2 || !res2.opened) {

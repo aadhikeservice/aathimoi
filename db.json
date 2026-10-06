@@ -1,114 +1,6 @@
 {
-  "events": [
-    {
-      "id": "ev_1790599639495",
-      "displayName1": "டெஸ்ட்",
-      "memberName": "டெஸ்ட௧",
-      "eventTitle": "வசந்த விழா",
-      "eventName": "டெஸ்ட்",
-      "place": "மதுரை",
-      "phone": "9876541230",
-      "eventDate": "2026-09-28",
-      "billNo": "001",
-      "upiId": "gfgf@ghvbjk",
-      "status": "pending",
-      "assignedUsername": "",
-      "createdAt": "2026-09-28T12:47:19.495Z",
-      "folderId": "17lKOVLa1F_6ae4DUmqWlmYPO7HB8nA5K"
-    },
-    {
-      "id": "ev_1790524656494",
-      "memberName": "முத்து",
-      "displayName1": "முத்து",
-      "eventTitle": "நிகழ்ச்சி",
-      "eventName": "முத்து",
-      "place": "மதுரை",
-      "phone": "987654321",
-      "eventDate": "2026-09-26T18:30:00.000Z",
-      "billNo": "",
-      "upiId": "FFGTH@GFJH",
-      "status": "pending",
-      "assignedUsername": "",
-      "folderId": "1-8qIUBlDMXci2PO-a-aWoJZhhb4jrA0t"
-    },
-    {
-      "id": "ev_1790598890222",
-      "memberName": "டெஸ்ட்1",
-      "displayName1": "டெஸ்ட்1",
-      "eventTitle": "நிகழ்ச்சி",
-      "eventName": "டெஸ்ட்1",
-      "place": "மதுரை",
-      "phone": "9874563210",
-      "eventDate": "2026-09-27T18:30:00.000Z",
-      "billNo": "",
-      "upiId": "hjggf@jkh",
-      "status": "pending",
-      "assignedUsername": "",
-      "folderId": "1C5T89gAcQ5YNv7qJ9PRbpQ9BcRHrHD7d"
-    },
-    {
-      "id": "ev_1790856743014",
-      "memberName": "சுவேதா",
-      "displayName1": "சுவேதா",
-      "eventTitle": "நிகழ்ச்சி",
-      "eventName": "சுவேதா",
-      "place": "கம்பம்",
-      "phone": "123456789",
-      "eventDate": "2026-09-30T18:30:00.000Z",
-      "billNo": "",
-      "upiId": "YTDFD@HG.COM",
-      "status": "pending",
-      "assignedUsername": "",
-      "folderId": "1z-IzgzXyaAq8WZZVjQt0Z1UtnskzPBw6"
-    }
-  ],
+  "events": [],
   "receipts": [
-    {
-      "id": "rcpt_1790599657814",
-      "billNo": "AM0001",
-      "eventId": "ev_1790599639495",
-      "displayName1": "டெஸ்ட்",
-      "eventName": "டெஸ்ட்",
-      "memberName": "டெஸ்ட௧",
-      "place": "கருணாக்கமுதன் பட்டி",
-      "initial": "J",
-      "name": "கிஷோர்",
-      "job": "airport",
-      "name1": "குமார்",
-      "relationship": "",
-      "mobile": "9865607179",
-      "amount": "50001",
-      "amountWords": "ஐம்பது ஆயிரம் ஒன்று ரூபாய் மட்டும்",
-      "mode": "ரொக்கம்",
-      "upiTxTime": "",
-      "createdBy": "admin",
-      "date": "28/09/2026",
-      "time": "06:17 PM",
-      "createdAt": "2026-09-28T12:47:37.788Z"
-    },
-    {
-      "id": "rcpt_1790600481408",
-      "billNo": "AM0002",
-      "eventId": "ev_1790599639495",
-      "displayName1": "டெஸ்ட்",
-      "eventName": "டெஸ்ட்",
-      "memberName": "டெஸ்ட௧",
-      "place": "கருணாக்கமுதன் பட்டி",
-      "initial": "J",
-      "name": "கிஷோர்",
-      "job": "airport",
-      "name1": "குமார்",
-      "relationship": "",
-      "mobile": "9865607179",
-      "amount": "6001",
-      "amountWords": "ஆறு ஆயிரம் ஒன்று ரூபாய் மட்டும்",
-      "mode": "ரொக்கம்",
-      "upiTxTime": "",
-      "createdBy": "admin",
-      "date": "28/09/2026",
-      "time": "06:31 PM",
-      "createdAt": "2026-09-28T13:01:21.408Z"
-    },
     {
       "id": "rcpt_1790871877894_bsst",
       "billNo": "AM1001",
@@ -814,14 +706,14 @@
     {
       "id": "mem_1790267726325_gp9l3",
       "mobile": "9865607179",
-      "initial": "J",
+      "initial": "",
       "name": "கிஷோர்",
-      "job": "airport",
+      "job": "",
       "name1": "குமார்",
       "relationship": "",
       "place": "கருணாக்கமுதன் பட்டி",
-      "eventName": "டெஸ்ட்",
-      "lastUpdated": "2026-09-28T13:01:21.408Z"
+      "eventName": "மனோஜ்",
+      "lastUpdated": "2026-10-06T16:48:51.540Z"
     },
     {
       "id": "mem_1790275239914_icm6m",
@@ -885,7 +777,7 @@
       "mobile": "",
       "updatedAt": "2026-09-25T10:12:12.915Z",
       "eventName": "சண்முகப்ரியா",
-      "lastUpdated": "2026-09-26T13:28:29.061Z"
+      "lastUpdated": "2026-10-06T16:48:51.540Z"
     },
     {
       "id": "mem_1790331007645_y6l0",
@@ -950,7 +842,7 @@
       "mobile": "",
       "updatedAt": "2026-09-25T10:12:12.916Z",
       "eventName": "ஆப்பிளின்",
-      "lastUpdated": "2026-09-26T13:28:29.061Z"
+      "lastUpdated": "2026-10-06T16:48:51.539Z"
     },
     {
       "id": "mem_1790331007645_wme5",
@@ -959,11 +851,23 @@
       "place": "மதுரை",
       "name1": "குமார்",
       "job": "",
-      "relationship": "தாய்மாமன்",
+      "relationship": "",
       "mobile": "",
       "updatedAt": "2026-09-25T10:12:12.916Z",
       "eventName": "ஆப்பிளின்",
-      "lastUpdated": "2026-09-26T13:28:29.061Z"
+      "lastUpdated": "2026-10-06T16:48:51.540Z"
+    },
+    {
+      "id": "mem_1791305331538_v6b6i",
+      "mobile": "",
+      "initial": "",
+      "name": "பிரபாகரன்",
+      "job": "",
+      "name1": "கௌசல்யா",
+      "relationship": "",
+      "place": "மதுரை",
+      "eventName": "நின்றான்",
+      "lastUpdated": "2026-10-06T16:48:51.538Z"
     }
   ],
   "payouts": [
@@ -978,7 +882,8 @@
       "paymentMode": "Cash",
       "createdBy": "admin",
       "date": "16/09/2026",
-      "time": "1899-12-30T00:14:50.000Z"
+      "time": "05:44 AM",
+      "amountWords": "ஐந்நூறு ரூபாய் மட்டும்"
     },
     {
       "id": "payout_1790094443908",
@@ -991,7 +896,8 @@
       "paymentMode": "Cash",
       "createdBy": "admin",
       "date": "22/09/2026",
-      "time": "1899-12-30T16:35:50.000Z"
+      "time": "10:05 PM",
+      "amountWords": "நூறு ரூபாய் மட்டும்"
     },
     {
       "id": "payout_1790095222480",
@@ -1004,7 +910,8 @@
       "paymentMode": "Cash",
       "createdBy": "admin",
       "date": "22/09/2026",
-      "time": "1899-12-30T16:48:50.000Z"
+      "time": "10:18 PM",
+      "amountWords": "நூறு ரூபாய் மட்டும்"
     },
     {
       "id": "payout_1790096473358",
@@ -1017,7 +924,8 @@
       "paymentMode": "Cash",
       "createdBy": "admin",
       "date": "22/09/2026",
-      "time": "1899-12-30T17:09:50.000Z"
+      "time": "10:39 PM",
+      "amountWords": "நூறு ரூபாய் மட்டும்"
     },
     {
       "id": "payout_1790264128702",
@@ -1030,7 +938,8 @@
       "paymentMode": "Cash",
       "createdBy": "admin",
       "date": "24/09/2026",
-      "time": "1899-12-30T15:43:50.000Z"
+      "time": "09:13 PM",
+      "amountWords": "நூறு ரூபாய் மட்டும்"
     },
     {
       "id": "payout_1790857186688",
@@ -1042,21 +951,9 @@
       "paidTo": "",
       "paymentMode": "Cash",
       "createdBy": "admin",
-      "date": "2026-01-09T18:30:00.000Z",
-      "time": "1899-12-30T12:27:50.000Z"
-    },
-    {
-      "id": "payout_1790763769410",
-      "eventId": "",
-      "eventName": "டெஸ்ட்",
-      "category": "General",
-      "description": "",
-      "amount": 500,
-      "paidTo": "",
-      "paymentMode": "Cash",
-      "createdBy": "admin",
-      "date": "30/09/2026",
-      "time": "1899-12-30T10:30:50.000Z"
+      "date": "10/01/2026",
+      "time": "05:57 PM",
+      "amountWords": "ஐந்நூறு ரூபாய் மட்டும்"
     }
   ],
   "users": [
@@ -1192,7 +1089,11 @@
     "ev_1790320090984",
     "ev_1790335641485",
     "ev_1790345142227",
-    "ev_1790427182874"
+    "ev_1790427182874",
+    "ev_1790599639495",
+    "ev_1790524656494",
+    "ev_1790598890222",
+    "ev_1790856743014"
   ],
   "deletedEventNames": [
     "கார்த்தி",
@@ -1208,8 +1109,17 @@
     "1 - 1",
     "1",
     "இ - இ",
-    "இ"
+    "இ",
+    "டெஸ்ட்",
+    "டெஸ்ட௧",
+    "டெஸ்ட் - டெஸ்ட௧",
+    "முத்து",
+    "முத்து - முத்து",
+    "டெஸ்ட்1",
+    "டெஸ்ட்1 - டெஸ்ட்1",
+    "சுவேதா",
+    "சுவேதா - சுவேதா"
   ],
-  "deletedAllBefore": "2026-09-27T14:40:21.5029332Z",
+  "deletedAllBefore": "2026-10-06T16:48:51.540Z",
   "gasWebAppUrl": "https://script.google.com/macros/s/AKfycbzfl-sZO2LKjMUPUuz6amq28JfTbVSTgaYDvEOiSqEF_skyrSqHABiZyJhyZSitA8O12Q/exec"
 }

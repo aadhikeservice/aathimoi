@@ -2818,34 +2818,22 @@ body.light-theme .tamil-key-btn:hover {
       }
     }
 
-    // 1b. Chromebook / Offline Standalone Mode (no local Node server):
-    // Directly invoke ChromeOS native "Save as PDF" / Print dialog with exact filename
-    if (window.location.protocol === 'file:' || window.location.protocol === 'chrome-extension:' || state.hasLocalServer === false) {
-      const tc = document.getElementById('aathi-toast-container');
-      if (tc) tc.innerHTML = '';
-      if (typeof setThermalPageSizeStyle === 'function') {
-        setThermalPageSizeStyle(false);
-      }
-      if (typeof fallbackPrintFn === 'function') {
-        const prevTitle = document.title;
-        document.title = cleanFilename;
-        fallbackPrintFn();
-        setTimeout(() => {
-          document.title = prevTitle;
-          if (printArea) {
-            printArea.classList.add('hidden');
-            printArea.innerHTML = '';
-          }
-        }, 1500);
-        return true;
-      }
-    }
+    // 2. Web Browser: Try Local Server PDF Generator (produces 100% searchable Tamil PDF)
+    const serverHost = (window.location.protocol === 'file:' || window.location.protocol === 'chrome-extension:')
+      ? 'http://127.0.0.1:3000'
+      : '';
+    const apiEndpoint = `${serverHost}/api/generate-pdf`;
 
-    // 2. Web Browser with Local Server: Start PDF generation in parallel with Save As dialog
-    const pdfFetchPromise = fetch('/api/generate-pdf', {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+
+    const pdfFetchPromise = fetch(apiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, filename: cleanFilename })
+      body: JSON.stringify({ html, filename: cleanFilename }),
+      signal: controller ? controller.signal : undefined
+    }).finally(() => {
+      if (timeoutId) clearTimeout(timeoutId);
     });
 
     let fileHandle = null;
@@ -2932,6 +2920,9 @@ body.light-theme .tamil-key-btn:hover {
         setThermalPageSizeStyle(false);
       }
       if (typeof fallbackPrintFn === 'function') {
+        if (typeof window.showToast === 'function') {
+          window.showToast('Notice: In Print Destination, choose "Save as PDF" (do not select "Adobe PDF" printer)', 'info');
+        }
         const prevTitle = document.title;
         document.title = cleanFilename;
         fallbackPrintFn();

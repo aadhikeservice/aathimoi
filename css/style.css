@@ -370,14 +370,14 @@ input[type=number] {
   }
 
   .thermal-office-copy {
-    width: 40mm !important;
-    max-width: 40mm !important;
-    height: 40mm !important;
-    max-height: 40mm !important;
+    width: 70mm !important;
+    max-width: 70mm !important;
+    height: 50mm !important;
+    max-height: 50mm !important;
     margin: 0 auto !important;
-    padding: 1mm 1.5mm !important;
-    border: 1.5px solid #000 !important;
-    border-radius: 3px !important;
+    padding: 1.5mm 2.2mm !important;
+    border: 2px solid #000 !important;
+    border-radius: 4px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
     page-break-inside: avoid !important;

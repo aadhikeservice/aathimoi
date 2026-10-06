@@ -11157,7 +11157,72 @@ body.light-theme .tamil-key-btn:hover {
     const rcpt = state.receipts.find(r => r.id === receiptId);
     if (!rcpt) return;
     normalizeReceiptData(rcpt);
-    openEditReceiptFormModal(rcpt);
+
+    let modalRoot = document.getElementById('receipt-edit-modal-root');
+    if (!modalRoot) {
+      modalRoot = document.createElement('div');
+      modalRoot.id = 'receipt-edit-modal-root';
+      document.body.appendChild(modalRoot);
+    }
+
+    const currentUsername = state.currentUser ? (state.currentUser.username || '').toLowerCase() : '';
+
+    // Password verification modal
+    modalRoot.innerHTML = `
+      <div class="modal-overlay">
+        <div class="glass-card w-full max-w-sm p-6 space-y-4 rounded-2xl shadow-2xl border border-amber-500/40">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold gold-gradient-text flex items-center space-x-2">
+              <i data-lucide="lock" class="w-5 h-5 text-amber-400"></i>
+              <span>Password Verification</span>
+            </h3>
+            <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition cursor-pointer">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-300">Enter password to edit Receipt #${rcpt.billNo || ''} (${rcpt.name || ''}):</p>
+          <form id="verify-receipt-pass-form" class="space-y-4">
+            <div>
+              <input type="password" id="verify-receipt-pass-input" class="input-styled font-mono text-center tracking-widest text-lg" placeholder="••••••••" required autocomplete="off">
+            </div>
+            <div class="flex space-x-3 pt-2">
+              <button type="button" onclick="document.getElementById('receipt-edit-modal-root').innerHTML=''" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 transition cursor-pointer">
+                Cancel
+              </button>
+              <button type="submit" class="w-1/2 gold-button py-2.5 text-xs font-bold rounded-xl shadow-lg cursor-pointer">
+                Verify
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    const passInput = document.getElementById('verify-receipt-pass-input');
+    if (passInput) passInput.focus();
+
+    document.getElementById('verify-receipt-pass-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const enteredPass = (document.getElementById('verify-receipt-pass-input')?.value || '').trim();
+
+      let userObj = state.users.find(u => (u.username || '').toLowerCase() === currentUsername);
+      let adminUsr = state.users.find(u => (u.username || '').toLowerCase() === 'admin');
+      const userPass = userObj ? userObj.password : (state.currentUser ? state.currentUser.password : '1234');
+      const adminPass = adminUsr ? adminUsr.password : '1234';
+
+      if (enteredPass !== userPass && enteredPass !== adminPass) {
+        alert('Incorrect Password! Access Denied.');
+        const inp = document.getElementById('verify-receipt-pass-input');
+        if (inp) {
+          inp.value = '';
+          inp.focus();
+        }
+        return;
+      }
+
+      openEditReceiptFormModal(rcpt);
+    });
   };
   window.appOpenEditReceiptModal = window.appEditReceipt;
   window.appOpenEditSavedDataModal = window.appEditReceipt;

@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const { execFileSync } = require('child_process');
 
 let mainWindow = null;
 
@@ -152,9 +154,12 @@ function inlineCoverBgImage(html) {
 
 // Helper to render HTML to PDF Buffer using hidden Electron BrowserWindow
 async function renderHtmlToPdfBuffer(html) {
+  const osTemp = (app && typeof app.getPath === 'function') ? app.getPath('temp') : os.tmpdir();
+  const tempDir = (osTemp && fs.existsSync(osTemp)) ? osTemp : os.tmpdir();
   const baseDir = fs.existsSync(path.join(__dirname, 'fonts')) ? __dirname : process.cwd();
   const tempId = `temp_e_pdf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const tempHtmlPath = path.join(baseDir, `${tempId}.html`);
+  const tempHtmlPath = path.join(tempDir, `${tempId}.html`);
+  const tempPdfPath = path.join(tempDir, `${tempId}.pdf`);
   const baseHref = 'file:///' + baseDir.replace(/\\/g, '/') + '/';
   const processedHtml = inlineCoverBgImage(html);
 
@@ -223,9 +228,9 @@ ${processedHtml}
 </html>`;
 
   fs.writeFileSync(tempHtmlPath, wrappedHtml, 'utf-8');
-  const tempPdfPath = path.join(baseDir, `${tempId}.pdf`);
 
   let pdfWin = null;
+  let tempPyScript = null;
   try {
     pdfWin = new BrowserWindow({
       show: false,
@@ -251,9 +256,14 @@ ${processedHtml}
     let buf = Buffer.isBuffer(pdfData) ? pdfData : Buffer.from(pdfData);
 
     // Post-process with Python searchable text overlay if script exists
-    const pyScript = path.join(__dirname, 'make_searchable_pdf.py');
+    let pyScript = path.join(__dirname, 'make_searchable_pdf.py');
     if (fs.existsSync(pyScript)) {
       try {
+        if (pyScript.includes('.asar')) {
+          tempPyScript = path.join(tempDir, `make_searchable_pdf_${tempId}.py`);
+          fs.writeFileSync(tempPyScript, fs.readFileSync(pyScript));
+          pyScript = tempPyScript;
+        }
         fs.writeFileSync(tempPdfPath, buf);
         const localPy = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe');
         const pyCandidates = ['py', 'python', localPy, 'C:\\Users\\jkish\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'];
@@ -278,6 +288,9 @@ ${processedHtml}
     }
     try { fs.unlinkSync(tempHtmlPath); } catch (e) {}
     try { if (fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath); } catch (e) {}
+    if (tempPyScript) {
+      try { if (fs.existsSync(tempPyScript)) fs.unlinkSync(tempPyScript); } catch (e) {}
+    }
   }
 }
 

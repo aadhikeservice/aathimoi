@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const PORT = process.env.PORT || 3000;
 const BASE_DIR = process.cwd();
@@ -1585,8 +1586,9 @@ const server = http.createServer((req, res) => {
 
         const outFileName = (filename || 'Report').replace(/[\/\\?%*:|"<>]/g, '_') + '.pdf';
         const tempId = Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-        const tempHtmlPath = path.join(BASE_DIR, 'public', `_temp_${tempId}.html`);
-        const tempPdfPath = path.join(BASE_DIR, 'public', `_temp_${tempId}.pdf`);
+        const tempDir = os.tmpdir() || path.join(BASE_DIR, 'public');
+        const tempHtmlPath = path.join(tempDir, `_temp_${tempId}.html`);
+        const tempPdfPath = path.join(tempDir, `_temp_${tempId}.pdf`);
 
         const wrappedHtml = `<!DOCTYPE html>
 <html>
@@ -1685,6 +1687,7 @@ ${processedHtml}
           `--print-to-pdf=${tempPdfPath}`,
           fileUrl
         ], { timeout: 60000 }, (err) => {
+          let tempPyScript = null;
           try {
             if (err) throw err;
             if (!fs.existsSync(tempPdfPath)) {
@@ -1692,9 +1695,14 @@ ${processedHtml}
             }
 
             // Post-process with Python to add 100% searchable text layer if available
-            const pyScript = path.join(__dirname, 'make_searchable_pdf.py');
+            let pyScript = path.join(__dirname, 'make_searchable_pdf.py');
             if (fs.existsSync(pyScript)) {
               try {
+                if (pyScript.includes('.asar')) {
+                  tempPyScript = path.join(tempDir, `make_searchable_pdf_${tempId}.py`);
+                  fs.writeFileSync(tempPyScript, fs.readFileSync(pyScript));
+                  pyScript = tempPyScript;
+                }
                 const localPy = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe');
                 const pyCandidates = ['py', 'python', localPy, 'C:\\Users\\jkish\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'];
                 for (const pyExe of pyCandidates) {
@@ -1712,6 +1720,9 @@ ${processedHtml}
 
             try { fs.unlinkSync(tempHtmlPath); } catch (e) {}
             try { fs.unlinkSync(tempPdfPath); } catch (e) {}
+            if (tempPyScript) {
+              try { if (fs.existsSync(tempPyScript)) fs.unlinkSync(tempPyScript); } catch (e) {}
+            }
 
             if (!pdfBuffer || pdfBuffer.length < 100 || pdfBuffer.slice(0, 4).toString() !== '%PDF') {
               throw new Error('Generated PDF file is empty or invalid');
@@ -1729,6 +1740,9 @@ ${processedHtml}
             console.error('[PDF Generator] Error during generation:', genErr);
             try { fs.unlinkSync(tempHtmlPath); } catch (e) {}
             try { fs.unlinkSync(tempPdfPath); } catch (e) {}
+            if (tempPyScript) {
+              try { if (fs.existsSync(tempPyScript)) fs.unlinkSync(tempPyScript); } catch (e) {}
+            }
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: genErr.message }));
           }

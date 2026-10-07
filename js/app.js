@@ -2034,102 +2034,104 @@
       }
     }
 
-    // 2. Web Browser: Try Local Server PDF Generator (produces 100% searchable Tamil PDF)
+    // 2. Web Browser: Fetch complete PDF buffer from server BEFORE opening file picker
+    // (Crucial: NEVER create a 0-byte file on disk before PDF bytes are received and verified!)
     const serverHost = (window.location.protocol === 'file:' || window.location.protocol === 'chrome-extension:')
       ? 'http://127.0.0.1:3000'
       : '';
     const apiEndpoint = `${serverHost}/api/generate-pdf`;
 
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+    let pdfUint8 = null;
+    let toastNoticeTimer = null;
+    try {
+      if (typeof window.showToast === 'function') {
+        toastNoticeTimer = setTimeout(() => {
+          window.showToast('Generating PDF, please wait...', 'info');
+        }, 400);
+      }
 
-    const pdfFetchPromise = fetch(apiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, filename: cleanFilename }),
-      signal: controller ? controller.signal : undefined
-    }).finally(() => {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      // Generous timeout (60s) for multi-page documents (Cover + Index + Ledgers + Ruled pages)
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 60000) : null;
+
+      const resp = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html, filename: cleanFilename }),
+        signal: controller ? controller.signal : undefined
+      });
       if (timeoutId) clearTimeout(timeoutId);
-    });
+      if (toastNoticeTimer) clearTimeout(toastNoticeTimer);
 
-    let fileHandle = null;
-    let writable = null;
-    if ('showSaveFilePicker' in window) {
-      try {
-        fileHandle = await window.showSaveFilePicker({
-          suggestedName: suggestedFileName,
-          types: [{
-            description: 'PDF Document (*.pdf)',
-            accept: { 'application/pdf': ['.pdf'] }
-          }]
-        });
-        writable = await fileHandle.createWritable();
-      } catch (pickerErr) {
-        if (pickerErr.name === 'AbortError') {
-          pdfFetchPromise.catch(() => {});
-          if (typeof window.showToast === 'function') {
-            window.showToast('Download cancelled by user.', 'info');
+      if (resp && resp.ok) {
+        const arrayBuf = await resp.arrayBuffer();
+        if (arrayBuf && arrayBuf.byteLength >= 100) {
+          const testHeader = new Uint8Array(arrayBuf.slice(0, 4));
+          // Verify valid PDF magic header (%PDF = 0x25, 0x50, 0x44, 0x46)
+          if (testHeader[0] === 0x25 && testHeader[1] === 0x50 && testHeader[2] === 0x44 && testHeader[3] === 0x46) {
+            pdfUint8 = new Uint8Array(arrayBuf);
           }
-          return false;
         }
-        console.warn('showSaveFilePicker notice:', pickerErr);
-        fileHandle = null;
-        writable = null;
+      }
+    } catch (fetchErr) {
+      if (toastNoticeTimer) clearTimeout(toastNoticeTimer);
+      console.warn('Local PDF server fetch error or offline:', fetchErr);
+    }
+
+    // If valid PDF bytes were received from server, save cleanly to disk
+    if (pdfUint8) {
+      // Priority A: If showSaveFilePicker is available, prompt user and write complete bytes atomically
+      if ('showSaveFilePicker' in window) {
+        try {
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName: suggestedFileName,
+            types: [{
+              description: 'PDF Document (*.pdf)',
+              accept: { 'application/pdf': ['.pdf'] }
+            }]
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(pdfUint8);
+          await writable.close();
+          if (typeof window.showToast === 'function') {
+            window.showToast(`✓ PDF saved successfully as "${fileHandle.name || suggestedFileName}"`, 'success');
+          }
+          return true;
+        } catch (pickerErr) {
+          if (pickerErr.name === 'AbortError') {
+            if (typeof window.showToast === 'function') {
+              window.showToast('Download cancelled by user.', 'info');
+            }
+            return false;
+          }
+          console.warn('showSaveFilePicker notice, using standard download fallback:', pickerErr);
+        }
+      }
+
+      // Priority B: Standard browser anchor download
+      try {
+        const blob = new Blob([pdfUint8], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = suggestedFileName;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          a.remove();
+          URL.revokeObjectURL(blobUrl);
+        }, 1500);
+        if (typeof window.showToast === 'function') {
+          window.showToast(`✓ PDF downloaded successfully as "${suggestedFileName}"`, 'success');
+        }
+        return true;
+      } catch (blobErr) {
+        console.warn('Blob download error:', blobErr);
       }
     }
 
-    try {
-      const resp = await pdfFetchPromise;
-      if (!resp.ok) {
-        throw new Error(`Server returned status ${resp.status}`);
-      }
-      const arrayBuf = await resp.arrayBuffer();
-      if (!arrayBuf || arrayBuf.byteLength < 100) {
-        throw new Error('Generated PDF buffer is empty');
-      }
-      const uint8 = new Uint8Array(arrayBuf);
-
-      // If user selected location via "Save As" window, write complete bytes and close
-      if (writable) {
-        await writable.write(uint8);
-        await writable.close();
-        if (typeof window.showToast === 'function') {
-          window.showToast(`✓ PDF saved successfully as "${fileHandle.name || suggestedFileName}"`, 'success');
-        }
-        return true;
-      }
-
-      if (fileHandle) {
-        const w = await fileHandle.createWritable();
-        await w.write(uint8);
-        await w.close();
-        if (typeof window.showToast === 'function') {
-          window.showToast(`✓ PDF saved successfully as "${fileHandle.name || suggestedFileName}"`, 'success');
-        }
-        return true;
-      }
-
-      // Fallback: Anchor download
-      const blob = new Blob([uint8], { type: 'application/pdf' });
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = suggestedFileName;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
-      }, 1000);
-      if (typeof window.showToast === 'function') {
-        window.showToast('✓ PDF downloaded successfully!', 'success');
-      }
-      return true;
-    } catch (err) {
-      if (writable) {
-        try { await writable.abort(); } catch (e) {}
-      }
-      console.warn('Direct PDF generation failed, falling back to browser print:', err);
+    // 3. Fallback: If server is offline or failed, guide user to browser print-to-PDF WITHOUT creating 0-byte corrupt files
+    console.warn('Direct PDF server unavailable, falling back to browser print:');
       const tc = document.getElementById('aathi-toast-container');
       if (tc) tc.innerHTML = '';
       if (typeof setThermalPageSizeStyle === 'function') {

@@ -1436,8 +1436,23 @@
       });
     }
 
-    const primaryMemberName = (activeEv && activeEv.displayName1) ? activeEv.displayName1 : ((activeEv && activeEv.memberName) || 'Aathi Moi');
-    const secondaryMemberName = (activeEv && activeEv.displayName1 && activeEv.memberName) ? activeEv.memberName : '';
+    const primaryMemberName = (activeEv && activeEv.displayName1)
+      ? activeEv.displayName1
+      : ((activeEv && (activeEv.memberName || activeEv.name || activeEv.eventName)) || 'Aathi Moi');
+    const secondaryMemberName = (activeEv && activeEv.displayName1 && activeEv.memberName)
+      ? activeEv.memberName
+      : ((activeEv && activeEv.displayName1 && activeEv.memberName1) ? activeEv.memberName1 : '');
+    const eventCelebration = (activeEv && (activeEv.eventTitle || activeEv.title || activeEv.celebrationTitle)) || '';
+    const place = (activeEv && (activeEv.place || activeEv.eventPlace)) || '';
+    const rawPhone = (activeEv && (activeEv.phone || activeEv.mobile || activeEv.eventPhone)) || '';
+    const phoneFormatted = rawPhone ? (formatPhoneWithCountryCode(rawPhone) || rawPhone) : '';
+    const rawDate = (activeEv && (activeEv.eventDate || activeEv.date)) || '';
+    const dateFormatted = rawDate ? formatDateDMY(rawDate) : '';
+
+    const metaParts = [];
+    if (place) metaParts.push(`<span>${toSearchableUnicode(place)}</span>`);
+    if (phoneFormatted) metaParts.push(`<span>${toSearchableUnicode(phoneFormatted)}</span>`);
+    if (rawDate && dateFormatted && dateFormatted !== '-') metaParts.push(`<span>${toSearchableUnicode('தேதி:')} ${toSearchableUnicode(dateFormatted)}</span>`);
 
     return `
       <div class="a4-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; box-sizing: border-box; padding: 25px; margin-bottom: 20px; font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: #fff; color: #000;">
@@ -1461,11 +1476,16 @@
               ${toSearchableUnicode(secondaryMemberName)}
             </div>
           ` : ''}
-          <div style="font-size: 10.5pt; font-weight: 700; color: #334155; margin-top: 4px;">
-            <span>${toSearchableUnicode((activeEv && activeEv.place) || '')}</span> ${activeEv && activeEv.place && activeEv.phone ? '&nbsp;|&nbsp;' : ''}
-            <span>${activeEv && activeEv.phone ? (formatPhoneWithCountryCode(activeEv.phone) || activeEv.phone) : ''}</span> ${(activeEv && (activeEv.place || activeEv.phone)) && activeEv.eventDate ? '&nbsp;|&nbsp;' : ''}
-            <span>${formatDateDMY(activeEv && activeEv.eventDate)}</span>
-          </div>
+          ${eventCelebration ? `
+            <div style="font-size: 11.5pt; font-weight: 800; color: #8B0000; margin: 2px 0 2px 0;">
+              ${toSearchableUnicode(eventCelebration)}
+            </div>
+          ` : ''}
+          ${metaParts.length > 0 ? `
+            <div style="font-size: 10.5pt; font-weight: 700; color: #334155; margin-top: 4px;">
+              ${metaParts.join(' &nbsp;|&nbsp; ')}
+            </div>
+          ` : ''}
         </div>
 
         <!-- Index Page Title -->

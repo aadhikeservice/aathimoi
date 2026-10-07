@@ -2298,7 +2298,7 @@ body.light-theme .tamil-key-btn:hover {
     const metaParts = [];
     if (place) metaParts.push(`<span>${toSearchableUnicode(place)}</span>`);
     if (phoneFormatted) metaParts.push(`<span>${toSearchableUnicode(phoneFormatted)}</span>`);
-    if (rawDate && dateFormatted && dateFormatted !== '-') metaParts.push(`<span>${toSearchableUnicode('தேதி:')} ${toSearchableUnicode(dateFormatted)}</span>`);
+    if (rawDate && dateFormatted && dateFormatted !== '-') metaParts.push(`<span>${toSearchableUnicode(dateFormatted)}</span>`);
 
     return `
       <div class="a4-page" style="page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; box-sizing: border-box; padding: 25px; margin-bottom: 20px; font-family: 'Mukta Malar', 'Nirmala UI', Arial, sans-serif; background: #fff; color: #000;">
@@ -14604,9 +14604,9 @@ body.light-theme .tamil-key-btn:hover {
 
     const evTitle = `${activeNoteEv.name}${activeNoteEv.title ? ' - ' + activeNoteEv.title : ''}`;
     const evMetaParts = [
-      activeNoteEv.place ? `ஊர்: ${activeNoteEv.place}` : '',
-      activeNoteEv.date ? `தேதி: ${formatDateDMY(activeNoteEv.date)}` : '',
-      selectedPlace !== 'ALL' ? `தேர்வு செய்த ஊர்: ${selectedPlace}` : ''
+      activeNoteEv.place || '',
+      selectedPlace !== 'ALL' && selectedPlace !== activeNoteEv.place ? selectedPlace : '',
+      activeNoteEv.date ? formatDateDMY(activeNoteEv.date) : ''
     ].filter(Boolean);
     const evSubtitle = evMetaParts.join(' | ');
 
@@ -14685,9 +14685,9 @@ body.light-theme .tamil-key-btn:hover {
     const totalAmount = filteredEntries.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const evTitle = `${activeNoteEv.name}${activeNoteEv.title ? ' - ' + activeNoteEv.title : ''}`;
     const evMetaParts = [
-      activeNoteEv.place ? `ஊர்: ${activeNoteEv.place}` : '',
-      activeNoteEv.date ? `தேதி: ${formatDateDMY(activeNoteEv.date)}` : '',
-      selectedPlace !== 'ALL' ? `தேர்வு செய்த ஊர்: ${selectedPlace}` : ''
+      activeNoteEv.place || '',
+      selectedPlace !== 'ALL' && selectedPlace !== activeNoteEv.place ? selectedPlace : '',
+      activeNoteEv.date ? formatDateDMY(activeNoteEv.date) : ''
     ].filter(Boolean);
     const evSubtitle = evMetaParts.join(' | ');
 
@@ -14835,7 +14835,7 @@ body.light-theme .tamil-key-btn:hover {
           <div style="font-size: 9.5pt; font-weight: bold; color: #8B0000; margin-top: 2px; font-family: monospace, sans-serif;">📞 98656 07179, 99946 96900, 79041 43508</div>
           <h2 style="font-size: 15pt; font-weight: bold; color: #0F172A; margin: 6px 0 2px 0;">${activeNoteEv.name} (${activeNoteEv.place})</h2>
           <div style="font-size: 10.5pt; font-weight: bold; color: #334155; margin-top: 4px;">
-            <span>தேதி: ${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' ? ` &nbsp;|&nbsp; <span>ஊர்: ${selectedPlace}</span>` : ''}
+            <span>${formatDateDMY(activeNoteEv.date)}</span>${selectedPlace !== 'ALL' && selectedPlace !== activeNoteEv.place ? ` &nbsp;|&nbsp; <span>${selectedPlace}</span>` : ''}
           </div>
         </div>
 

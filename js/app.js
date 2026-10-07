@@ -2164,7 +2164,6 @@
       }
       return false;
     }
-  }
 
   // Guidance modal to instruct user to select 'Save as PDF' instead of 'Adobe PDF'
   function showSaveAsPdfGuideModal({ filename, onProceed }) {
